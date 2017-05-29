@@ -13,6 +13,7 @@ using Emgu.CV.CvEnum;
 using Emgu.CV.ML;
 using System.Reflection;
 using System.Threading;
+using System.IO;
 
 namespace EmguCVDemo
 {
@@ -25,6 +26,7 @@ namespace EmguCVDemo
         //SVM svmObj = new SVM();
         Rectangle faceRectangle = new Rectangle();
         Rectangle faceReadRectangle = new Rectangle();
+        List<Rectangle> faceReadRectangleList = new List<Rectangle>();
         string url = "";
         //string url = "rtsp://admin:admin123@192.168.3.64:554/h264/ch1/main/av_stream";
         //string url = "rtsp://admin:admin@192.168.0.199/0";
@@ -114,6 +116,7 @@ namespace EmguCVDemo
             //faceRectangle.Width = 0;
             //faceRectangle.Height = 0;
             DrawRectangle(e.X - rectangle.X, e.Y - rectangle.Y);
+            DrawRectangleList();
             isDown = true;
             PrintMsg(String.Format("MouseDown:{0},{1}", e.X - rectangle.X, e.Y - rectangle.Y));
         }
@@ -126,6 +129,7 @@ namespace EmguCVDemo
             PropertyInfo rectangleProperty = this.pbImg.GetType().GetProperty("ImageRectangle", BindingFlags.Instance | BindingFlags.NonPublic);
             Rectangle rectangle = (Rectangle)rectangleProperty.GetValue(this.pbImg, null);
             DrawRectangle(e.X - rectangle.X, e.Y - rectangle.Y);
+            DrawRectangleList();
         }
 
         private void pbImg_MouseUp(object sender, MouseEventArgs e)
@@ -135,11 +139,16 @@ namespace EmguCVDemo
             PropertyInfo rectangleProperty = this.pbImg.GetType().GetProperty("ImageRectangle", BindingFlags.Instance | BindingFlags.NonPublic);
             Rectangle rectangle = (Rectangle)rectangleProperty.GetValue(this.pbImg, null);
             DrawRectangle(e.X - rectangle.X, e.Y - rectangle.Y);
+            DrawRectangleList();
             if (faceRectangle.Width > 0 && faceRectangle.Height > 0)
                 pbSubImg.Image = new Bitmap(nowImg).Clone(faceReadRectangle, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
             PrintMsg(String.Format("MouseUp:{0},{1}", e.X - rectangle.X, e.Y - rectangle.Y));
         }
-
+        /// <summary>
+        /// 计算矩形
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
         private void DrawRectangle(int x, int y)
         {
             if (nowImg == null || btnStop.Enabled)
@@ -166,10 +175,30 @@ namespace EmguCVDemo
             faceReadRectangle.Width = Convert.ToInt32(faceRectangle.Width / wb);
             faceReadRectangle.Height = Convert.ToInt32(faceRectangle.Height / hb);
 
+            //Bitmap cloneImg = new Bitmap(nowImg);
+            //Graphics g = Graphics.FromImage(cloneImg);
+            //int lineWide = Convert.ToInt32(2.0 / pbImg.Width * cloneImg.Width);
+            //g.DrawRectangle(new Pen(Color.Red, lineWide), faceReadRectangle);
+            //g.Dispose();
+            //pbImg.Image = cloneImg;
+            //GC.Collect();
+        }
+        /// <summary>
+        /// 绘制矩形
+        /// </summary>
+        private void DrawRectangleList()
+        {
+            if (nowImg == null || btnStop.Enabled)
+                return;
             Bitmap cloneImg = new Bitmap(nowImg);
             Graphics g = Graphics.FromImage(cloneImg);
             int lineWide = Convert.ToInt32(2.0 / pbImg.Width * cloneImg.Width);
-            g.DrawRectangle(new Pen(Color.Red, lineWide), faceReadRectangle);
+            Pen pen = new Pen(Color.Red, lineWide);
+            g.DrawRectangle(pen, faceReadRectangle);
+            foreach (var r in faceReadRectangleList)
+            {
+                g.DrawRectangle(pen, r);
+            }
             g.Dispose();
             pbImg.Image = cloneImg;
             GC.Collect();
@@ -182,22 +211,18 @@ namespace EmguCVDemo
                 txtMsg.AppendText(msg + "\r\n");
             }));
         }
-        Object lockObj = new Object();
         private void GetFrame()
         {
             try
             {
-                lock (lockObj)
+                if (cap != null && cap.Ptr != IntPtr.Zero)
                 {
-                    if (cap != null && cap.Ptr != IntPtr.Zero)
+                    if (!cap.IsOpened)
+                        return;
+                    cap.Retrieve(nextFrame, 0);
+                    if (!nextFrame.IsEmpty)
                     {
-                        if (!cap.IsOpened)
-                            return;
-                        cap.Retrieve(nextFrame, 0);
-                        if (!nextFrame.IsEmpty)
-                        {
-                            pbImg.Image = nextFrame.Bitmap;
-                        }
+                        pbImg.Image = nextFrame.Bitmap;
                     }
                 }
             }
@@ -229,44 +254,64 @@ namespace EmguCVDemo
         #region BP神经网络
         private int bpWidth = 960, bpHeight = 540;
         //private int bpWidth = 1920, bpHeight = 1080;
-        private int bpRectangleCount = 50;
+        private int bpRectangleCount = 50;//人脸框最大数量
+        private int bpTrainDataCount = 50;//训练样本数
         private ANN_MLP bp;
         private void CreateBP()
         {
             bp = new ANN_MLP();
             Matrix<int> layerSizes = new Matrix<int>(new int[] { 
                 bpWidth * bpHeight * 3,
-                10, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+                10, 50, 50, 50, 50, 50, 50, 50, 30, 10,
                 20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-                20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
                 bpRectangleCount * 4 
             });
             bp.SetLayerSizes(layerSizes);
-            bp.SetActivationFunction(ANN_MLP.AnnMlpActivationFunction.SigmoidSym, 1, 1);
+            bp.SetActivationFunction(ANN_MLP.AnnMlpActivationFunction.Gaussian, 1, 1);
             bp.TermCriteria = new MCvTermCriteria(10000, 1.0e-8);
             //bp.BackpropWeightScale = 0.1;
             //bp.BackpropMomentumScale = 0.1;
             bp.SetTrainMethod(ANN_MLP.AnnMlpTrainMethod.Backprop, 0.1, 0.1);
         }
-        private void TrainBP(Bitmap img, Rectangle[] rects)
+        private void TrainBP(Dictionary<Bitmap, List<Rectangle>> imgs)
         {
-            Bitmap tmpImg = ZoomImg(img, bpWidth, bpHeight, ref rects);
-            Image<Bgr, float> trainingData = new Image<Bgr, float>(tmpImg);
-            Matrix<float> trainingDataMats = new Matrix<float>(1, bpWidth * bpHeight * 3);
-            trainingDataMats.Bytes = trainingData.Bytes;
-            Matrix<float> labelsMats = new Matrix<float>(1, bpRectangleCount * 4);
+            bpTrainDataCount = imgs.Count;
+            Matrix<float> trainingDataMats = new Matrix<float>(bpTrainDataCount, bpWidth * bpHeight * 3);
+            trainingDataMats.SetValue(0);
+            Matrix<float> labelsMats = new Matrix<float>(bpTrainDataCount, bpRectangleCount * 4);
             labelsMats.SetValue(-1);
-            for (int i = 0; i < rects.Length * 4 && i < bpRectangleCount * 4; i += 4)
+            int j = 0;//行数
+            foreach (var item in imgs)
             {
-                labelsMats[0, i] = rects[i / 4].X / (float)bpWidth;
-                labelsMats[0, i + 1] = rects[i / 4].Y / (float)bpHeight;
-                labelsMats[0, i + 2] = rects[i / 4].Width / (float)bpWidth;
-                labelsMats[0, i + 3] = rects[i / 4].Height / (float)bpHeight;
+                Bitmap img = item.Key;
+                Rectangle[] rects = item.Value.ToArray();
+                //图片
+                //Matrix<float> trainingDataRow = trainingDataMats.GetRow(j);
+                Bitmap tmpImg = ZoomImg(img, bpWidth, bpHeight, ref rects);
+                Image<Bgr, float> trainingData = new Image<Bgr, float>(tmpImg);
+                for (int i = 0; i < bpWidth * bpHeight * 3; i += 3)
+                {
+                    trainingDataMats[j, i] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 0];
+                    trainingDataMats[j, i + 1] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 1];
+                    trainingDataMats[j, i + 2] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 2];
+                }
+                //矩形数据
+                for (int i = 0; i < rects.Length * 4 && i < bpRectangleCount * 4; i += 4)
+                {
+                    //Matrix<float> labelsMatsRow = labelsMats.GetRow(j);
+                    labelsMats[j, i] = rects[i / 4].X / (float)bpWidth;
+                    labelsMats[j, i + 1] = rects[i / 4].Y / (float)bpHeight;
+                    labelsMats[j, i + 2] = rects[i / 4].Width / (float)bpWidth;
+                    labelsMats[j, i + 3] = rects[i / 4].Height / (float)bpHeight;
+                }
+                tmpImg.Dispose();
+                tmpImg = null;
+                j++;
             }
             TrainData tmpTrainData = new TrainData(trainingDataMats, Emgu.CV.ML.MlEnum.DataLayoutType.RowSample, labelsMats);
+            //bp.Train(tmpTrainData, (int)(Emgu.CV.ML.MlEnum.AnnMlpTrainingFlag.NoInputScale | Emgu.CV.ML.MlEnum.AnnMlpTrainingFlag.NoOutputScale));
             bp.Train(tmpTrainData, (int)Emgu.CV.ML.MlEnum.AnnMlpTrainingFlag.Default);
-            tmpImg.Dispose();
-            tmpImg = null;
         }
         private Rectangle[] PredictBP(Bitmap img)
         {
@@ -275,7 +320,12 @@ namespace EmguCVDemo
             List<Rectangle> retRects = new List<Rectangle>();
             Image<Bgr, float> trainingData = new Image<Bgr, float>(img);
             Matrix<float> trainingDataMats = new Matrix<float>(1, bpWidth * bpHeight * 3);
-            trainingDataMats.Bytes = trainingData.Bytes;
+            for (int i = 0; i < bpWidth * bpHeight * 3; i += 3)
+            {
+                trainingDataMats[0, i] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 0];
+                trainingDataMats[0, i + 1] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 1];
+                trainingDataMats[0, i + 2] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 2];
+            }
             Matrix<float> labelsMats = new Matrix<float>(1, bpRectangleCount * 4);
             bp.Predict(trainingDataMats, labelsMats);
             for (int i = 0; i < bpRectangleCount * 4; i += 4)
@@ -298,7 +348,7 @@ namespace EmguCVDemo
             Graphics g = Graphics.FromImage(tmpZoomImg);
             g.Clear(Color.Black);
             int x = 0, y = 0, w = width, h = height;
-            double b1, b2, b0;
+            double b1, b2;
             b1 = width / height;
             b2 = img.Width / img.Height;
             if (b1 > b2)
@@ -332,28 +382,111 @@ namespace EmguCVDemo
         private void btnImport_Click(object sender, EventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "*.jpg|*.jpg";
             if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                nowImg = (Bitmap)Image.FromFile(ofd.FileName);
+                using (FileStream fs = new FileStream(ofd.FileName, FileMode.Open))
+                {
+                    int byteLength = (int)fs.Length;
+                    byte[] fileBytes = new byte[byteLength];
+                    fs.Read(fileBytes, 0, byteLength);
+
+                    nowImg = (Bitmap)Image.FromStream(new MemoryStream(fileBytes));
+                    fs.Close();
+                }
                 pbImg.Image = nowImg;
+                btnDeleteRectangle_Click(btnDeleteRectangle, null);
+                if (File.Exists(ofd.FileName + ".txt"))
+                {
+                    using (StreamReader sr = new StreamReader(ofd.FileName + ".txt"))
+                    {
+                        string tmpStrRectangle = sr.ReadLine();
+                        while (!String.IsNullOrEmpty(tmpStrRectangle))
+                        {
+                            string[] tmpStrRectangleItem = tmpStrRectangle.Split(' ');
+                            Rectangle tmpRectangle = new Rectangle();
+                            tmpRectangle.X = Convert.ToInt32(tmpStrRectangleItem[0]);
+                            tmpRectangle.Y = Convert.ToInt32(tmpStrRectangleItem[1]);
+                            tmpRectangle.Width = Convert.ToInt32(tmpStrRectangleItem[2]);
+                            tmpRectangle.Height = Convert.ToInt32(tmpStrRectangleItem[3]);
+                            faceReadRectangleList.Add(tmpRectangle);
+                            tmpStrRectangle = sr.ReadLine();
+                        }
+                        sr.Close();
+                    }
+
+                }
+                lblRectangleCount.Text = faceReadRectangleList.Count.ToString();
+                DrawRectangleList();
                 MessageBox.Show("导入完成");
             }
         }
 
         private void btnExport_Click(object sender, EventArgs e)
         {
+            if (nowImg == null || btnStop.Enabled)
+                return;
             SaveFileDialog sfd = new SaveFileDialog();
+            sfd.Filter = "*.jpg|*.jpg";
             if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                nowImg.Save(sfd.FileName);
+                nowImg.Save(sfd.FileName, System.Drawing.Imaging.ImageFormat.Jpeg);
+                using (StreamWriter fs = new StreamWriter(sfd.FileName + ".txt", false))
+                {
+                    foreach (var r in faceReadRectangleList)
+                    {
+                        fs.WriteLine(String.Format("{0} {1} {2} {3}", r.X, r.Y, r.Width, r.Height));
+                    }
+                    fs.Close();
+                }
                 MessageBox.Show("导出完成");
             }
         }
 
         private void btn_Click(object sender, EventArgs e)
         {
-            TrainBP(nowImg, new Rectangle[] { faceReadRectangle });
-            MessageBox.Show("训练完成");
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Dictionary<Bitmap, List<Rectangle>> nowImgs = new Dictionary<Bitmap, List<Rectangle>>();
+                foreach (var path in Directory.EnumerateFiles(fbd.SelectedPath, "*.jpg"))
+                {
+                    Bitmap tmpImg;
+                    using (FileStream fs = new FileStream(path, FileMode.Open))
+                    {
+                        int byteLength = (int)fs.Length;
+                        byte[] fileBytes = new byte[byteLength];
+                        fs.Read(fileBytes, 0, byteLength);
+
+                        tmpImg = (Bitmap)Image.FromStream(new MemoryStream(fileBytes));
+                        fs.Close();
+                    }
+                    List<Rectangle> tmpListRectangle = new List<Rectangle>();
+                    if (File.Exists(path + ".txt"))
+                    {
+                        using (StreamReader sr = new StreamReader(path + ".txt"))
+                        {
+                            string tmpStrRectangle = sr.ReadLine();
+                            while (!String.IsNullOrEmpty(tmpStrRectangle))
+                            {
+                                string[] tmpStrRectangleItem = tmpStrRectangle.Split(' ');
+                                Rectangle tmpRectangle = new Rectangle();
+                                tmpRectangle.X = Convert.ToInt32(tmpStrRectangleItem[0]);
+                                tmpRectangle.Y = Convert.ToInt32(tmpStrRectangleItem[1]);
+                                tmpRectangle.Width = Convert.ToInt32(tmpStrRectangleItem[2]);
+                                tmpRectangle.Height = Convert.ToInt32(tmpStrRectangleItem[3]);
+                                tmpListRectangle.Add(tmpRectangle);
+                                tmpStrRectangle = sr.ReadLine();
+                            }
+                            sr.Close();
+                        }
+
+                    }
+                    nowImgs.Add(tmpImg, tmpListRectangle);
+                }
+                TrainBP(nowImgs);
+                MessageBox.Show("训练完成");
+            }
         }
 
         private void btnSaveBP_Click(object sender, EventArgs e)
@@ -362,7 +495,6 @@ namespace EmguCVDemo
             sfd.Filter = "XML文件(*.xml)|*.xml";
             if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                //bp.Save(sfd.FileName);
                 bp.Write(new FileStorage(sfd.FileName, FileStorage.Mode.Write));
                 MessageBox.Show("导出完成");
             }
@@ -377,6 +509,24 @@ namespace EmguCVDemo
                 bp.Read(new FileStorage(ofd.FileName, FileStorage.Mode.Read).GetRoot());
                 MessageBox.Show("导入完成");
             }
+        }
+
+        private void btnAddRectangle_Click(object sender, EventArgs e)
+        {
+            faceReadRectangleList.Add(new Rectangle(faceReadRectangle.Location, faceReadRectangle.Size));
+            faceReadRectangle.Height = 0;
+            faceReadRectangle.Width = 0;
+            lblRectangleCount.Text = faceReadRectangleList.Count.ToString();
+            DrawRectangleList();
+        }
+
+        private void btnDeleteRectangle_Click(object sender, EventArgs e)
+        {
+            faceReadRectangleList.Clear();
+            faceReadRectangle.Location = Point.Empty;
+            faceReadRectangle.Size = Size.Empty;
+            lblRectangleCount.Text = faceReadRectangleList.Count.ToString();
+            DrawRectangleList();
         }
     }
 }

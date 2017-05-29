@@ -20,7 +20,6 @@ namespace EmguCVDemo
         public Form2()
         {
             InitializeComponent();
-            int count = 50;
             //初始化
             bp = new ANN_MLP();
             Matrix<int> layerSizes = new Matrix<int>(new int[] { 2, 2, 2, 2, 1 });
