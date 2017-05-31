@@ -40,7 +40,8 @@ namespace EmguCVDemo
         {
             //CvInvoke.UseOpenCL = false;
             // passing 0 gets zeroth webcam
-            cap = new VideoCapture(url);
+            //cap = new VideoCapture(url);
+            cap = new VideoCapture(0);
             cap.ImageGrabbed += new EventHandler(cap_ImageGrabbed);
             // adjust path to find your xml
             //cascadeClassifier = new CascadeClassifier("haarcascade_frontalface_alt2.xml");
@@ -263,13 +264,13 @@ namespace EmguCVDemo
             Matrix<int> layerSizes = new Matrix<int>(new int[] { 
                 bpWidth * bpHeight * 3,
                 10, 50, 50, 50, 50, 50, 50, 50, 30, 10,
-                20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
                 //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
                 bpRectangleCount * 4 
             });
             bp.SetLayerSizes(layerSizes);
-            bp.SetActivationFunction(ANN_MLP.AnnMlpActivationFunction.Gaussian, 1, 1);
-            bp.TermCriteria = new MCvTermCriteria(10000, 1.0e-8);
+            bp.SetActivationFunction(ANN_MLP.AnnMlpActivationFunction.SigmoidSym, 1, 1);
+            bp.TermCriteria = new MCvTermCriteria(100, 1.0e-8);
             //bp.BackpropWeightScale = 0.1;
             //bp.BackpropMomentumScale = 0.1;
             bp.SetTrainMethod(ANN_MLP.AnnMlpTrainMethod.Backprop, 0.1, 0.1);
@@ -318,7 +319,7 @@ namespace EmguCVDemo
             Rectangle[] tmpR = new Rectangle[] { };
             Bitmap tmpImg = ZoomImg(img, bpWidth, bpHeight, ref tmpR);
             List<Rectangle> retRects = new List<Rectangle>();
-            Image<Bgr, float> trainingData = new Image<Bgr, float>(img);
+            Image<Bgr, float> trainingData = new Image<Bgr, float>(tmpImg);
             Matrix<float> trainingDataMats = new Matrix<float>(1, bpWidth * bpHeight * 3);
             for (int i = 0; i < bpWidth * bpHeight * 3; i += 3)
             {
