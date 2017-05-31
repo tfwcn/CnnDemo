@@ -255,29 +255,31 @@ namespace EmguCVDemo
         private int bpWidth = 960, bpHeight = 540;
         //private int bpWidth = 1920, bpHeight = 1080;
         private int bpRectangleCount = 50;//人脸框最大数量
-        private int bpTrainDataCount = 50;//训练样本数
+        private int bpTrainDataCount;//训练样本数
         private ANN_MLP bp;
         private void CreateBP()
         {
             bp = new ANN_MLP();
             Matrix<int> layerSizes = new Matrix<int>(new int[] { 
-                bpWidth * bpHeight * 3,
+                bpWidth * bpHeight,
                 10, 50, 50, 50, 50, 50, 50, 50, 30, 10,
-                20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
                 //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
                 bpRectangleCount * 4 
             });
             bp.SetLayerSizes(layerSizes);
             bp.SetActivationFunction(ANN_MLP.AnnMlpActivationFunction.Gaussian, 1, 1);
-            bp.TermCriteria = new MCvTermCriteria(10000, 1.0e-8);
+            //bp.SetActivationFunction(ANN_MLP.AnnMlpActivationFunction.Gaussian, 0, 0);
+            bp.TermCriteria = new MCvTermCriteria(1000, 1.0e-8);
             //bp.BackpropWeightScale = 0.1;
             //bp.BackpropMomentumScale = 0.1;
             bp.SetTrainMethod(ANN_MLP.AnnMlpTrainMethod.Backprop, 0.1, 0.1);
+            //bp.SetTrainMethod(ANN_MLP.AnnMlpTrainMethod.Backprop, 0, 0);
         }
         private void TrainBP(Dictionary<Bitmap, List<Rectangle>> imgs)
         {
             bpTrainDataCount = imgs.Count;
-            Matrix<float> trainingDataMats = new Matrix<float>(bpTrainDataCount, bpWidth * bpHeight * 3);
+            Matrix<float> trainingDataMats = new Matrix<float>(bpTrainDataCount, bpWidth * bpHeight);
             trainingDataMats.SetValue(0);
             Matrix<float> labelsMats = new Matrix<float>(bpTrainDataCount, bpRectangleCount * 4);
             labelsMats.SetValue(-1);
@@ -290,11 +292,13 @@ namespace EmguCVDemo
                 //Matrix<float> trainingDataRow = trainingDataMats.GetRow(j);
                 Bitmap tmpImg = ZoomImg(img, bpWidth, bpHeight, ref rects);
                 Image<Bgr, float> trainingData = new Image<Bgr, float>(tmpImg);
-                for (int i = 0; i < bpWidth * bpHeight * 3; i += 3)
+                for (int i = 0; i < bpWidth * bpHeight; i++)
                 {
-                    trainingDataMats[j, i] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 0];
-                    trainingDataMats[j, i + 1] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 1];
-                    trainingDataMats[j, i + 2] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 2];
+                    trainingDataMats[j, i] = Color.FromArgb(
+                        (int)trainingData.Data[i / bpWidth, i % bpHeight, 2],
+                        (int)trainingData.Data[i / bpWidth, i % bpHeight, 1],
+                        (int)trainingData.Data[i / bpWidth, i % bpHeight, 0]
+                        ).ToArgb() / (float)0xFFFFFF;
                 }
                 //矩形数据
                 for (int i = 0; i < rects.Length * 4 && i < bpRectangleCount * 4; i += 4)
@@ -319,12 +323,14 @@ namespace EmguCVDemo
             Bitmap tmpImg = ZoomImg(img, bpWidth, bpHeight, ref tmpR);
             List<Rectangle> retRects = new List<Rectangle>();
             Image<Bgr, float> trainingData = new Image<Bgr, float>(img);
-            Matrix<float> trainingDataMats = new Matrix<float>(1, bpWidth * bpHeight * 3);
-            for (int i = 0; i < bpWidth * bpHeight * 3; i += 3)
+            Matrix<float> trainingDataMats = new Matrix<float>(1, bpWidth * bpHeight);
+            for (int i = 0; i < bpWidth * bpHeight; i++)
             {
-                trainingDataMats[0, i] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 0];
-                trainingDataMats[0, i + 1] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 1];
-                trainingDataMats[0, i + 2] = trainingData.Data[i / 3 / bpWidth, i / 3 % bpHeight, 2];
+                trainingDataMats[0, i] = Color.FromArgb(
+                        (int)trainingData.Data[i / bpWidth, i % bpHeight, 2],
+                        (int)trainingData.Data[i / bpWidth, i % bpHeight, 1],
+                        (int)trainingData.Data[i / bpWidth, i % bpHeight, 0]
+                        ).ToArgb() / (float)0xFFFFFF;
             }
             Matrix<float> labelsMats = new Matrix<float>(1, bpRectangleCount * 4);
             bp.Predict(trainingDataMats, labelsMats);
@@ -527,6 +533,93 @@ namespace EmguCVDemo
             faceReadRectangle.Size = Size.Empty;
             lblRectangleCount.Text = faceReadRectangleList.Count.ToString();
             DrawRectangleList();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            //if (args.length < 5)
+            //{
+            //    System.out
+            //            .println("Usage: \n\t-train trainfile\n\t-test predictfile\n\t-sep separator, default:','\n\t-eta eta, default:0.5\n\t-iter iternum, default:5000\n\t-out outputfile");
+            //    return;
+            //}
+            String trainfile = @".\data\train.txt";
+            String testfile = @".\data\test.txt";
+            String outputfile = "outputfile.txt";
+            float eta = 0.02f;
+            int nIter = 1000;
+            List<EmguCVDemo.BP.DataNode> trainList = GetDataList(trainfile);
+            List<EmguCVDemo.BP.DataNode> testList = GetDataList(testfile);
+            StreamWriter sw = new StreamWriter(outputfile);
+            int typeCount = 3;
+            EmguCVDemo.BP.AnnClassifier annClassifier = new EmguCVDemo.BP.AnnClassifier(trainList[0]
+                    .getAttribList().Count(), trainList[0].getAttribList()
+                    .Count() + 10, typeCount);
+            annClassifier.setTrainNodes(trainList);
+            annClassifier.train(eta, nIter);
+            for (int i = 0; i < testList.Count(); i++)
+            {
+                EmguCVDemo.BP.DataNode test = testList[i];
+                int type = annClassifier.test(test);
+                List<float> attribs = test.getAttribList();
+                for (int n = 0; n < attribs.Count(); n++)
+                {
+                    sw.Write(attribs[n] + ",");
+                }
+                sw.WriteLine(GetTypeName(type));
+            }
+            sw.Close();
+        }
+        private List<EmguCVDemo.BP.DataNode> GetDataList(string path)
+        {
+            List<EmguCVDemo.BP.DataNode> tmpListDataNode = new List<BP.DataNode>();
+            StreamReader sr = new StreamReader(path);
+            string line = sr.ReadLine();
+            while (!String.IsNullOrEmpty(line))
+            {
+                string[] values = line.Split(',');
+                EmguCVDemo.BP.DataNode data = new BP.DataNode();
+                for (int i = 0; i < values.Length; i++)
+                {
+                    if (i < values.Length - 1)
+                    {
+                        data.addAttrib(Convert.ToSingle(values[i]));
+                    }
+                    else
+                    {
+                        switch (values[i])
+                        {
+                            case "Iris-versicolor":
+                                data.setType(0);
+                                break;
+                            case "Iris-setosa":
+                                data.setType(1);
+                                break;
+                            case "Iris-virginica":
+                                data.setType(2);
+                                break;
+                        }
+                    }
+                }
+                tmpListDataNode.Add(data);
+                line = sr.ReadLine();
+            }
+            sr.Close();
+            return tmpListDataNode;
+        }
+
+        private string GetTypeName(int type)
+        {
+            switch (type)
+            {
+                case 0:
+                    return "Iris-versicolor";
+                case 1:
+                    return "Iris-setosa";
+                case 2:
+                    return "Iris-virginica";
+            }
+            return "";
         }
     }
 }
