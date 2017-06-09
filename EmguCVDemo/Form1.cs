@@ -252,7 +252,7 @@ namespace EmguCVDemo
             MessageBox.Show("识别完成");
         }
         #region BP神经网络
-        private int bpWidth = 960, bpHeight = 540;
+        private int bpWidth = 960 / 2, bpHeight = 540 / 2;
         //private int bpWidth = 1920, bpHeight = 1080;
         private int bpRectangleCount = 50;//人脸框最大数量
         private int bpTrainDataCount;//训练样本数
@@ -262,7 +262,7 @@ namespace EmguCVDemo
             bp = new ANN_MLP();
             Matrix<int> layerSizes = new Matrix<int>(new int[] { 
                 bpWidth * bpHeight,
-                10, 50, 50, 50, 50, 50, 50, 50, 30, 10,
+                bpWidth * bpHeight+100, bpRectangleCount * 4+50,
                 //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
                 //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
                 bpRectangleCount * 4 

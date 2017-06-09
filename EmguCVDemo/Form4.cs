@@ -1,0 +1,53 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+using EmguCVDemo.BP;
+
+namespace EmguCVDemo
+{
+    public partial class Form4 : Form
+    {
+        //private int bpWidth = 960, bpHeight = 540;
+        private int bpWidth = 1920, bpHeight = 1080;
+        private int bpRectangleCount = 50;//人脸框最大数量
+        private int bpTrainDataCount;//训练样本数
+        private Ann ann = new Ann();
+        private Cnn cnn = new Cnn();
+        public Form4()
+        {
+            InitializeComponent();
+        }
+
+        private void Form4_Load(object sender, EventArgs e)
+        {
+            /*int[] layerSizes = new int[] { 
+                bpWidth * bpHeight,
+                bpWidth * bpHeight+100, 50, 30, 10,
+                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+                bpRectangleCount * 4 
+            };
+            int[] layerType = new int[] { 
+                1,
+                1, 1, 1, 1,
+                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
+                1
+            };
+            ann.SetLayerSizes(layerSizes,
+                layerType);*/
+            //cnn.CreateCnn(bpWidth, bpHeight, 20, 20, 10, 10, 50 * 4);
+            uint c = 0x11223344;
+            uint result;
+            result = c & 0xFF;
+            result = (c & 0xFF00) >> 8;
+            result = (c & 0xFF0000) >> 16;
+            result = (c & 0xFF000000) >> 24;
+        }
+    }
+}
