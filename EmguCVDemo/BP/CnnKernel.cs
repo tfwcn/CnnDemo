@@ -8,7 +8,7 @@ namespace EmguCVDemo.BP
     /// <summary>
     /// 卷积核
     /// </summary>
-    public class CnnKernel : ICnnNode
+    public class CnnKernel
     {
         /// <summary>
         /// 共享权重(所有感知野共享)
@@ -164,40 +164,26 @@ namespace EmguCVDemo.BP
         /// <param name="output">正确输出值</param>
         /// <param name="learningRate">学习速率</param>
         /// <returns></returns>
-        public void BackPropagation(double[,] input, double[,] output, double learningRate)
+        public double[,] BackPropagation(double[,] output, double learningRate)
         {
+            double[,] result = null;//正确输入值
             switch (ActivationFunctionType)
             {
                 case 1:
                     //tanh
-                    CalculatedBackPropagationResultTanh(input, output, learningRate);
+                    result = CalculatedBackPropagationResultTanh(output, learningRate);
                     break;
             }
+            return result;
         }
         /// <summary>
         /// 计算反向传播结果（tanh）
         /// </summary>
         /// <returns></returns>
-        private void CalculatedBackPropagationResultTanh(double[,] input, double[,] output, double learningRate)
+        private double[,] CalculatedBackPropagationResultTanh(double[,] output, double learningRate)
         {
-            double derivativeSum = 0;//导数的和，和的导数等于导数的和
-            //调整输出
-            for (int i = 0; i < ConvolutionKernelWidth; i++)
-            {
-                for (int j = 0; j < ConvolutionKernelHeight; j++)
-                {
-                    OutputValue[i, j] = ActivationFunctionTanhDerivative(OutputValue[i, j] - output[i, j]);
-                    derivativeSum = OutputValue[i, j];
-                }
-            }
-            //更新权重
-            for (int i = 0; i < receptiveFieldWidth; i++)
-            {
-                for (int j = 0; j < receptiveFieldHeight; j++)
-                {
-                    ShareWeight[i, j] -= learningRate * derivativeSum;
-                }
-            }
+            double[,] result = new double[inputWidth, inputHeight];//正确输入值
+            return result;
         }
     }
 }

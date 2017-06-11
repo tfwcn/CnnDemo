@@ -20,6 +20,26 @@ namespace EmguCVDemo.BP
         /// </summary>
         public int ConvolutionKernelCount { get; set; }
         /// <summary>
+        /// 输出宽度
+        /// </summary>
+        public int OutputWidth
+        {
+            get
+            {
+                return CnnPoolingList[0].ConvolutionKernelWidth;
+            }
+        }
+        /// <summary>
+        /// 输出高度
+        /// </summary>
+        public int OutputHeight
+        {
+            get
+            {
+                return CnnPoolingList[0].ConvolutionKernelHeight;
+            }
+        }
+        /// <summary>
         /// 创建卷积层
         /// </summary>
         /// <param name="convolutionKernelCount"></param>
@@ -54,6 +74,33 @@ namespace EmguCVDemo.BP
             {
                 CnnPoolingList.Add(new CnnPooling(CnnKernelList[0].ConvolutionKernelWidth, CnnKernelList[0].ConvolutionKernelHeight, receptiveFieldWidth, receptiveFieldHeight, activationFunctionType));
             }
+        }
+        /// <summary>
+        /// 前向传播,计算结果
+        /// </summary>
+        public List<double[,]> CalculatedResult(List<double[,]> value)
+        {
+            List<double[,]> result = new List<double[,]>();
+            for (int i = 0; i < ConvolutionKernelCount; i++)
+            {
+                result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
+            }
+            return result;
+        }
+        /// <summary>
+        /// 反向传播
+        /// </summary>
+        /// <param name="output">正确输出值</param>
+        /// <param name="learningRate">学习速率</param>
+        /// <returns>返回更新权重后的输入值</returns>
+        public List<double[,]> BackPropagation(List<double[,]> output, double learningRate)
+        {
+            List<double[,]> result = new List<double[,]>();
+            for (int i = 0; i < ConvolutionKernelCount; i++)
+            {
+                result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i]), learningRate));
+            }
+            return result;
         }
     }
 }

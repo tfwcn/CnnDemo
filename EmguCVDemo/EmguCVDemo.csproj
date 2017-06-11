@@ -74,7 +74,6 @@
     <Compile Include="BP\CnnConvolutionLayer.cs" />
     <Compile Include="BP\CnnSubReceptiveField.cs" />
     <Compile Include="BP\DataNode.cs" />
-    <Compile Include="BP\ICnnNode.cs" />
     <Compile Include="BP\NetworkNode.cs" />
     <Compile Include="BP\AnnNode.cs" />
     <Compile Include="BP\CnnFull.cs" />
