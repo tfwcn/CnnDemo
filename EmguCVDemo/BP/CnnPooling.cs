@@ -6,9 +6,9 @@ using System.Text;
 namespace EmguCVDemo.BP
 {
     /// <summary>
-    /// 卷积核
+    /// 卷积核(池化)
     /// </summary>
-    public class CnnKernel : ICnnNode
+    public class CnnPooling : ICnnNode
     {
         /// <summary>
         /// 共享权重(所有感知野共享)
@@ -43,15 +43,7 @@ namespace EmguCVDemo.BP
         /// </summary>
         private int inputHeight;
         /// <summary>
-        /// 偏移值（宽）
-        /// </summary>
-        private int offsetWidth;
-        /// <summary>
-        /// 偏移值（高）
-        /// </summary>
-        private int offsetHeight;
-        /// <summary>
-        /// 激活函数类型，1:tanh,2:池化(Mean Pooling),3:池化(Max Pooling)
+        /// 激活函数类型，1:池化(Mean Pooling),2:池化(Max Pooling)
         /// </summary>
         public int ActivationFunctionType;
         /// <summary>
@@ -62,18 +54,20 @@ namespace EmguCVDemo.BP
         /// 原输出值
         /// </summary>
         public double[,] OutputValue { get; set; }
+        /// <summary>
+        /// 最大值池化时的最大值指针
+        /// </summary>
+        private int[,] OutputPoolingMax;
 
-        public CnnKernel(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth, int offsetHeight, int activationFunctionType = 1)
+        public CnnPooling(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, int activationFunctionType = 1)
         {
             this.receptiveFieldWidth = receptiveFieldWidth;
             this.receptiveFieldHeight = receptiveFieldHeight;
             this.inputWidth = inputWidth;
             this.inputHeight = inputHeight;
-            this.offsetWidth = offsetWidth;
-            this.offsetHeight = offsetHeight;
             this.ActivationFunctionType = activationFunctionType;
-            this.ConvolutionKernelWidth = Convert.ToInt32(Math.Floor((inputWidth - receptiveFieldWidth) / (double)offsetWidth)) + 1;
-            this.ConvolutionKernelHeight = Convert.ToInt32(Math.Floor((inputHeight - receptiveFieldHeight) / (double)offsetHeight)) + 1;
+            this.ConvolutionKernelWidth = Convert.ToInt32(Math.Floor(inputWidth / (double)receptiveFieldWidth));
+            this.ConvolutionKernelHeight = Convert.ToInt32(Math.Floor(inputHeight / (double)receptiveFieldWidth));
             ShareWeight = new double[receptiveFieldWidth, receptiveFieldHeight];
             InitShareWeight();
         }
@@ -104,18 +98,22 @@ namespace EmguCVDemo.BP
             switch (ActivationFunctionType)
             {
                 case 1:
-                    //tanh
-                    result = ActivationFunctionTanh(value, x, y);
+                    //平均池化
+                    result = ActivationFunctionMeanPooling(value, x, y);
+                    break;
+                case 2:
+                    //最大值池化
+                    result = ActivationFunctionMaxPooling(value, x, y);
                     break;
             }
             return result;
         }
         /// <summary>
-        /// 激活函数（tanh）
+        /// 激活函数（平均池化）
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private double ActivationFunctionTanh(double[,] value, int x, int y)
+        private double ActivationFunctionMeanPooling(double[,] value, int x, int y)
         {
             double result = 0;
             //累计区域内的值
@@ -123,23 +121,30 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < receptiveFieldHeight && j < value.GetLength(1); j++)
                 {
-                    result += value[offsetWidth * x + i, offsetHeight * y + j] * ShareWeight[i, j];
+                    result += value[receptiveFieldWidth * x + i, receptiveFieldHeight * y + j];
                 }
             }
-            //调用激活函数计算结果
-            result = Math.Tanh(result + OutputOffset);
+            //平均值
+            result = result / (receptiveFieldWidth * receptiveFieldHeight);
             return result;
         }
         /// <summary>
-        /// 激活函数导数（tanh）
+        /// 激活函数（最大值池化）
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private double ActivationFunctionTanhDerivative(double value)
+        private double ActivationFunctionMaxPooling(double[,] value, int x, int y)
         {
-            double result = 0;
-            //激活函数导数计算结果
-            result = 1 - Math.Pow(Math.Tanh(value), 2);
+            double result = value[0, 0];
+            //计算区域内的最大值
+            for (int i = 0; i < receptiveFieldWidth && i < value.GetLength(0); i++)
+            {
+                for (int j = 0; j < receptiveFieldHeight && j < value.GetLength(1); j++)
+                {
+                    if (result < value[receptiveFieldWidth * x + 1, receptiveFieldHeight * y + j])
+                        result = value[receptiveFieldWidth * x + 1, receptiveFieldHeight * y + j];
+                }
+            }
             return result;
         }
         /// <summary>
@@ -169,25 +174,28 @@ namespace EmguCVDemo.BP
             switch (ActivationFunctionType)
             {
                 case 1:
-                    //tanh
-                    CalculatedBackPropagationResultTanh(input, output, learningRate);
+                    //平均池化
+                    CalculatedBackPropagationResultMeanPooling(input, output, learningRate);
+                    break;
+                case 2:
+                    //最大值池化
+                    CalculatedBackPropagationResultMaxPooling(input, output, learningRate);
                     break;
             }
         }
         /// <summary>
-        /// 计算反向传播结果（tanh）
+        /// 计算反向传播结果（平均池化）
         /// </summary>
         /// <returns></returns>
-        private void CalculatedBackPropagationResultTanh(double[,] input, double[,] output, double learningRate)
+        private void CalculatedBackPropagationResultMeanPooling(double[,] input, double[,] output, double learningRate)
         {
-            double derivativeSum = 0;//导数的和，和的导数等于导数的和
-            //调整输出
+            double outputValueSum = 0;//和
+            //计算总和
             for (int i = 0; i < ConvolutionKernelWidth; i++)
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
-                    OutputValue[i, j] = ActivationFunctionTanhDerivative(OutputValue[i, j] - output[i, j]);
-                    derivativeSum = OutputValue[i, j];
+                    outputValueSum = OutputValue[i, j];
                 }
             }
             //更新权重
@@ -195,9 +203,38 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < receptiveFieldHeight; j++)
                 {
-                    ShareWeight[i, j] -= learningRate * derivativeSum;
+                    ShareWeight[i, j] -= learningRate * (outputValueSum / (ConvolutionKernelWidth * receptiveFieldHeight));
                 }
             }
+            //调整输出
+            CalculatedConvolutionResult(input);
+        }
+        /// <summary>
+        /// 计算反向传播结果（最大值池化）
+        /// </summary>
+        /// <returns></returns>
+        private void CalculatedBackPropagationResultMaxPooling(double[,] input, double[,] output, double learningRate)
+        {
+            double outputValueMax = OutputValue[0, 0];//最大值
+            //计算最大值
+            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            {
+                for (int j = 0; j < ConvolutionKernelHeight; j++)
+                {
+                    if (outputValueMax < OutputValue[i, j])
+                        outputValueMax = OutputValue[i, j];
+                }
+            }
+            //更新权重
+            for (int i = 0; i < receptiveFieldWidth; i++)
+            {
+                for (int j = 0; j < receptiveFieldHeight; j++)
+                {
+                    ShareWeight[i, j] -= learningRate * outputValueMax;
+                }
+            }
+            //调整输出
+            CalculatedConvolutionResult(input);
         }
     }
 }

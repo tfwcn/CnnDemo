@@ -8,7 +8,7 @@ namespace EmguCVDemo.BP
     /// <summary>
     /// 全链接层
     /// </summary>
-    public class CnnFull
+    public class CnnFullLayer
     {
         /// <summary>
         /// 权重
@@ -29,9 +29,17 @@ namespace EmguCVDemo.BP
         /// <summary>
         /// 激活函数类型，1:tanh
         /// </summary>
-        public int ActivationFunctionType;
+        private int ActivationFunctionType;
+        /// <summary>
+        /// 原输入值
+        /// </summary>
+        public double[] InputValue { get; set; }
+        /// <summary>
+        /// 原输出值
+        /// </summary>
+        public double[] OutputValue { get; set; }
 
-        public CnnFull(int InputCount, int OutputCount, int activationFunctionType = 1)
+        public CnnFullLayer(int InputCount, int OutputCount, int activationFunctionType = 1)
         {
             this.InputCount = InputCount;
             this.OutputCount = OutputCount;
@@ -41,25 +49,24 @@ namespace EmguCVDemo.BP
             InitInputWeight();
         }
         /// <summary>
-        /// 计算卷积结果
+        /// 前向传播,计算结果
         /// </summary>
-        public double[] CalculatedConvolutionResult(double[] value)
+        public double[] CalculatedResult(double[] value)
         {
+            InputValue = value;
             double[] result = new double[OutputCount];
             for (int i = 0; i < OutputCount; i++)
             {
-                for (int j = 0; j < InputCount; j++)
-                {
-                    result[i] = CalculatedConvolutionPointResult(value, j);
-                }
+                result[i] = CalculatedPointResult(value, i);
             }
+            OutputValue = result;
             return result;
         }
         /// <summary>
         /// 计算单个神经元结果
         /// </summary>
         /// <returns></returns>
-        private double CalculatedConvolutionPointResult(double[] value, int index)
+        private double CalculatedPointResult(double[] value, int index)
         {
             double result = 0;
             //调用激活函数计算结果
@@ -90,7 +97,19 @@ namespace EmguCVDemo.BP
             return result;
         }
         /// <summary>
-        /// 初始化共享权重
+        /// 激活函数导数（tanh）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionTanhDerivative(double value)
+        {
+            double result = 0;
+            //激活函数导数计算结果
+            result = 1 - Math.Pow(Math.Tanh(value), 2);
+            return result;
+        }
+        /// <summary>
+        /// 初始化权重
         /// </summary>
         private void InitInputWeight()
         {
@@ -106,6 +125,41 @@ namespace EmguCVDemo.BP
             {
                 OutputOffset[i] = random.NextDouble();
             }
+        }
+        /// <summary>
+        /// 反向传播
+        /// </summary>
+        /// <param name="output">正确输出值</param>
+        /// <param name="learningRate">学习速率</param>
+        /// <returns>返回更新权重后的输入值</returns>
+        public double[] BackPropagation(double[] output, double learningRate)
+        {
+            double[] result = new double[InputCount];
+            //初始输入值
+            for (int i = 0; i < InputCount; i++)
+            {
+                result[i] = InputValue[i];
+            }
+            //更新权重和偏置
+            for (int i = 0; i < OutputCount; i++)
+            {
+                //残差
+                double residual = ActivationFunctionTanhDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
+                for (int j = 0; j < InputCount; j++)
+                {
+                    //sum(残差)=残差*更新前的权重
+                    result[j] += InputWeight[i, j] * residual;
+                    InputWeight[i, j] -= learningRate * InputValue[j] * residual;
+                }
+                OutputOffset[i] -= learningRate * residual;
+            }
+            //计算正确输入值
+            for (int i = 0; i < InputCount; i++)
+            {
+                //正确输入值=旧输入值-sum(残差*更新前的权重)
+                result[i] = InputValue[i] - result[i];
+            }
+            return result;
         }
     }
 }

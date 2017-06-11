@@ -41,13 +41,7 @@ namespace EmguCVDemo
             };
             ann.SetLayerSizes(layerSizes,
                 layerType);*/
-            //cnn.CreateCnn(bpWidth, bpHeight, 20, 20, 10, 10, 50 * 4);
-            uint c = 0x11223344;
-            uint result;
-            result = c & 0xFF;
-            result = (c & 0xFF00) >> 8;
-            result = (c & 0xFF0000) >> 16;
-            result = (c & 0xFF000000) >> 24;
+            cnn.CreateCnn(bpWidth, bpHeight, 20, 20, 10, 10, 50 * 4);
         }
     }
 }
