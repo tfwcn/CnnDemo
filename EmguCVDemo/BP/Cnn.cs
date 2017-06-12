@@ -21,62 +21,134 @@ namespace EmguCVDemo.BP
             CnnFullLayerList = new List<CnnFullLayer>();
         }
         /// <summary>
-        /// 设置卷积层
+        /// 增加首个卷积层
         /// </summary>
         /// <param name="cnnConvolutionLayer"></param>
-        public void SetCnnConvolutionLayer(CnnConvolutionLayer cnnConvolutionLayer)
+        public void AddCnnConvolutionLayer(int convolutionKernelCount,
+            int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
+            int offsetWidth, int offsetHeight, int activationFunctionType = 1,
+            int poolingReceptiveFieldWidth = 2, int poolingReceptiveFieldHeight = 2, int poolingActivationFunctionType = 1)
         {
+            CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
+            //创建卷积层
+            cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, inputWidth, inputHeight, receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType);
+            //创建池化层
+            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, poolingActivationFunctionType);
             CnnConvolutionLayerList.Add(cnnConvolutionLayer);
         }
         /// <summary>
-        /// 设置全连接层
+        /// 增加后续卷积层
+        /// </summary>
+        /// <param name="cnnConvolutionLayer"></param>
+        public void AddCnnConvolutionLayer(int convolutionKernelCount,
+            int receptiveFieldWidth, int receptiveFieldHeight,
+            int offsetWidth, int offsetHeight, int activationFunctionType = 1,
+            int poolingReceptiveFieldWidth = 2, int poolingReceptiveFieldHeight = 2, int poolingActivationFunctionType = 1)
+        {
+            var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
+            CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
+            //创建卷积层
+            cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, cnnConvolutionLayerLast.OutputWidth, cnnConvolutionLayerLast.OutputHeight,
+                receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType);
+            //创建池化层
+            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, poolingActivationFunctionType);
+            CnnConvolutionLayerList.Add(cnnConvolutionLayer);
+        }
+        /// <summary>
+        /// 增加全连接层，在卷积层后，要先创建完卷积层
         /// </summary>
         /// <param name="cnnFullLayer"></param>
-        public void SetCnnFullLayer(CnnFullLayer cnnFullLayer)
+        public void AddCnnFullLayer(int OutputCount, int activationFunctionType = 1)
         {
-            CnnFullLayerList.Add(cnnFullLayer);
+            if (CnnFullLayerList.Count == 0)
+            {
+                //连接卷积层
+                var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
+                CnnFullLayer cnnFullLayer = new CnnFullLayer(cnnConvolutionLayerLast.ConvolutionKernelCount
+                    * cnnConvolutionLayerLast.OutputWidth
+                    * cnnConvolutionLayerLast.OutputHeight,
+                    OutputCount, activationFunctionType);
+                CnnFullLayerList.Add(cnnFullLayer);
+            }
+            else
+            {
+                var cnnFullLayerLast = CnnFullLayerList[CnnFullLayerList.Count - 1];//最后的卷积层
+                CnnFullLayer cnnFullLayer = new CnnFullLayer(cnnFullLayerLast.OutputCount,
+                    OutputCount, activationFunctionType);
+                CnnFullLayerList.Add(cnnFullLayer);
+            }
         }
         /// <summary>
         /// 训练
         /// </summary>
-        public void Train(double[,] input, double[] output, double learningRate, int count)
+        public void Train(double[,] input, double[] output, double learningRate)
         {
-            for (int tc = 0; tc < count; tc++)
+            #region 正向传播
+            //计算卷积层输出
+            List<double[,]> outputConvolutionTmp = new List<double[,]>();
+            for (int i = 0; i < CnnConvolutionLayerList[0].ConvolutionKernelCount; i++)
             {
-                #region 正向传播
-                //计算卷积层输出
-                List<double[,]> outputConvolutionTmp = new List<double[,]>();
-                for (int i = 0; i < CnnConvolutionLayerList[0].ConvolutionKernelCount; i++)
+                outputConvolutionTmp.Add(input);
+            }
+            foreach (var cnnConvolutionLayer in CnnConvolutionLayerList)
+            {
+                List<double[,]> inputTmp = new List<double[,]>();
+                for (int i = 0; i < cnnConvolutionLayer.ConvolutionKernelCount; i++)
                 {
-                    outputConvolutionTmp.Add(input);
+                    inputTmp.Add(outputConvolutionTmp[i % outputConvolutionTmp.Count]);
                 }
-                foreach (var cnnConvolutionLayer in CnnConvolutionLayerList)
+                outputConvolutionTmp = cnnConvolutionLayer.CalculatedResult(inputTmp);
+            }
+            //计算卷积层转全连接层
+            var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
+            double[] outputFullTmp = new double[cnnConvolutionLayerLast.ConvolutionKernelCount
+                * cnnConvolutionLayerLast.OutputWidth
+                * cnnConvolutionLayerLast.OutputHeight];
+            for (int j = 0; j < cnnConvolutionLayerLast.OutputHeight; j++)
+            {
+                for (int i = 0; i < cnnConvolutionLayerLast.OutputWidth; i++)
                 {
-                    outputConvolutionTmp = cnnConvolutionLayer.CalculatedResult(outputConvolutionTmp);
-                }
-                //计算全连接层输出
-                var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
-                double[] outputFullTmp = new double[cnnConvolutionLayerLast.ConvolutionKernelCount
-                    * cnnConvolutionLayerLast.OutputWidth
-                    * cnnConvolutionLayerLast.OutputHeight];
-                for (int j = 0; j < cnnConvolutionLayerLast.OutputHeight; j++)
-                {
-                    for (int i = 0; i < cnnConvolutionLayerLast.OutputWidth; i++)
+                    for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
                     {
-                        for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
-                        {
-                            outputFullTmp[i * j * (cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.OutputHeight) + k] = outputConvolutionTmp[k][i, j];
-                        }
+                        outputFullTmp[i * j * (cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.OutputHeight) + k] = outputConvolutionTmp[k][i, j];
                     }
                 }
-                foreach (var cnnFullLayer in CnnFullLayerList)
-                {
-                    outputFullTmp = cnnFullLayer.CalculatedResult(outputFullTmp);
-                }
-                #endregion
-                #region 反向传播
-                #endregion
             }
+            //计算全连接层输出
+            foreach (var cnnFullLayer in CnnFullLayerList)
+            {
+                outputFullTmp = cnnFullLayer.CalculatedResult(outputFullTmp);
+            }
+            #endregion
+            #region 反向传播
+            //计算全连接层
+            double[] inputFullTmp = output;
+            for (int i = CnnFullLayerList.Count - 1; i >= 0; i--)
+            {
+                inputFullTmp = CnnFullLayerList[i].BackPropagation(inputFullTmp, learningRate);
+            }
+            //计算全连接层转卷积层
+            List<double[,]> inputConvolutionTmp = new List<double[,]>();
+            for (int i = 0; i < cnnConvolutionLayerLast.ConvolutionKernelCount; i++)
+            {
+                inputConvolutionTmp.Add(new double[cnnConvolutionLayerLast.OutputWidth, cnnConvolutionLayerLast.OutputHeight]);
+            }
+            for (int j = 0; j < cnnConvolutionLayerLast.OutputHeight; j++)
+            {
+                for (int i = 0; i < cnnConvolutionLayerLast.OutputWidth; i++)
+                {
+                    for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
+                    {
+                        inputConvolutionTmp[k][i, j] = inputFullTmp[i * j * (cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.OutputHeight) + k];
+                    }
+                }
+            }
+            //计算卷积层
+            for (int i = CnnConvolutionLayerList.Count - 1; i >= 0; i--)
+            {
+                inputConvolutionTmp = CnnConvolutionLayerList[i].BackPropagation(inputConvolutionTmp, learningRate);
+            }
+            #endregion
         }
         /// <summary>
         /// 识别
@@ -91,7 +163,12 @@ namespace EmguCVDemo.BP
             }
             foreach (var cnnConvolutionLayer in CnnConvolutionLayerList)
             {
-                outputConvolutionTmp = cnnConvolutionLayer.CalculatedResult(outputConvolutionTmp);
+                List<double[,]> inputTmp = new List<double[,]>();
+                for (int i = 0; i < cnnConvolutionLayer.ConvolutionKernelCount; i++)
+                {
+                    inputTmp.Add(outputConvolutionTmp[i % outputConvolutionTmp.Count]);
+                }
+                outputConvolutionTmp = cnnConvolutionLayer.CalculatedResult(inputTmp);
             }
             //计算全连接层输出
             var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
@@ -120,7 +197,7 @@ namespace EmguCVDemo.BP
         /// <param name="input"></param>
         /// <param name="type"></param>
         /// <returns></returns>
-        private double[,] GetARGB(double[,] input, int type)
+        /*private double[,] GetARGB(double[,] input, int type)
         {
             double[,] result = new double[input.GetLength(0), input.GetLength(1)];
             for (int i = 0; i < input.GetLength(0); i++)
@@ -146,6 +223,6 @@ namespace EmguCVDemo.BP
                 }
             }
             return result;
-        }
+        }*/
     }
 }

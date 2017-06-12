@@ -261,65 +261,70 @@ namespace EmguCVDemo
         private void CreateBP()
         {
             cnn = new Cnn();
-            cnn.CreateCnn(bpWidth, bpHeight, 20, 20, 10, 10, bpRectangleCount * 4);
+            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, 1, 2, 2, 1);
+            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 2, 2, 1);
+            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1);
+            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 2, 2, 1);
+            //cnn.AddCnnConvolutionLayer(80, 5, 5, 1, 1, 1, 2, 2, 1);
+            //cnn.AddCnnConvolutionLayer(100, 5, 5, 1, 1, 1, 2, 2, 1);
+            //cnn.AddCnnFullLayer(300, 1);
+            cnn.AddCnnFullLayer(bpRectangleCount * 4, 1);
         }
         private void TrainBP(Dictionary<Bitmap, List<Rectangle>> imgs)
         {
             bpTrainDataCount = imgs.Count;
-            Matrix<float> trainingDataMats = new Matrix<float>(bpTrainDataCount, bpWidth * bpHeight);
-            trainingDataMats.SetValue(0);
-            Matrix<float> labelsMats = new Matrix<float>(bpTrainDataCount, bpRectangleCount * 4);
-            labelsMats.SetValue(-1);
-            int j = 0;//行数
-            foreach (var item in imgs)
+            for (int tc = 0; tc < 3; tc++)
             {
-                Bitmap img = item.Key;
-                Rectangle[] rects = item.Value.ToArray();
-                //图片
-                //Matrix<float> trainingDataRow = trainingDataMats.GetRow(j);
-                Bitmap tmpImg = ZoomImg(img, bpWidth, bpHeight, ref rects);
-                Image<Bgr, float> trainingData = new Image<Bgr, float>(tmpImg);
-                for (int i = 0; i < bpWidth * bpHeight; i++)
+                foreach (var item in imgs)
                 {
-                    trainingDataMats[j, i] = Color.FromArgb(
-                        (int)trainingData.Data[i / bpWidth, i % bpHeight, 2],
-                        (int)trainingData.Data[i / bpWidth, i % bpHeight, 1],
-                        (int)trainingData.Data[i / bpWidth, i % bpHeight, 0]
-                        ).ToArgb() / (float)0xFFFFFF;
+                    Bitmap img = item.Key;
+                    Rectangle[] rects = item.Value.ToArray();
+                    //图片
+                    Bitmap tmpImg = ZoomImg(img, bpWidth, bpHeight, ref rects);
+                    Image<Bgr, float> trainingData = new Image<Bgr, float>(tmpImg);
+                    double[,] input = new double[bpWidth, bpHeight];
+                    for (int i = 0; i < bpWidth; i++)
+                    {
+                        for (int j = 0; j < bpHeight; j++)
+                        {
+                            input[i, j] = Color.FromArgb(
+                                (int)trainingData.Data[j, i, 2],
+                                (int)trainingData.Data[j, i, 1],
+                                (int)trainingData.Data[j, i, 0]
+                                ).ToArgb() / (float)0xFFFFFF;
+                        }
+                    }
+                    //矩形数据
+                    double[] output = new double[bpRectangleCount * 4];
+                    for (int i = 0; i < rects.Length * 4 && i < bpRectangleCount * 4; i += 4)
+                    {
+                        output[i] = rects[i / 4].X / (float)bpWidth;
+                        output[i + 1] = rects[i / 4].Y / (float)bpHeight;
+                        output[i + 2] = rects[i / 4].Width / (float)bpWidth;
+                        output[i + 3] = rects[i / 4].Height / (float)bpHeight;
+                    }
+                    tmpImg.Dispose();
+                    tmpImg = null;
+                    cnn.Train(input, output, 0.01);
                 }
-                //矩形数据
-                for (int i = 0; i < rects.Length * 4 && i < bpRectangleCount * 4; i += 4)
-                {
-                    //Matrix<float> labelsMatsRow = labelsMats.GetRow(j);
-                    labelsMats[j, i] = rects[i / 4].X / (float)bpWidth;
-                    labelsMats[j, i + 1] = rects[i / 4].Y / (float)bpHeight;
-                    labelsMats[j, i + 2] = rects[i / 4].Width / (float)bpWidth;
-                    labelsMats[j, i + 3] = rects[i / 4].Height / (float)bpHeight;
-                }
-                tmpImg.Dispose();
-                tmpImg = null;
-                j++;
             }
-            TrainData tmpTrainData = new TrainData(trainingDataMats, Emgu.CV.ML.MlEnum.DataLayoutType.RowSample, labelsMats);
-            //bp.Train(tmpTrainData, (int)(Emgu.CV.ML.MlEnum.AnnMlpTrainingFlag.NoInputScale | Emgu.CV.ML.MlEnum.AnnMlpTrainingFlag.NoOutputScale));
-            //cnn.Train(tmpTrainData, (int)Emgu.CV.ML.MlEnum.AnnMlpTrainingFlag.Default);
         }
         private Rectangle[] PredictBP(Bitmap img)
         {
             Rectangle[] tmpR = new Rectangle[] { };
             Bitmap tmpImg = ZoomImg(img, bpWidth, bpHeight, ref tmpR);
             List<Rectangle> retRects = new List<Rectangle>();
-            Image<Bgr, float> trainingData = new Image<Bgr, float>(img);
+            Image<Bgr, float> trainingData = new Image<Bgr, float>(tmpImg);
             double[,] input = new double[bpWidth, bpHeight];
-            for (int j = 0; j < bpHeight; j++)
+            for (int i = 0; i < bpWidth; i++)
             {
-                for (int i = 0; i < bpWidth; i += 4)
+                for (int j = 0; j < bpHeight; j++)
                 {
                     input[i, j] = Color.FromArgb(
-                        (int)trainingData.Data[i, j, 2],
-                        (int)trainingData.Data[i, j, 1],
-                        (int)trainingData.Data[i, j, 0]
-                        ).ToArgb();
+                        (int)trainingData.Data[j, i, 2],
+                        (int)trainingData.Data[j, i, 1],
+                        (int)trainingData.Data[j, i, 0]
+                        ).ToArgb() / (float)0xFFFFFF;
                 }
             }
             double[] output = cnn.Predict(input);

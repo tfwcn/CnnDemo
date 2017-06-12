@@ -72,8 +72,8 @@ namespace EmguCVDemo.BP
             this.offsetWidth = offsetWidth;
             this.offsetHeight = offsetHeight;
             this.ActivationFunctionType = activationFunctionType;
-            this.ConvolutionKernelWidth = Convert.ToInt32(Math.Floor((inputWidth - receptiveFieldWidth) / (double)offsetWidth)) + 1;
-            this.ConvolutionKernelHeight = Convert.ToInt32(Math.Floor((inputHeight - receptiveFieldHeight) / (double)offsetHeight)) + 1;
+            this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling((inputWidth - receptiveFieldWidth) / (double)offsetWidth)) + 1;
+            this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling((inputHeight - receptiveFieldHeight) / (double)offsetHeight)) + 1;
             ShareWeight = new double[receptiveFieldWidth, receptiveFieldHeight];
             InitShareWeight();
         }
@@ -82,6 +82,7 @@ namespace EmguCVDemo.BP
         /// </summary>
         public double[,] CalculatedConvolutionResult(double[,] value)
         {
+            InputValue = value;
             double[,] result = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
             for (int i = 0; i < ConvolutionKernelWidth; i++)
             {
@@ -119,9 +120,9 @@ namespace EmguCVDemo.BP
         {
             double result = 0;
             //累计区域内的值
-            for (int i = 0; i < receptiveFieldWidth && i < value.GetLength(0); i++)
+            for (int i = 0; i < receptiveFieldWidth && offsetWidth * x + i < value.GetLength(0); i++)
             {
-                for (int j = 0; j < receptiveFieldHeight && j < value.GetLength(1); j++)
+                for (int j = 0; j < receptiveFieldHeight && offsetHeight * y + j < value.GetLength(1); j++)
                 {
                     result += value[offsetWidth * x + i, offsetHeight * y + j] * ShareWeight[i, j];
                 }
@@ -183,6 +184,56 @@ namespace EmguCVDemo.BP
         private double[,] CalculatedBackPropagationResultTanh(double[,] output, double learningRate)
         {
             double[,] result = new double[inputWidth, inputHeight];//正确输入值
+            //180度反转权限矩阵
+            /*double[,] ShareWeight180 = new double[receptiveFieldWidth, receptiveFieldHeight];
+            for (int i = 0; i < receptiveFieldWidth; i++)
+            {
+                for (int j = 0; j < receptiveFieldHeight; j++)
+                {
+                    ShareWeight180[i, j] = ShareWeight[receptiveFieldWidth - i - 1, receptiveFieldHeight - j - 1];
+                }
+            }*/
+            //计算输入值残差
+            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            {
+                for (int j = 0; j < ConvolutionKernelHeight; j++)
+                {
+                    //残差
+                    double residual = ActivationFunctionTanhDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
+                    for (int i2 = 0; i2 < receptiveFieldWidth && i * offsetWidth + i2 < inputWidth; i2++)
+                    {
+                        for (int j2 = 0; j2 < receptiveFieldHeight && j * offsetHeight + j2 < inputHeight; j2++)
+                        {
+                            result[i * offsetWidth + i2, j * offsetHeight + j2] += learningRate * ShareWeight[i2, j2] * residual;
+                        }
+                    }
+                }
+            }
+            //更新权重和偏置
+            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            {
+                for (int j = 0; j < ConvolutionKernelHeight; j++)
+                {
+                    //残差
+                    double residual = ActivationFunctionTanhDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
+                    for (int i2 = 0; i2 < receptiveFieldWidth; i2++)
+                    {
+                        for (int j2 = 0; j2 < receptiveFieldHeight; j2++)
+                        {
+                            ShareWeight[i2, j2] -= learningRate * residual / (ConvolutionKernelWidth * ConvolutionKernelHeight);
+                        }
+                    }
+                    OutputOffset -= learningRate * residual / (ConvolutionKernelWidth * ConvolutionKernelHeight);
+                }
+            }
+            //计算正确输入值
+            for (int i = 0; i < inputWidth; i++)
+            {
+                for (int j = 0; j < inputHeight; j++)
+                {
+                    result[i, j] = InputValue[i, j] - result[i, j];
+                }
+            }
             return result;
         }
     }

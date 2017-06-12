@@ -135,11 +135,6 @@ namespace EmguCVDemo.BP
         public double[] BackPropagation(double[] output, double learningRate)
         {
             double[] result = new double[InputCount];
-            //初始输入值
-            for (int i = 0; i < InputCount; i++)
-            {
-                result[i] = InputValue[i];
-            }
             //更新权重和偏置
             for (int i = 0; i < OutputCount; i++)
             {

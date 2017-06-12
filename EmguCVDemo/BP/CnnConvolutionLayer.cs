@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 
 namespace EmguCVDemo.BP
 {
@@ -81,9 +82,19 @@ namespace EmguCVDemo.BP
         public List<double[,]> CalculatedResult(List<double[,]> value)
         {
             List<double[,]> result = new List<double[,]>();
+            List<Thread> threadList = new List<Thread>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
-                result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
+                //Thread t = new Thread(() =>
+                //{
+                    result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
+                //});
+                //t.Start();
+                //threadList.Add(t);
+            }
+            foreach (var t in threadList)
+            {
+                t.Join();
             }
             return result;
         }
@@ -96,9 +107,19 @@ namespace EmguCVDemo.BP
         public List<double[,]> BackPropagation(List<double[,]> output, double learningRate)
         {
             List<double[,]> result = new List<double[,]>();
+            List<Thread> threadList = new List<Thread>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
-                result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i]), learningRate));
+                //Thread t = new Thread(() =>
+                //{
+                    result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i]), learningRate));
+                //});
+                //t.Start();
+                //threadList.Add(t);
+            }
+            foreach (var t in threadList)
+            {
+                t.Join();
             }
             return result;
         }

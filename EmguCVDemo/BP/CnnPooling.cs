@@ -58,8 +58,8 @@ namespace EmguCVDemo.BP
             this.inputWidth = inputWidth;
             this.inputHeight = inputHeight;
             this.ActivationFunctionType = activationFunctionType;
-            this.ConvolutionKernelWidth = Convert.ToInt32(Math.Floor(inputWidth / (double)receptiveFieldWidth));
-            this.ConvolutionKernelHeight = Convert.ToInt32(Math.Floor(inputHeight / (double)receptiveFieldWidth));
+            this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling(inputWidth / (double)receptiveFieldWidth));
+            this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling(inputHeight / (double)receptiveFieldWidth));
             OutputPoolingMax = new int[ConvolutionKernelWidth, ConvolutionKernelHeight];
         }
         /// <summary>
@@ -67,6 +67,7 @@ namespace EmguCVDemo.BP
         /// </summary>
         public double[,] CalculatedConvolutionResult(double[,] value)
         {
+            InputValue = value;
             double[,] result = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
             for (int i = 0; i < ConvolutionKernelWidth; i++)
             {
@@ -108,9 +109,9 @@ namespace EmguCVDemo.BP
         {
             double result = 0;
             //累计区域内的值
-            for (int i = 0; i < receptiveFieldWidth && i < value.GetLength(0); i++)
+            for (int i = 0; i < receptiveFieldWidth && receptiveFieldWidth * x + i < value.GetLength(0); i++)
             {
-                for (int j = 0; j < receptiveFieldHeight && j < value.GetLength(1); j++)
+                for (int j = 0; j < receptiveFieldHeight && receptiveFieldHeight * y + j < value.GetLength(1); j++)
                 {
                     result += value[receptiveFieldWidth * x + i, receptiveFieldHeight * y + j];
                 }
@@ -129,13 +130,13 @@ namespace EmguCVDemo.BP
             double result = value[0, 0];
             OutputPoolingMax[x, y] = 0;
             //计算区域内的最大值
-            for (int i = 0; i < receptiveFieldWidth && i < value.GetLength(0); i++)
+            for (int i = 0; i < receptiveFieldWidth && receptiveFieldWidth * x + i < value.GetLength(0); i++)
             {
-                for (int j = 0; j < receptiveFieldHeight && j < value.GetLength(1); j++)
+                for (int j = 0; j < receptiveFieldHeight && receptiveFieldHeight * y + j < value.GetLength(1); j++)
                 {
-                    if (result < value[receptiveFieldWidth * x + 1, receptiveFieldHeight * y + j])
+                    if (result < value[receptiveFieldWidth * x + i, receptiveFieldHeight * y + j])
                     {
-                        result = value[receptiveFieldWidth * x + 1, receptiveFieldHeight * y + j];
+                        result = value[receptiveFieldWidth * x + i, receptiveFieldHeight * y + j];
                         OutputPoolingMax[x, y] = i + j * receptiveFieldHeight;
                     }
                 }
@@ -175,7 +176,7 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < inputHeight; j++)
                 {
-                    result[i, j] = output[inputWidth / receptiveFieldWidth, inputHeight / receptiveFieldHeight] / (receptiveFieldWidth * receptiveFieldHeight);
+                    result[i, j] = output[i / receptiveFieldWidth, j / receptiveFieldHeight] / (receptiveFieldWidth * receptiveFieldHeight);
                 }
             }
             return result;
@@ -192,7 +193,7 @@ namespace EmguCVDemo.BP
                 for (int j = 0; j < inputHeight; j++)
                 {
                     if (OutputPoolingMax[i, j] == receptiveFieldWidth % i + receptiveFieldHeight % j * receptiveFieldHeight)
-                        result[i, j] = output[inputWidth / receptiveFieldWidth, inputHeight / receptiveFieldHeight];
+                        result[i, j] = output[i / receptiveFieldWidth, j / receptiveFieldHeight];
                     else
                         result[i, j] = 0;
                 }

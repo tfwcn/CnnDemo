@@ -41,7 +41,10 @@ namespace EmguCVDemo
             };
             ann.SetLayerSizes(layerSizes,
                 layerType);*/
-            cnn.CreateCnn(bpWidth, bpHeight, 20, 20, 10, 10, 50 * 4);
+            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 10, 10, 2, 2, 1, 2, 2, 1);
+            cnn.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 2, 2, 1);
+            cnn.AddCnnFullLayer(300, 1);
+            cnn.AddCnnFullLayer(50 * 4, 1);
         }
     }
 }
