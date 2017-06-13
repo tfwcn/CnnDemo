@@ -233,10 +233,10 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < ShareWeight.GetLength(1); j++)
                 {
-                    ShareWeight[i, j] = random.NextDouble();
+                    ShareWeight[i, j] = GetRandom(random);
                 }
             }
-            OutputOffset = random.NextDouble();
+            OutputOffset = GetRandom(random);
         }
         /// <summary>
         /// 获取随机值

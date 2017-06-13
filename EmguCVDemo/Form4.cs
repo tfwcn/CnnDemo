@@ -7,11 +7,15 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.IO;
+using EmguCVDemo.BP;
+using Emgu.CV;
+using Emgu.CV.Structure;
 
 namespace EmguCVDemo
 {
     public partial class Form4 : Form
     {
+        private Cnn cnn;
         public Form4()
         {
             InitializeComponent();
@@ -19,6 +23,11 @@ namespace EmguCVDemo
 
         private void Form4_Load(object sender, EventArgs e)
         {
+            cnn = new Cnn();
+            cnn.AddCnnConvolutionLayer(20, 28, 28, 1, 1, 5, 5, 2, 2, 2, 2);
+            cnn.AddCnnConvolutionLayer(20, 1, 1, 5, 5, 2, 2, 2, 2);
+            cnn.AddCnnFullLayer(100, 1);
+            cnn.AddCnnFullLayer(10, 1);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -34,11 +43,79 @@ namespace EmguCVDemo
             int height = ToInt32(bytes4);
             fsImages.Read(bytes4, 0, 4);
             int width = ToInt32(bytes4);
+            //for (int i = 0; i < count; i++)
+            for (int i = 0; i < 10000; i++)
+            {
+                Bitmap img = GetImage(fsImages, width, height);
+                byte label = GetLable(fs);
+                double[] labels = new double[10];
+                for (int i2 = 0; i2 < 10; i2++)
+                {
+                    labels[i2] = -1;
+                }
+                labels[label] = 1;
+                Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
+                double[,] input = new double[width, height];
+                for (int w = 0; w < width; w++)
+                {
+                    for (int h = 0; h < height; h++)
+                    {
+                        input[w, h] = Color.FromArgb(
+                            (int)trainingData.Data[h, w, 2],
+                            (int)trainingData.Data[h, w, 1],
+                            (int)trainingData.Data[h, w, 0]
+                            ).ToArgb() / (float)0xFFFFFF;
+                    }
+                }
+                cnn.Train(input, labels, 0.05);
+                //img.Save("imgs/" + i + "_" + label + ".jpg");
+            }
+            fsImages.Close();
+            fs.Close();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            FileStream fs = new FileStream("t10k-labels.idx1-ubyte", FileMode.Open);
+            FileStream fsImages = new FileStream("t10k-images.idx3-ubyte", FileMode.Open);
+            byte[] bytes4 = new byte[4];
+            fsImages.Seek(4, SeekOrigin.Current);
+            fs.Seek(8, SeekOrigin.Current);
+            fsImages.Read(bytes4, 0, 4);
+            int count = ToInt32(bytes4);
+            fsImages.Read(bytes4, 0, 4);
+            int height = ToInt32(bytes4);
+            fsImages.Read(bytes4, 0, 4);
+            int width = ToInt32(bytes4);
             for (int i = 0; i < count; i++)
             {
                 Bitmap img = GetImage(fsImages, width, height);
                 byte label = GetLable(fs);
-                img.Save("imgs/" + i + "_" + label + ".jpg");
+                Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
+                double[,] input = new double[width, height];
+                for (int w = 0; w < width; w++)
+                {
+                    for (int h = 0; h < height; h++)
+                    {
+                        input[w, h] = Color.FromArgb(
+                            (int)trainingData.Data[h, w, 2],
+                            (int)trainingData.Data[h, w, 1],
+                            (int)trainingData.Data[h, w, 0]
+                            ).ToArgb() / (float)0xFFFFFF;
+                    }
+                }
+                double[] labels = cnn.Predict(input);
+                double maxtype = labels[0], max = 0;
+                for (int n = 0; n < 10; n++)
+                {
+                    if (maxtype < labels[n])
+                    {
+                        max = n;
+                        maxtype = labels[n];
+                    }
+                }
+                Console.WriteLine(i + ":" + label + "," + max);
+                //img.Save("imgs/" + i + "_" + label + ".jpg");
             }
             fsImages.Close();
             fs.Close();
