@@ -92,10 +92,10 @@ namespace EmguCVDemo.BP
                 //t.Start();
                 //threadList.Add(t);
             }
-            foreach (var t in threadList)
-            {
-                t.Join();
-            }
+            //foreach (var t in threadList)
+            //{
+            //    t.Join();
+            //}
             return result;
         }
         /// <summary>
@@ -117,10 +117,10 @@ namespace EmguCVDemo.BP
                 //t.Start();
                 //threadList.Add(t);
             }
-            foreach (var t in threadList)
-            {
-                t.Join();
-            }
+            //foreach (var t in threadList)
+            //{
+            //    t.Join();
+            //}
             return result;
         }
     }

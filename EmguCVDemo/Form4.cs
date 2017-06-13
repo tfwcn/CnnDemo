@@ -6,18 +6,12 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-using EmguCVDemo.BP;
+using System.IO;
 
 namespace EmguCVDemo
 {
     public partial class Form4 : Form
     {
-        //private int bpWidth = 960, bpHeight = 540;
-        private int bpWidth = 1920, bpHeight = 1080;
-        private int bpRectangleCount = 50;//人脸框最大数量
-        private int bpTrainDataCount;//训练样本数
-        private Ann ann = new Ann();
-        private Cnn cnn = new Cnn();
         public Form4()
         {
             InitializeComponent();
@@ -25,26 +19,60 @@ namespace EmguCVDemo
 
         private void Form4_Load(object sender, EventArgs e)
         {
-            /*int[] layerSizes = new int[] { 
-                bpWidth * bpHeight,
-                bpWidth * bpHeight+100, 50, 30, 10,
-                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-                bpRectangleCount * 4 
-            };
-            int[] layerType = new int[] { 
-                1,
-                1, 1, 1, 1,
-                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-                //20, 20, 20, 20, 20, 20, 20, 20, 20, 20,
-                1
-            };
-            ann.SetLayerSizes(layerSizes,
-                layerType);*/
-            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 10, 10, 2, 2, 1, 2, 2, 1);
-            cnn.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 2, 2, 1);
-            cnn.AddCnnFullLayer(300, 1);
-            cnn.AddCnnFullLayer(50 * 4, 1);
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            FileStream fs = new FileStream("train-labels.idx1-ubyte", FileMode.Open);
+            FileStream fsImages = new FileStream("train-images.idx3-ubyte", FileMode.Open);
+            byte[] bytes4 = new byte[4];
+            fsImages.Seek(4, SeekOrigin.Current);
+            fs.Seek(8, SeekOrigin.Current);
+            fsImages.Read(bytes4, 0, 4);
+            int count = ToInt32(bytes4);
+            fsImages.Read(bytes4, 0, 4);
+            int height = ToInt32(bytes4);
+            fsImages.Read(bytes4, 0, 4);
+            int width = ToInt32(bytes4);
+            for (int i = 0; i < count; i++)
+            {
+                Bitmap img = GetImage(fsImages, width, height);
+                byte label = GetLable(fs);
+                img.Save("imgs/" + i + "_" + label + ".jpg");
+            }
+            fsImages.Close();
+            fs.Close();
+        }
+
+        private Bitmap GetImage(FileStream fs, int width, int height)
+        {
+            Bitmap img = new Bitmap(width, height);
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    byte[] bytes1 = new byte[1];
+                    fs.Read(bytes1, 0, 1);
+                    img.SetPixel(x, y, Color.FromArgb(255 - bytes1[0], 255 - bytes1[0], 255 - bytes1[0]));
+                }
+            }
+            return img;
+        }
+
+        private byte GetLable(FileStream fs)
+        {
+            byte[] bytes1 = new byte[1];
+            fs.Read(bytes1, 0, 1);
+            return bytes1[0];
+        }
+
+        private int ToInt32(byte[] bytes)
+        {
+            int count = bytes[3];
+            count += bytes[2] << 8;
+            count += bytes[1] << 16;
+            count += bytes[0] << 24;
+            return count;
         }
     }
 }

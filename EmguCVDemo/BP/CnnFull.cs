@@ -69,12 +69,54 @@ namespace EmguCVDemo.BP
         private double CalculatedPointResult(double[] value, int index)
         {
             double result = 0;
+            //累计区域内的值
+            for (int i = 0; i < InputCount; i++)
+            {
+                result += value[i] * InputWeight[index, i];
+            }
+            result = ActivationFunction(result + OutputOffset[index]);
+            return result;
+        }
+        /// <summary>
+        /// 激活函数
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunction(double value)
+        {
+            double result = 0;
             //调用激活函数计算结果
             switch (ActivationFunctionType)
             {
                 case 1:
                     //tanh
-                    result = ActivationFunctionTanh(value, index);
+                    result = ActivationFunctionTanh(value);
+                    break;
+                case 2:
+                    //PReLU
+                    result = ActivationFunctionPReLU(value);
+                    break;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 激活函数导数
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionDerivative(double value)
+        {
+            double result = 0;
+            //调用激活函数计算结果
+            switch (ActivationFunctionType)
+            {
+                case 1:
+                    //tanh
+                    result = ActivationFunctionTanhDerivative(value);
+                    break;
+                case 2:
+                    //PReLU
+                    result = ActivationFunctionPReLUDerivative(value);
                     break;
             }
             return result;
@@ -84,16 +126,11 @@ namespace EmguCVDemo.BP
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private double ActivationFunctionTanh(double[] value, int index)
+        private double ActivationFunctionTanh(double value)
         {
             double result = 0;
-            //累计区域内的值
-            for (int i = 0; i < InputCount; i++)
-            {
-                result += value[i] * InputWeight[index, i];
-            }
             //调用激活函数计算结果
-            result = Math.Tanh(result + OutputOffset[index]);
+            result = Math.Tanh(value);
             return result;
         }
         /// <summary>
@@ -109,6 +146,48 @@ namespace EmguCVDemo.BP
             return result;
         }
         /// <summary>
+        /// 激活函数（PReLU）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionPReLU(double value)
+        {
+            double result = 0;
+            //调用激活函数计算结果
+            if (value >= 0)
+            {
+                result = value;
+            }
+            else
+            {
+                result = 0.05 * value;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 激活函数导数（PReLU）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionPReLUDerivative(double value)
+        {
+            double result = 0;
+            //激活函数导数计算结果
+            if (value > 0)
+            {
+                result = 1;
+            }
+            else if (value == 0)
+            {
+                result = 0;
+            }
+            else
+            {
+                result = 0.05;
+            }
+            return result;
+        }
+        /// <summary>
         /// 初始化权重
         /// </summary>
         private void InitInputWeight()
@@ -118,13 +197,31 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < InputWeight.GetLength(1); j++)
                 {
-                    InputWeight[i, j] = random.NextDouble();
+                    InputWeight[i, j] = GetRandom(random);
                 }
             }
             for (int i = 0; i < OutputOffset.Length; i++)
             {
-                OutputOffset[i] = random.NextDouble();
+                OutputOffset[i] = GetRandom(random);
             }
+        }
+        /// <summary>
+        /// 获取随机值
+        /// </summary>
+        private double GetRandom(Random random)
+        {
+            double result = 0;
+            switch (ActivationFunctionType)
+            {
+                case 2:
+                    //PReLU
+                    result = (random.NextDouble() * Math.Abs(InputCount - OutputCount) + (InputCount > OutputCount ? OutputCount : InputCount)) * Math.Sqrt(InputCount / 2);
+                    break;
+                default:
+                    result = (random.NextDouble() * Math.Abs(InputCount - OutputCount) + (InputCount > OutputCount ? OutputCount : InputCount)) * Math.Sqrt(InputCount);
+                    break;
+            }
+            return result;
         }
         /// <summary>
         /// 反向传播
@@ -139,7 +236,7 @@ namespace EmguCVDemo.BP
             for (int i = 0; i < OutputCount; i++)
             {
                 //残差
-                double residual = ActivationFunctionTanhDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
+                double residual = ActivationFunctionDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
                 for (int j = 0; j < InputCount; j++)
                 {
                     //sum(残差)=残差*更新前的权重

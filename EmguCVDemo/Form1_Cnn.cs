@@ -261,10 +261,10 @@ namespace EmguCVDemo
         private void CreateBP()
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, 1, 2, 2, 1);
-            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 2, 2, 1);
-            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1);
-            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 2, 2, 1);
+            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, 1, 2, 2, 2);
+            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 2, 2, 2);
+            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 2);
+            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 2, 2, 2);
             //cnn.AddCnnConvolutionLayer(80, 5, 5, 1, 1, 1, 2, 2, 1);
             //cnn.AddCnnConvolutionLayer(100, 5, 5, 1, 1, 1, 2, 2, 1);
             //cnn.AddCnnFullLayer(300, 1);
@@ -273,7 +273,7 @@ namespace EmguCVDemo
         private void TrainBP(Dictionary<Bitmap, List<Rectangle>> imgs)
         {
             bpTrainDataCount = imgs.Count;
-            for (int tc = 0; tc < 3; tc++)
+            for (int tc = 0; tc < 10; tc++)
             {
                 foreach (var item in imgs)
                 {
@@ -540,27 +540,41 @@ namespace EmguCVDemo
             String trainfile = @".\data\train.txt";
             String testfile = @".\data\test.txt";
             String outputfile = "outputfile.txt";
-            float eta = 0.02f;
+            float eta = 0.5f;
             int nIter = 1000;
             List<EmguCVDemo.BP.DataNode> trainList = GetDataList(trainfile);
             List<EmguCVDemo.BP.DataNode> testList = GetDataList(testfile);
             StreamWriter sw = new StreamWriter(outputfile);
             int typeCount = 3;
-            EmguCVDemo.BP.AnnClassifier annClassifier = new EmguCVDemo.BP.AnnClassifier(trainList[0]
-                    .getAttribList().Count(), trainList[0].getAttribList()
-                    .Count() + 10, typeCount);
-            annClassifier.setTrainNodes(trainList);
-            annClassifier.train(eta, nIter);
+            Cnn tmpCnn = new Cnn();
+            tmpCnn.AddCnnFullLayer(4, 14, 1);
+            tmpCnn.AddCnnFullLayer(3, 1);
+            for (int i = 0; i < nIter; i++)
+            {
+                foreach (var t in trainList)
+                {
+                    tmpCnn.TrainFullLayer(t.getAttribList2().ToArray(), t.getTypes(), eta);
+                }
+            }
             for (int i = 0; i < testList.Count(); i++)
             {
                 EmguCVDemo.BP.DataNode test = testList[i];
-                int type = annClassifier.test(test);
+                double[] type = tmpCnn.PredictFullLayer(test.getAttribList2().ToArray());
                 List<float> attribs = test.getAttribList();
                 for (int n = 0; n < attribs.Count(); n++)
                 {
                     sw.Write(attribs[n] + ",");
                 }
-                sw.WriteLine(GetTypeName(type));
+                double maxtype = type[0], max = 0;
+                for (int n = 0; n < 3; n++)
+                {
+                    if (maxtype < type[n])
+                    {
+                        max = n;
+                        maxtype = type[n];
+                    }
+                }
+                sw.WriteLine(GetTypeName(max));
             }
             sw.Close();
         }
@@ -602,9 +616,9 @@ namespace EmguCVDemo
             return tmpListDataNode;
         }
 
-        private string GetTypeName(int type)
+        private string GetTypeName(double type)
         {
-            switch (type)
+            switch ((int)Math.Round(type, 0))
             {
                 case 0:
                     return "Iris-versicolor";

@@ -192,7 +192,7 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < inputHeight; j++)
                 {
-                    if (OutputPoolingMax[i, j] == receptiveFieldWidth % i + receptiveFieldHeight % j * receptiveFieldHeight)
+                    if (OutputPoolingMax[i, j] == i % receptiveFieldWidth + j % receptiveFieldHeight * receptiveFieldHeight)
                         result[i, j] = output[i / receptiveFieldWidth, j / receptiveFieldHeight];
                     else
                         result[i, j] = 0;

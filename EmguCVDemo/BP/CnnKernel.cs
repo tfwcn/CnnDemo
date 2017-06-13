@@ -101,24 +101,6 @@ namespace EmguCVDemo.BP
         private double CalculatedConvolutionPointResult(double[,] value, int x, int y)
         {
             double result = 0;
-            //调用激活函数计算结果
-            switch (ActivationFunctionType)
-            {
-                case 1:
-                    //tanh
-                    result = ActivationFunctionTanh(value, x, y);
-                    break;
-            }
-            return result;
-        }
-        /// <summary>
-        /// 激活函数（tanh）
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private double ActivationFunctionTanh(double[,] value, int x, int y)
-        {
-            double result = 0;
             //累计区域内的值
             for (int i = 0; i < receptiveFieldWidth && offsetWidth * x + i < value.GetLength(0); i++)
             {
@@ -128,7 +110,63 @@ namespace EmguCVDemo.BP
                 }
             }
             //调用激活函数计算结果
-            result = Math.Tanh(result + OutputOffset);
+            result = ActivationFunction(result + OutputOffset);
+            return result;
+        }
+        /// <summary>
+        /// 激活函数
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunction(double value)
+        {
+            double result = 0;
+            //调用激活函数计算结果
+            switch (ActivationFunctionType)
+            {
+                case 1:
+                    //tanh
+                    result = ActivationFunctionTanh(value);
+                    break;
+                case 2:
+                    //PReLU
+                    result = ActivationFunctionPReLU(value);
+                    break;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 激活函数导数
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionDerivative(double value)
+        {
+            double result = 0;
+            //调用激活函数计算结果
+            switch (ActivationFunctionType)
+            {
+                case 1:
+                    //tanh
+                    result = ActivationFunctionTanhDerivative(value);
+                    break;
+                case 2:
+                    //PReLU
+                    result = ActivationFunctionPReLUDerivative(value);
+                    break;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 激活函数（tanh）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionTanh(double value)
+        {
+            double result = 0;
+            //调用激活函数计算结果
+            result = Math.Tanh(value);
             return result;
         }
         /// <summary>
@@ -141,6 +179,48 @@ namespace EmguCVDemo.BP
             double result = 0;
             //激活函数导数计算结果
             result = 1 - Math.Pow(Math.Tanh(value), 2);
+            return result;
+        }
+        /// <summary>
+        /// 激活函数（PReLU）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionPReLU(double value)
+        {
+            double result = 0;
+            //调用激活函数计算结果
+            if (value >= 0)
+            {
+                result = value;
+            }
+            else
+            {
+                result = 0.05 * value;
+            }
+            return result;
+        }
+        /// <summary>
+        /// 激活函数导数（PReLU）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionPReLUDerivative(double value)
+        {
+            double result = 0;
+            //激活函数导数计算结果
+            if (value > 0)
+            {
+                result = 1;
+            }
+            else if (value == 0)
+            {
+                result = 0;
+            }
+            else
+            {
+                result = 0.05;
+            }
             return result;
         }
         /// <summary>
@@ -159,6 +239,26 @@ namespace EmguCVDemo.BP
             OutputOffset = random.NextDouble();
         }
         /// <summary>
+        /// 获取随机值
+        /// </summary>
+        private double GetRandom(Random random)
+        {
+            double result = 0;
+            int inputCount = inputWidth * inputHeight;
+            int outputCount = ConvolutionKernelWidth * ConvolutionKernelHeight;
+            switch (ActivationFunctionType)
+            {
+                case 2:
+                    //PReLU
+                    result = (random.NextDouble() * Math.Abs(inputCount - outputCount) + (inputCount > outputCount ? outputCount : inputCount)) * Math.Sqrt(inputCount / 2);
+                    break;
+                default:
+                    result = (random.NextDouble() * Math.Abs(inputCount - outputCount) + (inputCount > outputCount ? outputCount : inputCount)) * Math.Sqrt(inputCount);
+                    break;
+            }
+            return result;
+        }
+        /// <summary>
         /// 反向传播
         /// </summary>
         /// <param name="input">上一层的输出值，即该层输入值</param>
@@ -168,13 +268,7 @@ namespace EmguCVDemo.BP
         public double[,] BackPropagation(double[,] output, double learningRate)
         {
             double[,] result = null;//正确输入值
-            switch (ActivationFunctionType)
-            {
-                case 1:
-                    //tanh
-                    result = CalculatedBackPropagationResultTanh(output, learningRate);
-                    break;
-            }
+            result = CalculatedBackPropagationResultTanh(output, learningRate);
             return result;
         }
         /// <summary>
@@ -199,7 +293,7 @@ namespace EmguCVDemo.BP
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
                     //残差
-                    double residual = ActivationFunctionTanhDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
+                    double residual = ActivationFunctionDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
                     for (int i2 = 0; i2 < receptiveFieldWidth && i * offsetWidth + i2 < inputWidth; i2++)
                     {
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * offsetHeight + j2 < inputHeight; j2++)
@@ -215,7 +309,7 @@ namespace EmguCVDemo.BP
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
                     //残差
-                    double residual = ActivationFunctionTanhDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
+                    double residual = ActivationFunctionDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
                     for (int i2 = 0; i2 < receptiveFieldWidth; i2++)
                     {
                         for (int j2 = 0; j2 < receptiveFieldHeight; j2++)

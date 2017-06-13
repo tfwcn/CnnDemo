@@ -58,7 +58,7 @@ namespace EmguCVDemo.BP
         /// 增加全连接层，在卷积层后，要先创建完卷积层
         /// </summary>
         /// <param name="cnnFullLayer"></param>
-        public void AddCnnFullLayer(int OutputCount, int activationFunctionType = 1)
+        public void AddCnnFullLayer(int outputCount, int activationFunctionType = 1)
         {
             if (CnnFullLayerList.Count == 0)
             {
@@ -67,16 +67,26 @@ namespace EmguCVDemo.BP
                 CnnFullLayer cnnFullLayer = new CnnFullLayer(cnnConvolutionLayerLast.ConvolutionKernelCount
                     * cnnConvolutionLayerLast.OutputWidth
                     * cnnConvolutionLayerLast.OutputHeight,
-                    OutputCount, activationFunctionType);
+                    outputCount, activationFunctionType);
                 CnnFullLayerList.Add(cnnFullLayer);
             }
             else
             {
                 var cnnFullLayerLast = CnnFullLayerList[CnnFullLayerList.Count - 1];//最后的卷积层
                 CnnFullLayer cnnFullLayer = new CnnFullLayer(cnnFullLayerLast.OutputCount,
-                    OutputCount, activationFunctionType);
+                    outputCount, activationFunctionType);
                 CnnFullLayerList.Add(cnnFullLayer);
             }
+        }
+        /// <summary>
+        /// 增加全连接层,仅用于BP网络
+        /// </summary>
+        /// <param name="cnnFullLayer"></param>
+        public void AddCnnFullLayer(int inputCount, int outputCount, int activationFunctionType = 1)
+        {
+            CnnFullLayer cnnFullLayer = new CnnFullLayer(inputCount,
+                outputCount, activationFunctionType);
+            CnnFullLayerList.Add(cnnFullLayer);
         }
         /// <summary>
         /// 训练
@@ -151,6 +161,28 @@ namespace EmguCVDemo.BP
             #endregion
         }
         /// <summary>
+        /// 训练,仅用于BP网络
+        /// </summary>
+        public void TrainFullLayer(double[] input, double[] output, double learningRate)
+        {
+            #region 正向传播
+            //计算全连接层输出
+            double[] outputFullTmp = input;
+            foreach (var cnnFullLayer in CnnFullLayerList)
+            {
+                outputFullTmp = cnnFullLayer.CalculatedResult(outputFullTmp);
+            }
+            #endregion
+            #region 反向传播
+            //计算全连接层
+            double[] inputFullTmp = output;
+            for (int i = CnnFullLayerList.Count - 1; i >= 0; i--)
+            {
+                inputFullTmp = CnnFullLayerList[i].BackPropagation(inputFullTmp, learningRate);
+            }
+            #endregion
+        }
+        /// <summary>
         /// 识别
         /// </summary>
         public double[] Predict(double[,] input)
@@ -185,6 +217,19 @@ namespace EmguCVDemo.BP
                     }
                 }
             }
+            foreach (var cnnFullLayer in CnnFullLayerList)
+            {
+                outputFullTmp = cnnFullLayer.CalculatedResult(outputFullTmp);
+            }
+            return outputFullTmp;
+        }
+        /// <summary>
+        /// 识别,仅用于BP网络
+        /// </summary>
+        public double[] PredictFullLayer(double[] input)
+        {
+            //计算全连接层输出
+            double[] outputFullTmp = input;
             foreach (var cnnFullLayer in CnnFullLayerList)
             {
                 outputFullTmp = cnnFullLayer.CalculatedResult(outputFullTmp);
