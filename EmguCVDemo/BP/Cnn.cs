@@ -15,10 +15,15 @@ namespace EmguCVDemo.BP
         /// 全链接层
         /// </summary>
         public List<CnnFullLayer> CnnFullLayerList { get; set; }
+        /// <summary>
+        /// 卷积层间连接
+        /// </summary>
+        private List<bool[,]> convolutionLinkList;
         public Cnn()
         {
             CnnConvolutionLayerList = new List<CnnConvolutionLayer>();
             CnnFullLayerList = new List<CnnFullLayer>();
+            convolutionLinkList = new List<bool[,]>();
         }
         /// <summary>
         /// 增加首个卷积层
@@ -53,6 +58,42 @@ namespace EmguCVDemo.BP
             //创建池化层
             cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, poolingActivationFunctionType);
             CnnConvolutionLayerList.Add(cnnConvolutionLayer);
+            //随机创建卷积层间连接
+            bool[,] oneLinks = new bool[convolutionKernelCount, cnnConvolutionLayerLast.ConvolutionKernelCount];
+            Random random = new Random();
+            for (int i = 0; i < convolutionKernelCount; i++)
+            {
+                int linkCount = 0;//每层链接数
+                while (linkCount < 2)//确保最低链接数
+                {
+                    for (int j = 0; j < cnnConvolutionLayerLast.ConvolutionKernelCount; j++)
+                    {
+                        if (random.NextDouble() < 0.5)
+                            oneLinks[i, j] = false;
+                        else
+                        {
+                            oneLinks[i, j] = true;
+                            linkCount++;
+                        }
+                    }
+                }
+                //排除相同链接
+                for (int j = 0; j < i; j++)
+                {
+                    linkCount = 0;//相同链接数
+                    for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
+                    {
+                        if (oneLinks[i, k] = oneLinks[j, k])
+                            linkCount++;
+                    }
+                    if (linkCount == cnnConvolutionLayerLast.ConvolutionKernelCount)
+                    {
+                        i--;
+                        break;
+                    }
+                }
+            }
+            convolutionLinkList.Add(oneLinks);
         }
         /// <summary>
         /// 增加全连接层，在卷积层后，要先创建完卷积层
@@ -100,14 +141,35 @@ namespace EmguCVDemo.BP
             {
                 outputConvolutionTmp.Add(input);
             }
-            foreach (var cnnConvolutionLayer in CnnConvolutionLayerList)
+            for (int i = 0; i < CnnConvolutionLayerList.Count; i++)
             {
                 List<double[,]> inputTmp = new List<double[,]>();
-                for (int i = 0; i < cnnConvolutionLayer.ConvolutionKernelCount; i++)
+                if (i == 0)//第一层直接输入
                 {
-                    inputTmp.Add(outputConvolutionTmp[i % outputConvolutionTmp.Count]);
+                    inputTmp = outputConvolutionTmp;
                 }
-                outputConvolutionTmp = cnnConvolutionLayer.CalculatedResult(inputTmp);
+                else//随机链接
+                {
+                    for (int j = 0; j < CnnConvolutionLayerList[i].ConvolutionKernelCount; j++)
+                    {
+                        double[,] inputOneTmp = new double[outputConvolutionTmp[0].GetLength(0), outputConvolutionTmp[0].GetLength(1)];
+                        for (int k = 0; k < outputConvolutionTmp.Count; k++)
+                        {
+                            if (convolutionLinkList[i - 1][j, k])
+                            {
+                                for (int x = 0; x < outputConvolutionTmp[0].GetLength(0); x++)
+                                {
+                                    for (int y = 0; y < outputConvolutionTmp[0].GetLength(1); y++)
+                                    {
+                                        inputOneTmp[x, y] += outputConvolutionTmp[k][x, y];
+                                    }
+                                }
+                            }
+                        }
+                        inputTmp.Add(inputOneTmp);
+                    }
+                }
+                outputConvolutionTmp = CnnConvolutionLayerList[i].CalculatedResult(inputTmp);
             }
             //计算卷积层转全连接层
             var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层

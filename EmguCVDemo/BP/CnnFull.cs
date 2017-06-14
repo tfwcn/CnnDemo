@@ -221,7 +221,7 @@ namespace EmguCVDemo.BP
                     result = (random.NextDouble() * Math.Abs(InputCount - OutputCount) + (InputCount > OutputCount ? OutputCount : InputCount)) * Math.Sqrt(InputCount);
                     break;
             }
-            return result;
+            return random.NextDouble();
         }
         /// <summary>
         /// 反向传播

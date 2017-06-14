@@ -82,20 +82,10 @@ namespace EmguCVDemo.BP
         public List<double[,]> CalculatedResult(List<double[,]> value)
         {
             List<double[,]> result = new List<double[,]>();
-            List<Thread> threadList = new List<Thread>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
-                //Thread t = new Thread(() =>
-                //{
-                    result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
-                //});
-                //t.Start();
-                //threadList.Add(t);
+                result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
             }
-            //foreach (var t in threadList)
-            //{
-            //    t.Join();
-            //}
             return result;
         }
         /// <summary>
@@ -107,20 +97,10 @@ namespace EmguCVDemo.BP
         public List<double[,]> BackPropagation(List<double[,]> output, double learningRate)
         {
             List<double[,]> result = new List<double[,]>();
-            List<Thread> threadList = new List<Thread>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
-                //Thread t = new Thread(() =>
-                //{
-                    result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i]), learningRate));
-                //});
-                //t.Start();
-                //threadList.Add(t);
+                result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate));
             }
-            //foreach (var t in threadList)
-            //{
-            //    t.Join();
-            //}
             return result;
         }
     }

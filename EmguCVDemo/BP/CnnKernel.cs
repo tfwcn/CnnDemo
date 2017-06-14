@@ -15,7 +15,7 @@ namespace EmguCVDemo.BP
         /// </summary>
         public double[,] ShareWeight { get; set; }
         /// <summary>
-        /// 共享偏置
+        /// 偏置
         /// </summary>
         public double OutputOffset { get; set; }
         /// <summary>
@@ -53,7 +53,7 @@ namespace EmguCVDemo.BP
         /// <summary>
         /// 激活函数类型，1:tanh,2:池化(Mean Pooling),3:池化(Max Pooling)
         /// </summary>
-        public int ActivationFunctionType;
+        public int ActivationFunctionType { get; set; }
         /// <summary>
         /// 原输入值
         /// </summary>
@@ -88,14 +88,17 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
-                    result[i, j] = CalculatedConvolutionPointResult(value, i, j);
+                    result[i, j] = CalculatedConvolutionPointResult(value, i, j);//卷积
+                    result[i, j] += OutputOffset;//偏置
+                    //调用激活函数计算结果
+                    result[i, j] = ActivationFunction(result[i, j]);
                 }
             }
             OutputValue = result;
             return result;
         }
         /// <summary>
-        /// 计算感知野结果
+        /// 计算感知野结果(卷积)
         /// </summary>
         /// <returns></returns>
         private double CalculatedConvolutionPointResult(double[,] value, int x, int y)
@@ -109,8 +112,6 @@ namespace EmguCVDemo.BP
                     result += value[offsetWidth * x + i, offsetHeight * y + j] * ShareWeight[i, j];
                 }
             }
-            //调用激活函数计算结果
-            result = ActivationFunction(result + OutputOffset);
             return result;
         }
         /// <summary>
@@ -224,7 +225,7 @@ namespace EmguCVDemo.BP
             return result;
         }
         /// <summary>
-        /// 初始化共享权重
+        /// 初始化共享权重和偏置
         /// </summary>
         private void InitShareWeight()
         {
@@ -236,7 +237,6 @@ namespace EmguCVDemo.BP
                     ShareWeight[i, j] = GetRandom(random);
                 }
             }
-            OutputOffset = GetRandom(random);
         }
         /// <summary>
         /// 获取随机值
@@ -256,7 +256,7 @@ namespace EmguCVDemo.BP
                     result = (random.NextDouble() * Math.Abs(inputCount - outputCount) + (inputCount > outputCount ? outputCount : inputCount)) * Math.Sqrt(inputCount);
                     break;
             }
-            return result;
+            return random.NextDouble();
         }
         /// <summary>
         /// 反向传播
@@ -268,25 +268,16 @@ namespace EmguCVDemo.BP
         public double[,] BackPropagation(double[,] output, double learningRate)
         {
             double[,] result = null;//正确输入值
-            result = CalculatedBackPropagationResultTanh(output, learningRate);
+            result = CalculatedBackPropagationResult(output, learningRate);
             return result;
         }
         /// <summary>
-        /// 计算反向传播结果（tanh）
+        /// 计算反向传播结果
         /// </summary>
         /// <returns></returns>
-        private double[,] CalculatedBackPropagationResultTanh(double[,] output, double learningRate)
+        private double[,] CalculatedBackPropagationResult(double[,] output, double learningRate)
         {
             double[,] result = new double[inputWidth, inputHeight];//正确输入值
-            //180度反转权限矩阵
-            /*double[,] ShareWeight180 = new double[receptiveFieldWidth, receptiveFieldHeight];
-            for (int i = 0; i < receptiveFieldWidth; i++)
-            {
-                for (int j = 0; j < receptiveFieldHeight; j++)
-                {
-                    ShareWeight180[i, j] = ShareWeight[receptiveFieldWidth - i - 1, receptiveFieldHeight - j - 1];
-                }
-            }*/
             //计算输入值残差
             for (int i = 0; i < ConvolutionKernelWidth; i++)
             {
@@ -298,7 +289,7 @@ namespace EmguCVDemo.BP
                     {
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * offsetHeight + j2 < inputHeight; j2++)
                         {
-                            result[i * offsetWidth + i2, j * offsetHeight + j2] += learningRate * ShareWeight[i2, j2] * residual;
+                            result[i * offsetWidth + i2, j * offsetHeight + j2] += ShareWeight[i2, j2] * residual;
                         }
                     }
                 }
@@ -310,11 +301,11 @@ namespace EmguCVDemo.BP
                 {
                     //残差
                     double residual = ActivationFunctionDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
-                    for (int i2 = 0; i2 < receptiveFieldWidth; i2++)
+                    for (int i2 = 0; i2 < receptiveFieldWidth && i * offsetWidth + i2 < inputWidth; i2++)
                     {
-                        for (int j2 = 0; j2 < receptiveFieldHeight; j2++)
+                        for (int j2 = 0; j2 < receptiveFieldHeight && j * offsetHeight + j2 < inputHeight; j2++)
                         {
-                            ShareWeight[i2, j2] -= learningRate * residual / (ConvolutionKernelWidth * ConvolutionKernelHeight);
+                            ShareWeight[i2, j2] -= learningRate * InputValue[i * offsetWidth + i2, j * offsetHeight + j2] * residual / (ConvolutionKernelWidth * ConvolutionKernelHeight * receptiveFieldWidth * receptiveFieldHeight);
                         }
                     }
                     OutputOffset -= learningRate * residual / (ConvolutionKernelWidth * ConvolutionKernelHeight);
