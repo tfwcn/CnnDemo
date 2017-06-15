@@ -142,7 +142,8 @@ namespace EmguCVDemo.BP
         {
             double result = 0;
             //激活函数导数计算结果
-            result = 1 - Math.Pow(Math.Tanh(value), 2);
+            result = 1 - Math.Pow(Math.Tanh(value), 2);//旧
+            //result = 1 - Math.Pow(value, 2);
             return result;
         }
         /// <summary>
@@ -221,7 +222,7 @@ namespace EmguCVDemo.BP
                     result = (random.NextDouble() * Math.Abs(InputCount - OutputCount) + (InputCount > OutputCount ? OutputCount : InputCount)) * Math.Sqrt(InputCount);
                     break;
             }
-            return random.NextDouble();
+            return result;
         }
         /// <summary>
         /// 反向传播
@@ -232,19 +233,32 @@ namespace EmguCVDemo.BP
         public double[] BackPropagation(double[] output, double learningRate)
         {
             double[] result = new double[InputCount];
-            //更新权重和偏置
+            //权重残差
+            double[,] deltaWeight = new double[OutputCount, InputCount];
+            //偏置残差
+            double[] deltaOffset = new double[OutputCount];
+            //计算上一层的残差
             for (int i = 0; i < OutputCount; i++)
             {
-                //残差
-                double residual = ActivationFunctionDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
+                //残差=导数(输出值)*(输出值-正确值)
+               double residual = ActivationFunctionDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
                 for (int j = 0; j < InputCount; j++)
                 {
-                    //sum(残差)=残差*更新前的权重
+                    //sum(残差)=更新前的权重*残差
                     result[j] += InputWeight[i, j] * residual;
-                    InputWeight[i, j] -= learningRate * InputValue[j] * residual;
+                    //计算权重残差,sum(残差)=残差*输入值
+                    deltaWeight[i, j] += residual * InputValue[j];
                 }
-                OutputOffset[i] -= learningRate * residual;
+                deltaOffset[i] = residual;
             }
+            for (int i = 0; i < InputCount; i++)
+            {
+                //上一层的残差=sum(残差)*导数(输入值)
+                //result[i] *= ActivationFunctionDerivative(InputValue[i]);//旧代码没有
+            }
+            //更新权重和偏置
+            UpdateWeight(InputWeight, deltaWeight, learningRate);
+            UpdateOffset(OutputOffset, deltaOffset, learningRate);
             //计算正确输入值
             for (int i = 0; i < InputCount; i++)
             {
@@ -252,6 +266,37 @@ namespace EmguCVDemo.BP
                 result[i] = InputValue[i] - result[i];
             }
             return result;
+        }
+        /// <summary>
+        /// 更新权重
+        /// </summary>
+        /// <param name="weight">权重</param>
+        /// <param name="delta">残差</param>
+        /// <param name="learningRate">学习率</param>
+        private void UpdateWeight(double[,] weight, double[,] delta, double learningRate)
+        {
+            for (int i = 0; i < InputCount; i++)
+            {
+                for (int j = 0; j < OutputCount; j++)
+                {
+                    //weight[j, i] -= learningRate * delta[j, i] / (delta[j, i] + 1e-8);
+                    weight[j, i] -= learningRate * delta[j, i];//旧
+                }
+            }
+        }
+        /// <summary>
+        /// 更新偏置
+        /// </summary>
+        /// <param name="weight">偏置</param>
+        /// <param name="delta">残差</param>
+        /// <param name="learningRate">学习率</param>
+        private void UpdateOffset(double[] offset, double[] delta, double learningRate)
+        {
+            for (int i = 0; i < OutputCount; i++)
+            {
+                //offset[i] -= learningRate * delta[i] / (delta[i] + 1e-8);
+                offset[i] -= learningRate * delta[i];//旧
+            }
         }
     }
 }

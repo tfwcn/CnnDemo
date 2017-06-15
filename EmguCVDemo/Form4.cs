@@ -67,7 +67,7 @@ namespace EmguCVDemo
                             ).ToArgb() / (float)0xFFFFFF;
                     }
                 }
-                cnn.Train(input, labels, 0.05);
+                cnn.Train(input, labels, 0.01);
                 //img.Save("imgs/" + i + "_" + label + ".jpg");
             }
             fsImages.Close();

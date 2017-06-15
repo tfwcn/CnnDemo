@@ -221,6 +221,7 @@ namespace EmguCVDemo.BP
                 inputConvolutionTmp = CnnConvolutionLayerList[i].BackPropagation(inputConvolutionTmp, learningRate);
             }
             #endregion
+            CnnHelper.ShowChange(outputFullTmp, output);
         }
         /// <summary>
         /// 训练,仅用于BP网络

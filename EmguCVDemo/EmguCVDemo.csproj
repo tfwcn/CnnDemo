@@ -70,6 +70,7 @@
     <Compile Include="BP\Ann.cs" />
     <Compile Include="BP\AnnClassifier.cs" />
     <Compile Include="BP\Cnn.cs" />
+    <Compile Include="BP\CnnHelper.cs" />
     <Compile Include="BP\CnnKernel.cs" />
     <Compile Include="BP\CnnConvolutionLayer.cs" />
     <Compile Include="BP\CnnSubReceptiveField.cs" />
