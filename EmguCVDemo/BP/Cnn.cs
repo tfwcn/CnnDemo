@@ -83,7 +83,7 @@ namespace EmguCVDemo.BP
                     linkCount = 0;//相同链接数
                     for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
                     {
-                        if (oneLinks[i, k] = oneLinks[j, k])
+                        if (oneLinks[i, k] == oneLinks[j, k])
                             linkCount++;
                     }
                     if (linkCount == cnnConvolutionLayerLast.ConvolutionKernelCount)
@@ -218,7 +218,33 @@ namespace EmguCVDemo.BP
             //计算卷积层
             for (int i = CnnConvolutionLayerList.Count - 1; i >= 0; i--)
             {
-                inputConvolutionTmp = CnnConvolutionLayerList[i].BackPropagation(inputConvolutionTmp, learningRate);
+                List<double[,]> outputTmp = new List<double[,]>();
+                if (i == CnnConvolutionLayerList.Count - 1)//最后一层直接输入
+                {
+                    outputTmp = inputConvolutionTmp;
+                }
+                else//随机链接
+                {
+                    for (int j = 0; j < CnnConvolutionLayerList[i + 1].ConvolutionKernelCount; j++)
+                    {
+                        double[,] outputOneTmp = new double[inputConvolutionTmp[0].GetLength(0), inputConvolutionTmp[0].GetLength(1)];
+                        for (int k = 0; k < inputConvolutionTmp.Count; k++)
+                        {
+                            if (convolutionLinkList[i][k, j])
+                            {
+                                for (int x = 0; x < inputConvolutionTmp[0].GetLength(0); x++)
+                                {
+                                    for (int y = 0; y < inputConvolutionTmp[0].GetLength(1); y++)
+                                    {
+                                        outputOneTmp[x, y] += inputConvolutionTmp[k][x, y];
+                                    }
+                                }
+                            }
+                        }
+                        outputTmp.Add(outputOneTmp);
+                    }
+                }
+                inputConvolutionTmp = CnnConvolutionLayerList[i].BackPropagation(outputTmp, learningRate);
             }
             #endregion
         }
