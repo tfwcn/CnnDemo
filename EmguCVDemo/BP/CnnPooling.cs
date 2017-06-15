@@ -11,9 +11,9 @@ namespace EmguCVDemo.BP
     public class CnnPooling
     {
         /// <summary>
-        /// 共享权重(所有感知野共享)
+        /// 共享权重(所有感知野共享，所有权重一样)
         /// </summary>
-        public double[,] ShareWeight { get; set; }
+        public double ShareWeight { get; set; }
         /// <summary>
         /// 偏置
         /// </summary>
@@ -74,7 +74,6 @@ namespace EmguCVDemo.BP
             this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling(inputWidth / (double)receptiveFieldWidth));
             this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling(inputHeight / (double)receptiveFieldWidth));
             OutputPoolingMax = new int[ConvolutionKernelWidth, ConvolutionKernelHeight];
-            ShareWeight = new double[receptiveFieldWidth, receptiveFieldHeight];
             InitShareWeight();
         }
         /// <summary>
@@ -172,7 +171,8 @@ namespace EmguCVDemo.BP
         {
             double result = 0;
             //激活函数导数计算结果
-            result = 1 - Math.Pow(Math.Tanh(value), 2);
+            //result = 1 - Math.Pow(Math.Tanh(value), 2);//旧
+            result = 1 - Math.Pow(value, 2);
             return result;
         }
         /// <summary>
@@ -251,7 +251,7 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < receptiveFieldHeight && receptiveFieldHeight * y + j < value.GetLength(1); j++)
                 {
-                    result += value[receptiveFieldWidth * x + i, receptiveFieldHeight * y + j] * ShareWeight[i, j];
+                    result += value[receptiveFieldWidth * x + i, receptiveFieldHeight * y + j] * ShareWeight;
                 }
             }
             //平均值
@@ -279,7 +279,7 @@ namespace EmguCVDemo.BP
                     }
                 }
             }
-            result *= ShareWeight[OutputPoolingMax[x, y] % receptiveFieldWidth, OutputPoolingMax[x, y] / receptiveFieldHeight];
+            result *= ShareWeight;
             return result;
         }
         /// <summary>
@@ -288,13 +288,8 @@ namespace EmguCVDemo.BP
         private void InitShareWeight()
         {
             Random random = new Random();
-            for (int i = 0; i < ShareWeight.GetLength(0); i++)
-            {
-                for (int j = 0; j < ShareWeight.GetLength(1); j++)
-                {
-                    ShareWeight[i, j] = GetRandom(random);
-                }
-            }
+            ShareWeight = GetRandom(random);
+            OutputOffset = GetRandom(random);
         }
         /// <summary>
         /// 获取随机值
@@ -302,8 +297,8 @@ namespace EmguCVDemo.BP
         private double GetRandom(Random random)
         {
             double result = 0;
-            int inputCount = inputWidth * inputHeight;
-            int outputCount = ConvolutionKernelWidth * ConvolutionKernelHeight;
+            int inputCount = inputWidth;
+            int outputCount = ConvolutionKernelWidth;
             switch (ActivationFunctionType)
             {
                 case 2:
@@ -314,7 +309,7 @@ namespace EmguCVDemo.BP
                     result = (random.NextDouble() * Math.Abs(inputCount - outputCount) + (inputCount > outputCount ? outputCount : inputCount)) * Math.Sqrt(inputCount);
                     break;
             }
-            return random.NextDouble();
+            return random.NextDouble()-0.5;
         }
         /// <summary>
         /// 反向传播
@@ -324,26 +319,7 @@ namespace EmguCVDemo.BP
         /// <returns></returns>
         public double[,] BackPropagation(double[,] output, double learningRate)
         {
-            double[,] result = null;//正确输入值
-            //每个核的残差
-            double[,] delta = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
-            for (int i = 0; i < ConvolutionKernelWidth; i++)
-            {
-                for (int j = 0; j < ConvolutionKernelHeight; j++)
-                {
-                    delta[i, j] = OutputValue[i, j] - output[i, j];
-                }
-            }
-            double[,] outputTmp = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
-            for (int i = 0; i < ConvolutionKernelWidth; i++)
-            {
-                for (int j = 0; j < ConvolutionKernelHeight; j++)
-                {
-                    outputTmp[i, j] = output[i, j] * receptiveFieldWidth * receptiveFieldHeight;
-                }
-            }
-            //out=sum(in*w)+b
-            result = CalculatedBackPropagationResult(outputTmp, learningRate);
+            double[,] result = CalculatedBackPropagationResult(output, learningRate);//正确输入值
             return result;
         }
         /// <summary>
@@ -352,47 +328,18 @@ namespace EmguCVDemo.BP
         /// <returns></returns>
         private double[,] CalculatedBackPropagationResult(double[,] output, double learningRate)
         {
-            double[,] result = new double[inputWidth, inputHeight];//正确输入值
-            //计算输入值残差
-            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            double[,] result = null;//正确输入值
+            //调用激活函数计算结果
+            switch (PoolingType)
             {
-                for (int j = 0; j < ConvolutionKernelHeight; j++)
-                {
-                    //残差
-                    double residual = ActivationFunctionDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
-                    for (int i2 = 0; i2 < receptiveFieldWidth && i * receptiveFieldWidth + i2 < inputWidth; i2++)
-                    {
-                        for (int j2 = 0; j2 < receptiveFieldHeight && j * receptiveFieldWidth + j2 < inputHeight; j2++)
-                        {
-                            result[i * receptiveFieldWidth + i2, j * receptiveFieldWidth + j2] += ShareWeight[i2, j2] * residual;
-                        }
-                    }
-                }
-            }
-            //更新权重和偏置
-            for (int i = 0; i < ConvolutionKernelWidth; i++)
-            {
-                for (int j = 0; j < ConvolutionKernelHeight; j++)
-                {
-                    //残差
-                    double residual = ActivationFunctionDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
-                    for (int i2 = 0; i2 < receptiveFieldWidth && i * receptiveFieldWidth + i2 < inputWidth; i2++)
-                    {
-                        for (int j2 = 0; j2 < receptiveFieldHeight && j * receptiveFieldWidth + j2 < inputHeight; j2++)
-                        {
-                            ShareWeight[i2, j2] -= learningRate * InputValue[i * receptiveFieldWidth + i2, j * receptiveFieldWidth + j2] * residual / (ConvolutionKernelWidth * ConvolutionKernelHeight * receptiveFieldWidth * receptiveFieldHeight);
-                        }
-                    }
-                    OutputOffset -= learningRate * residual / (ConvolutionKernelWidth * ConvolutionKernelHeight);
-                }
-            }
-            //计算正确输入值
-            for (int i = 0; i < inputWidth; i++)
-            {
-                for (int j = 0; j < inputHeight; j++)
-                {
-                    result[i, j] = InputValue[i, j] - result[i, j];
-                }
+                case 1:
+                    //平均池化
+                    result = CalculatedBackPropagationResultMeanPooling(output, learningRate);
+                    break;
+                case 2:
+                    //最大值池化
+                    result = CalculatedBackPropagationResultMaxPooling(output, learningRate);
+                    break;
             }
             return result;
         }
@@ -400,36 +347,134 @@ namespace EmguCVDemo.BP
         /// 计算反向传播结果（平均池化）
         /// </summary>
         /// <returns></returns>
-        private double[,] CalculatedBackPropagationResultMeanPooling(double[,] output)
+        private double[,] CalculatedBackPropagationResultMeanPooling(double[,] output, double learningRate)
         {
             double[,] result = new double[inputWidth, inputHeight];//正确输入值=正确输出/感知野大小，放入原来位置
+            //输出残差
+            double[,] residual = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
+            //权重残差
+            double deltaWeight = 0;
+            //偏置残差
+            double deltaOffset = 0;
+            //残差
+            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            {
+                for (int j = 0; j < ConvolutionKernelHeight; j++)
+                {
+                    residual[i, j] = OutputValue[i, j] - output[i, j];
+                }
+            }
+            //计算残差
+            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            {
+                for (int j = 0; j < ConvolutionKernelHeight; j++)
+                {
+                    for (int i2 = 0; i2 < receptiveFieldWidth && i * receptiveFieldWidth + i2 < inputWidth; i2++)
+                    {
+                        for (int j2 = 0; j2 < receptiveFieldHeight && j * receptiveFieldHeight + j2 < inputHeight; j2++)
+                        {
+                            //计算输入值残差
+                            result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] += ShareWeight * residual[i, j];
+                            //计算权重残差
+                            deltaWeight += InputValue[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] * residual[i, j];
+                        }
+                    }
+                    //计算偏置残差
+                    deltaOffset += residual[i, j];
+                }
+            }
             for (int i = 0; i < inputWidth; i++)
             {
                 for (int j = 0; j < inputHeight; j++)
                 {
-                    result[i, j] = output[i / receptiveFieldWidth, j / receptiveFieldHeight] / (receptiveFieldWidth * receptiveFieldHeight);
+                    result[i, j] /= receptiveFieldWidth * receptiveFieldHeight;
+                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);//旧代码没有
                 }
             }
+            deltaWeight /= receptiveFieldWidth * receptiveFieldHeight;
+            //更新权重和偏置
+            UpdateWeight(ShareWeight, deltaWeight, learningRate);
+            UpdateOffset(OutputOffset, deltaOffset, learningRate);
             return result;
         }
         /// <summary>
         /// 计算反向传播结果（最大值池化）
         /// </summary>
         /// <returns></returns>
-        private double[,] CalculatedBackPropagationResultMaxPooling(double[,] output)
+        private double[,] CalculatedBackPropagationResultMaxPooling(double[,] output, double learningRate)
         {
             double[,] result = new double[inputWidth, inputHeight];//正确输入值=正确输出放入原来最大值位置，其余位置设置成0
+            //输出残差
+            double[,] residual = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
+            //权重残差
+            double deltaWeight = 0;
+            //偏置残差
+            double deltaOffset = 0;
+            //残差
+            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            {
+                for (int j = 0; j < ConvolutionKernelHeight; j++)
+                {
+                    residual[i, j] = OutputValue[i, j] - output[i, j];
+                }
+            }
+            //计算残差
+            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            {
+                for (int j = 0; j < ConvolutionKernelHeight; j++)
+                {
+                    for (int i2 = 0; i2 < receptiveFieldWidth && i * receptiveFieldWidth + i2 < inputWidth; i2++)
+                    {
+                        for (int j2 = 0; j2 < receptiveFieldHeight && j * receptiveFieldHeight + j2 < inputHeight; j2++)
+                        {
+                            //计算输入值残差
+                            if (OutputPoolingMax[ConvolutionKernelWidth, ConvolutionKernelWidth] == i2 + j2 * receptiveFieldHeight)
+                            {
+                                result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] += ShareWeight * residual[i, j];
+                                //计算权重残差
+                                deltaWeight += InputValue[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] * residual[i, j];
+                            }
+                            else
+                                result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] = 0;
+                        }
+                    }
+                    //计算偏置残差
+                    deltaOffset += residual[i, j];
+                }
+            }
             for (int i = 0; i < inputWidth; i++)
             {
                 for (int j = 0; j < inputHeight; j++)
                 {
-                    if (OutputPoolingMax[i / receptiveFieldWidth, j / receptiveFieldHeight] == i % receptiveFieldWidth + j % receptiveFieldHeight * receptiveFieldHeight)
-                        result[i, j] = output[i / receptiveFieldWidth, j / receptiveFieldHeight];
-                    else
-                        result[i, j] = 0;
+                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);//旧代码没有
                 }
             }
+            //更新权重和偏置
+            UpdateWeight(ShareWeight, deltaWeight, learningRate);
+            UpdateOffset(OutputOffset, deltaOffset, learningRate);
             return result;
+        }
+        /// <summary>
+        /// 更新权重
+        /// </summary>
+        /// <param name="weight">权重</param>
+        /// <param name="delta">残差</param>
+        /// <param name="learningRate">学习率</param>
+        private void UpdateWeight(double weight, double delta, double learningRate)
+        {
+            weight -= learningRate * delta / (delta + 1e-8);
+            //weight -= learningRate * delta;//旧
+        }
+        /// <summary>
+        /// 更新偏置
+        /// </summary>
+        /// <param name="weight">偏置</param>
+        /// <param name="delta">残差</param>
+        /// <param name="learningRate">学习率</param>
+        private void UpdateOffset(double offset, double delta, double learningRate)
+        {
+            offset -= learningRate * delta / (delta + 1e-8);
+            //offset -= learningRate * delta;//旧
         }
     }
 }
