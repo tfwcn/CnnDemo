@@ -179,8 +179,8 @@ namespace EmguCVDemo.BP
         {
             double result = 0;
             //激活函数导数计算结果
-            //result = 1 - Math.Pow(Math.Tanh(value), 2);//旧
-            result = 1 - Math.Pow(value, 2);
+            result = 1 - Math.Pow(Math.Tanh(value), 2);//旧
+            //result = 1 - Math.Pow(value, 2);
             return result;
         }
         /// <summary>
@@ -199,6 +199,7 @@ namespace EmguCVDemo.BP
             else
             {
                 result = 0.05 * value;
+                //result = 0;
             }
             return result;
         }
@@ -222,6 +223,7 @@ namespace EmguCVDemo.BP
             else
             {
                 result = 0.05;
+                //result = 0;
             }
             return result;
         }
@@ -238,6 +240,7 @@ namespace EmguCVDemo.BP
                     ShareWeight[i, j] = GetRandom(random);
                 }
             }
+            OutputOffset = GetRandom(random);
         }
         /// <summary>
         /// 获取随机值
@@ -245,19 +248,19 @@ namespace EmguCVDemo.BP
         private double GetRandom(Random random)
         {
             double result = 0;
-            int inputCount = inputWidth;
+            int inputCount = inputWidth * inputHeight;
             int outputCount = ConvolutionKernelWidth;
             switch (ActivationFunctionType)
             {
                 case 2:
                     //PReLU
-                    result = (random.NextDouble() * Math.Abs(inputCount - outputCount) + (inputCount > outputCount ? outputCount : inputCount)) * Math.Sqrt(inputCount / 2);
+                    result = random.NextDouble() * 0.0001;
                     break;
                 default:
-                    result = (random.NextDouble() * Math.Abs(inputCount - outputCount) + (inputCount > outputCount ? outputCount : inputCount)) * Math.Sqrt(inputCount);
+                    result = random.NextDouble() * (Math.Sqrt(6) / Math.Sqrt(inputCount + outputCount)) * 2 - (Math.Sqrt(6) / Math.Sqrt(inputCount + outputCount));
                     break;
             }
-            return random.NextDouble() - 0.5;
+            return result;
         }
         /// <summary>
         /// 反向传播
@@ -344,8 +347,8 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < receptiveFieldHeight; j++)
                 {
-                    weight[i, j] -= learningRate * delta[i, j] / (delta[i, j] + 1e-8);
-                    //weight[i, j] -= learningRate * delta[i, j];//旧
+                    //weight[i, j] -= learningRate * delta[i, j] / (delta[i, j] + 1e-8);
+                    weight[i, j] -= learningRate * delta[i, j];//旧
                 }
             }
         }
@@ -357,8 +360,8 @@ namespace EmguCVDemo.BP
         /// <param name="learningRate">学习率</param>
         private void UpdateOffset(double offset, double delta, double learningRate)
         {
-            offset -= learningRate * delta / (delta + 1e-8);
-            //offset -= learningRate * delta;//旧
+            //offset -= learningRate * delta / (delta + 1e-8);
+            offset -= learningRate * delta;//旧
         }
     }
 }

@@ -165,12 +165,16 @@ namespace EmguCVDemo.BP
                                     }
                                 }
                             }
+                            //Console.Write((convolutionLinkList[i - 1][j, k] ? 1 : 0) + " ");
                         }
                         inputTmp.Add(inputOneTmp);
+                        //Console.WriteLine("");
                     }
                 }
+                //Console.WriteLine("");
                 outputConvolutionTmp = CnnConvolutionLayerList[i].CalculatedResult(inputTmp);
             }
+            //Console.WriteLine("end");
             //计算卷积层转全连接层
             var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
             double[] outputFullTmp = new double[cnnConvolutionLayerLast.ConvolutionKernelCount
@@ -182,7 +186,7 @@ namespace EmguCVDemo.BP
                 {
                     for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
                     {
-                        outputFullTmp[i * j * (cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.OutputHeight) + k] = outputConvolutionTmp[k][i, j];
+                        outputFullTmp[i * cnnConvolutionLayerLast.ConvolutionKernelCount + j * cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.ConvolutionKernelCount + k] = outputConvolutionTmp[k][i, j];
                     }
                 }
             }
@@ -211,7 +215,7 @@ namespace EmguCVDemo.BP
                 {
                     for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
                     {
-                        inputConvolutionTmp[k][i, j] = inputFullTmp[i * j * (cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.OutputHeight) + k];
+                        inputConvolutionTmp[k][i, j] = inputFullTmp[i * cnnConvolutionLayerLast.ConvolutionKernelCount + j * cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.ConvolutionKernelCount + k];
                     }
                 }
             }
@@ -225,7 +229,7 @@ namespace EmguCVDemo.BP
                 }
                 else//随机链接
                 {
-                    for (int j = 0; j < CnnConvolutionLayerList[i + 1].ConvolutionKernelCount; j++)
+                    for (int j = 0; j < CnnConvolutionLayerList[i].ConvolutionKernelCount; j++)
                     {
                         double[,] outputOneTmp = new double[inputConvolutionTmp[0].GetLength(0), inputConvolutionTmp[0].GetLength(1)];
                         for (int k = 0; k < inputConvolutionTmp.Count; k++)
@@ -240,14 +244,18 @@ namespace EmguCVDemo.BP
                                     }
                                 }
                             }
+                            //Console.Write((convolutionLinkList[i][j, k] ? 1 : 0) + " ");
                         }
                         outputTmp.Add(outputOneTmp);
+                        //Console.WriteLine("");
                     }
                 }
+                //Console.WriteLine("");
                 inputConvolutionTmp = CnnConvolutionLayerList[i].BackPropagation(outputTmp, learningRate);
             }
+            //Console.WriteLine("end");
             #endregion
-            CnnHelper.ShowChange(outputFullTmp, output);
+            CnnHelper.ShowChange(outputFullTmp, output, 60000);
         }
         /// <summary>
         /// 训练,仅用于BP网络
@@ -302,7 +310,7 @@ namespace EmguCVDemo.BP
                 {
                     for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
                     {
-                        outputFullTmp[i * j * (cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.OutputHeight) + k] = outputConvolutionTmp[k][i, j];
+                        outputFullTmp[i * cnnConvolutionLayerLast.ConvolutionKernelCount + j * cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.ConvolutionKernelCount + k] = outputConvolutionTmp[k][i, j];
                     }
                 }
             }

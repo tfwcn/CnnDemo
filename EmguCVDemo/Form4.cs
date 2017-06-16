@@ -24,9 +24,10 @@ namespace EmguCVDemo
         private void Form4_Load(object sender, EventArgs e)
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(20, 28, 28, 5, 5, 1, 1, 1, 2, 2, 1);
-            cnn.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 2, 2, 1);
-            cnn.AddCnnFullLayer(100, 1);
+            cnn.AddCnnConvolutionLayer(20, 28, 28, 5, 5, 1, 1, 1, 2, 2, 2);
+            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1);
+            cnn.AddCnnConvolutionLayer(80, 3, 3, 1, 1, 1, 2, 2, 1);
+            cnn.AddCnnFullLayer(200, 1);
             cnn.AddCnnFullLayer(10, 1);
         }
 
@@ -51,7 +52,7 @@ namespace EmguCVDemo
                 double[] labels = new double[10];
                 for (int i2 = 0; i2 < 10; i2++)
                 {
-                    labels[i2] = -1;
+                    labels[i2] = 0;
                 }
                 labels[label] = 1;
                 Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
@@ -60,11 +61,11 @@ namespace EmguCVDemo
                 {
                     for (int h = 0; h < height; h++)
                     {
-                        input[w, h] = Color.FromArgb(
+                        input[w, h] = Color.FromArgb(0,
                             (int)trainingData.Data[h, w, 2],
                             (int)trainingData.Data[h, w, 1],
                             (int)trainingData.Data[h, w, 0]
-                            ).ToArgb() / (float)0xFFFFFF;
+                            ).ToArgb() / (double)0xFFFFFF;
                     }
                 }
                 cnn.Train(input, labels, 0.01);
@@ -97,11 +98,11 @@ namespace EmguCVDemo
                 {
                     for (int h = 0; h < height; h++)
                     {
-                        input[w, h] = Color.FromArgb(
+                        input[w, h] = Color.FromArgb(0,
                             (int)trainingData.Data[h, w, 2],
                             (int)trainingData.Data[h, w, 1],
                             (int)trainingData.Data[h, w, 0]
-                            ).ToArgb() / (float)0xFFFFFF;
+                            ).ToArgb() / (double)0xFFFFFF;
                     }
                 }
                 double[] labels = cnn.Predict(input);

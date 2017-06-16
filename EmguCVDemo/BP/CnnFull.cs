@@ -162,6 +162,7 @@ namespace EmguCVDemo.BP
             else
             {
                 result = 0.05 * value;
+                //result = 0;
             }
             return result;
         }
@@ -185,6 +186,7 @@ namespace EmguCVDemo.BP
             else
             {
                 result = 0.05;
+                //result = 0;
             }
             return result;
         }
@@ -216,10 +218,11 @@ namespace EmguCVDemo.BP
             {
                 case 2:
                     //PReLU
-                    result = (random.NextDouble() * Math.Abs(InputCount - OutputCount) + (InputCount > OutputCount ? OutputCount : InputCount)) * Math.Sqrt(InputCount / 2);
+                    result = random.NextDouble() * 0.0001;
                     break;
                 default:
-                    result = (random.NextDouble() * Math.Abs(InputCount - OutputCount) + (InputCount > OutputCount ? OutputCount : InputCount)) * Math.Sqrt(InputCount);
+                    result = random.NextDouble() * (Math.Sqrt(6) / Math.Sqrt(InputCount + OutputCount)) * 2 - (Math.Sqrt(6) / Math.Sqrt(InputCount + OutputCount));
+                    //result = (random.NextDouble() * Math.Abs(InputCount - OutputCount) + (InputCount > OutputCount ? OutputCount : InputCount)) * Math.Sqrt(InputCount);
                     break;
             }
             return result;
@@ -241,7 +244,7 @@ namespace EmguCVDemo.BP
             for (int i = 0; i < OutputCount; i++)
             {
                 //残差=导数(输出值)*(输出值-正确值)
-               double residual = ActivationFunctionDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
+                double residual = ActivationFunctionDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
                 for (int j = 0; j < InputCount; j++)
                 {
                     //sum(残差)=更新前的权重*残差
@@ -254,7 +257,7 @@ namespace EmguCVDemo.BP
             for (int i = 0; i < InputCount; i++)
             {
                 //上一层的残差=sum(残差)*导数(输入值)
-                //result[i] *= ActivationFunctionDerivative(InputValue[i]);//旧代码没有
+                result[i] *= ActivationFunctionDerivative(InputValue[i]);
             }
             //更新权重和偏置
             UpdateWeight(InputWeight, deltaWeight, learningRate);
@@ -275,14 +278,18 @@ namespace EmguCVDemo.BP
         /// <param name="learningRate">学习率</param>
         private void UpdateWeight(double[,] weight, double[,] delta, double learningRate)
         {
+            //Console.WriteLine(String.Format("FullUpdateWeight {0}->{1}", InputCount, OutputCount));
             for (int i = 0; i < InputCount; i++)
             {
                 for (int j = 0; j < OutputCount; j++)
                 {
                     //weight[j, i] -= learningRate * delta[j, i] / (delta[j, i] + 1e-8);
                     weight[j, i] -= learningRate * delta[j, i];//旧
+                    //Console.Write(weight[j, i] + " ");
                 }
+                //Console.WriteLine("");
             }
+            //Console.WriteLine("");
         }
         /// <summary>
         /// 更新偏置
@@ -292,11 +299,14 @@ namespace EmguCVDemo.BP
         /// <param name="learningRate">学习率</param>
         private void UpdateOffset(double[] offset, double[] delta, double learningRate)
         {
+            //Console.WriteLine(String.Format("FullUpdateOffset {0}->{1}", InputCount, OutputCount));
             for (int i = 0; i < OutputCount; i++)
             {
                 //offset[i] -= learningRate * delta[i] / (delta[i] + 1e-8);
                 offset[i] -= learningRate * delta[i];//旧
+                //Console.Write(offset[i] + " ");
             }
+            //Console.WriteLine("");
         }
     }
 }

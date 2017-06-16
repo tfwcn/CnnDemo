@@ -346,21 +346,21 @@ bool CNN::initWeightThreshold()、、初始化权重
 	srand(time(0) + rand());
 	const double scale = 6.0;
 
-	double min_ = -std::sqrt(scale / (25.0 + 150.0));
+	double min_ = -std::sqrt(scale / (25.0 + 150.0));//0.1851640199545102923133133553168
 	double max_ = std::sqrt(scale / (25.0 + 150.0));
 	uniform_rand(weight_C1, len_weight_C1_CNN, min_, max_);
 	for (int i = 0; i < len_bias_C1_CNN; i++) {
 		bias_C1[i] = 0.0;
 	}
 
-	min_ = -std::sqrt(scale / (4.0 + 1.0));
+	min_ = -std::sqrt(scale / (4.0 + 1.0));//1.0954451150103322269139395656016
 	max_ = std::sqrt(scale / (4.0 + 1.0));
 	uniform_rand(weight_S2, len_weight_S2_CNN, min_, max_);
 	for (int i = 0; i < len_bias_S2_CNN; i++) {
 		bias_S2[i] = 0.0;
 	}
 
-	min_ = -std::sqrt(scale / (150.0 + 400.0));
+	min_ = -std::sqrt(scale / (150.0 + 400.0));//0.10444659357341870290637475396762
 	max_ = std::sqrt(scale / (150.0 + 400.0));
 	uniform_rand(weight_C3, len_weight_C3_CNN, min_, max_);
 	for (int i = 0; i < len_bias_C3_CNN; i++) {
@@ -374,7 +374,7 @@ bool CNN::initWeightThreshold()、、初始化权重
 		bias_S4[i] = 0.0;
 	}
 
-	min_ = -std::sqrt(scale / (400.0 + 3000.0));
+	min_ = -std::sqrt(scale / (400.0 + 3000.0));//0.04200840252084029410587882241981
 	max_ = std::sqrt(scale / (400.0 + 3000.0));
 	uniform_rand(weight_C5, len_weight_C5_CNN, min_, max_);
 	for (int i = 0; i < len_bias_C5_CNN; i++) {
@@ -1005,24 +1005,24 @@ bool CNN::Backward_S4()
 	init_variable(delta_bias_C5, 0.0, len_bias_C5_CNN);
 
 	// propagate delta to previous layer
-	for (int inc = 0; inc < num_map_S4_CNN; inc++) {
-		for (int outc = 0; outc < num_map_C5_CNN; outc++) {
-			int addr1 = get_index(0, 0, num_map_S4_CNN * outc + inc, width_kernel_conv_CNN, height_kernel_conv_CNN, num_map_S4_CNN * num_map_C5_CNN);
-			int addr2 = get_index(0, 0, outc, width_image_C5_CNN, height_image_C5_CNN, num_map_C5_CNN);
-			int addr3 = get_index(0, 0, inc, width_image_S4_CNN, height_image_S4_CNN, num_map_S4_CNN);
+	for (int inc = 0; inc < num_map_S4_CNN; inc++) {16
+		for (int outc = 0; outc < num_map_C5_CNN; outc++) {120
+			int addr1 = get_index(0, 0, num_map_S4_CNN * outc + inc, width_kernel_conv_CNN, height_kernel_conv_CNN, num_map_S4_CNN * num_map_C5_CNN);//5*5
+			int addr2 = get_index(0, 0, outc, width_image_C5_CNN, height_image_C5_CNN, num_map_C5_CNN);//C5卷积核大小 1*1
+			int addr3 = get_index(0, 0, inc, width_image_S4_CNN, height_image_S4_CNN, num_map_S4_CNN);//S4卷积核大小 5*5
 
-			const double* pw = &weight_C5[0] + addr1;
-			const double* pdelta_src = &delta_neuron_C5[0] + addr2;
-			double* pdelta_dst = &delta_neuron_S4[0] + addr3;
+			const double* pw = &weight_C5[0] + addr1;//S4-C5的权限
+			const double* pdelta_src = &delta_neuron_C5[0] + addr2;//C5卷积核输出残差
+			double* pdelta_dst = &delta_neuron_S4[0] + addr3;//S4卷积核输出残差
 
-			for (int y = 0; y < height_image_C5_CNN; y++) {
-				for (int x = 0; x < width_image_C5_CNN; x++) {
+			for (int y = 0; y < height_image_C5_CNN; y++) {//1
+				for (int x = 0; x < width_image_C5_CNN; x++) {//1
 					const double* ppw = pw;
 					const double ppdelta_src = pdelta_src[y * width_image_C5_CNN + x];
 					double* ppdelta_dst = pdelta_dst + y * width_image_S4_CNN + x;
 
-					for (int wy = 0; wy < height_kernel_conv_CNN; wy++) {
-						for (int wx = 0; wx < width_kernel_conv_CNN; wx++) {
+					for (int wy = 0; wy < height_kernel_conv_CNN; wy++) {//5
+						for (int wx = 0; wx < width_kernel_conv_CNN; wx++) {//5
 							ppdelta_dst[wy * width_image_S4_CNN + wx] += *ppw++ * ppdelta_src;
 						}
 					}
@@ -1036,20 +1036,20 @@ bool CNN::Backward_S4()
 	}
 
 	// accumulate dw
-	for (int inc = 0; inc < num_map_S4_CNN; inc++) {
-		for (int outc = 0; outc < num_map_C5_CNN; outc++) {
-			for (int wy = 0; wy < height_kernel_conv_CNN; wy++) {
-				for (int wx = 0; wx < width_kernel_conv_CNN; wx++) {
-					int addr1 = get_index(wx, wy, inc, width_image_S4_CNN, height_image_S4_CNN, num_map_S4_CNN);
-					int addr2 = get_index(0, 0, outc, width_image_C5_CNN, height_image_C5_CNN, num_map_C5_CNN);
-					int addr3 = get_index(wx, wy, num_map_S4_CNN * outc + inc, width_kernel_conv_CNN, height_kernel_conv_CNN, num_map_S4_CNN * num_map_C5_CNN);
+	for (int inc = 0; inc < num_map_S4_CNN; inc++) {//16
+		for (int outc = 0; outc < num_map_C5_CNN; outc++) {//120
+			for (int wy = 0; wy < height_kernel_conv_CNN; wy++) {//5*5
+				for (int wx = 0; wx < width_kernel_conv_CNN; wx++) {//5*5
+					int addr1 = get_index(wx, wy, inc, width_image_S4_CNN, height_image_S4_CNN, num_map_S4_CNN);//5*5,16
+					int addr2 = get_index(0, 0, outc, width_image_C5_CNN, height_image_C5_CNN, num_map_C5_CNN);//1*1,120
+					int addr3 = get_index(wx, wy, num_map_S4_CNN * outc + inc, width_kernel_conv_CNN, height_kernel_conv_CNN, num_map_S4_CNN * num_map_C5_CNN);//5*5
 
 					double dst = 0.0;
-					const double* prevo = &neuron_S4[0] + addr1;
-					const double* delta = &delta_neuron_C5[0] + addr2;
+					const double* prevo = &neuron_S4[0] + addr1;//S4卷积核5*5*16
+					const double* delta = &delta_neuron_C5[0] + addr2;//C5残差1*120
 
-					for (int y = 0; y < height_image_C5_CNN; y++) {
-						dst += dot_product(prevo + y * width_image_S4_CNN, delta + y * width_image_C5_CNN, width_image_C5_CNN);
+					for (int y = 0; y < height_image_C5_CNN; y++) {//1
+						dst += dot_product(prevo + y * width_image_S4_CNN, delta + y * width_image_C5_CNN, width_image_C5_CNN);//1
 					}
 
 					delta_weight_C5[addr3] += dst;
@@ -1079,18 +1079,18 @@ bool CNN::Backward_C3()
 	init_variable(delta_weight_S4, 0.0, len_weight_S4_CNN);
 	init_variable(delta_bias_S4, 0.0, len_bias_S4_CNN);
 
-	double scale_factor = 1.0 / (width_kernel_pooling_CNN * height_kernel_pooling_CNN);
+	double scale_factor = 1.0 / (width_kernel_pooling_CNN * height_kernel_pooling_CNN);//2*2
 
 	assert(in2wo_C3.size() == num_neuron_C3_CNN);
 	assert(weight2io_C3.size() == len_weight_S4_CNN);
 	assert(bias2out_C3.size() == len_bias_S4_CNN);
 
-	for (int i = 0; i < num_neuron_C3_CNN; i++) {
+	for (int i = 0; i < num_neuron_C3_CNN; i++) {//10*10*16
 		const wo_connections& connections = in2wo_C3[i];
 		double delta = 0.0;
 
 		for (int j = 0; j < connections.size(); j++) {
-			delta += weight_S4[connections[j].first] * delta_neuron_S4[connections[j].second];
+			delta += weight_S4[connections[j].first] * delta_neuron_S4[connections[j].second];//权限*S4残差
 		}
 
 		delta_neuron_C3[i] = delta * scale_factor * activation_function_tanh_derivative(neuron_C3[i]);
