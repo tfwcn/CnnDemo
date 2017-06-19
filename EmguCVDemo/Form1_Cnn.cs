@@ -540,7 +540,7 @@ namespace EmguCVDemo
             String trainfile = @".\data\train.txt";
             String testfile = @".\data\test.txt";
             String outputfile = "outputfile.txt";
-            float eta = 0.5f;
+            float eta = 0.01f;
             int nIter = 1000;
             List<EmguCVDemo.BP.DataNode> trainList = GetDataList(trainfile);
             List<EmguCVDemo.BP.DataNode> testList = GetDataList(testfile);

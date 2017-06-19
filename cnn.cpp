@@ -341,7 +341,7 @@ bool CNN::uniform_rand(double* src, int len, double min, double max)
 	return true;
 }
 
-bool CNN::initWeightThreshold()、、初始化权重
+bool CNN::initWeightThreshold()//初始化权重
 {
 	srand(time(0) + rand());
 	const double scale = 6.0;
