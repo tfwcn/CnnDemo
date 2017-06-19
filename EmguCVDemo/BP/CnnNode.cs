@@ -92,7 +92,7 @@ namespace EmguCVDemo.BP
             return result;
         }
         /// <summary>
-        /// 激活函数（PReLU）
+        /// 激活函数（ReLU）
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
@@ -106,13 +106,15 @@ namespace EmguCVDemo.BP
             }
             else
             {
-                result = 0.05 * value;
-                //result = 0;
+                //result = 0.05 * value;
+                result = 0;
             }
+            if (double.IsNaN(result))
+                throw new Exception("NaN!");
             return result;
         }
         /// <summary>
-        /// 激活函数导数（PReLU）
+        /// 激活函数导数（ReLU）
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
@@ -130,9 +132,11 @@ namespace EmguCVDemo.BP
             }
             else
             {
-                result = 0.05;
-                //result = 0;
+                //result = 0.05;
+                result = 0;
             }
+            if (double.IsNaN(result))
+                throw new Exception("NaN!");
             return result;
         }
     }
