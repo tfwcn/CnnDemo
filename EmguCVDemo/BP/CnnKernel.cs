@@ -51,6 +51,14 @@ namespace EmguCVDemo.BP
         /// </summary>
         private int offsetHeight;
         /// <summary>
+        /// 0填充（宽）
+        /// </summary>
+        private int zeroPaddingWidth;
+        /// <summary>
+        /// 0填充（高）
+        /// </summary>
+        private int zeroPaddingHeight;
+        /// <summary>
         /// 激活函数类型，1:tanh,2:池化(Mean Pooling),3:池化(Max Pooling)
         /// </summary>
         public int ActivationFunctionType { get; set; }
