@@ -54,6 +54,7 @@ namespace EmguCVDemo.BP
             for (int i = 0; i < OutputCount; i++)
             {
                 result[i] = CalculatedPointResult(value, i);
+                result[i] = ActivationFunction(result[i] + OutputOffset[i]);
             }
             OutputValue = result;
             return result;
@@ -70,7 +71,6 @@ namespace EmguCVDemo.BP
             {
                 result += value[i] * InputWeight[index, i];
             }
-            result = ActivationFunction(result + OutputOffset[index]);
             return result;
         }
         /// <summary>
@@ -129,21 +129,14 @@ namespace EmguCVDemo.BP
             {
                 //残差=导数(输出值)*(输出值-正确值)
                 double residual = ActivationFunctionDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
-                //double residual = (OutputValue[i] - output[i]);
                 for (int j = 0; j < InputCount; j++)
                 {
                     //sum(残差)=更新前的权重*残差
                     result[j] += InputWeight[i, j] * residual;
                     //计算权重残差,sum(残差)=残差*输入值
-                    //deltaWeight[i, j] += residual * InputValue[j];
-                    deltaWeight[i, j] += residual;
+                    deltaWeight[i, j] += residual * InputValue[j];
                 }
                 deltaOffset[i] = residual;
-            }
-            for (int i = 0; i < InputCount; i++)
-            {
-                //上一层的残差=sum(残差)*导数(输入值)
-                //result[i] *= ActivationFunctionDerivative(InputValue[i]);
             }
             //更新权重和偏置
             UpdateWeight(InputWeight, deltaWeight, learningRate);
@@ -169,7 +162,6 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < OutputCount; j++)
                 {
-                    //weight[j, i] -= learningRate * delta[j, i] / (delta[j, i] + 1e-8);
                     weight[j, i] -= learningRate * delta[j, i];//旧
                     //Console.Write(weight[j, i] + " ");
                 }
@@ -188,7 +180,6 @@ namespace EmguCVDemo.BP
             //Console.WriteLine(String.Format("FullUpdateOffset {0}->{1}", InputCount, OutputCount));
             for (int i = 0; i < OutputCount; i++)
             {
-                //offset[i] -= learningRate * delta[i] / (delta[i] + 1e-8);
                 offset[i] -= learningRate * delta[i];//旧
                 //Console.Write(offset[i] + " ");
             }

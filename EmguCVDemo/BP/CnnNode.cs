@@ -67,8 +67,8 @@ namespace EmguCVDemo.BP
         {
             double result = 0;
             ////调用激活函数计算结果
-            //result = Math.Tanh(value);
-            result = Y_STRETCH * Math.Tanh(X_STRETCH * value);
+            result = Math.Tanh(value);
+            //result = Y_STRETCH * Math.Tanh(X_STRETCH * value);
             if (double.IsNaN(result))
                 throw new Exception("NaN!");
             return result;
@@ -82,11 +82,10 @@ namespace EmguCVDemo.BP
         {
             double result = 0;
             //激活函数导数计算结果
-            //result = 1 - Math.Pow(Math.Tanh(value), 2);//旧
-            //result = 1 - Math.Pow(value, 2);
-            double coshx = Math.Cosh(X_STRETCH * value);
-            double denominator = Math.Cosh(2.0 * X_STRETCH * value) + 1;
-            result = DERIVATIVE_STRETCH * coshx * coshx / (denominator * denominator);
+            result = 1 - Math.Pow(value, 2);
+            //double coshx = Math.Cosh(X_STRETCH * value);
+            //double denominator = Math.Cosh(2.0 * X_STRETCH * value) + 1;
+            //result = DERIVATIVE_STRETCH * coshx * coshx / (denominator * denominator);
             if (double.IsNaN(result))
                 throw new Exception("NaN!");
             return result;
