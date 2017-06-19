@@ -73,11 +73,12 @@
     <Compile Include="BP\CnnHelper.cs" />
     <Compile Include="BP\CnnKernel.cs" />
     <Compile Include="BP\CnnConvolutionLayer.cs" />
+    <Compile Include="BP\CnnNode.cs" />
     <Compile Include="BP\CnnSubReceptiveField.cs" />
     <Compile Include="BP\DataNode.cs" />
     <Compile Include="BP\NetworkNode.cs" />
     <Compile Include="BP\AnnNode.cs" />
-    <Compile Include="BP\CnnFull.cs" />
+    <Compile Include="BP\CnnFullLayer.cs" />
     <Compile Include="BP\CnnPooling.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>

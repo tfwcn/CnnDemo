@@ -8,7 +8,7 @@ namespace EmguCVDemo.BP
     /// <summary>
     /// 卷积核(池化)
     /// </summary>
-    public class CnnPooling
+    public class CnnPooling : CnnNode
     {
         /// <summary>
         /// 共享权重(所有感知野共享，所有权重一样)
@@ -42,10 +42,6 @@ namespace EmguCVDemo.BP
         /// 输入高度
         /// </summary>
         private int inputHeight;
-        /// <summary>
-        /// 激活函数类型，1:池化(Mean Pooling),2:池化(Max Pooling)
-        /// </summary>
-        public int ActivationFunctionType { get; set; }
         /// <summary>
         /// 池化类型，1:平均池化(Mean Pooling),2:最大值池化(Max Pooling)
         /// </summary>
@@ -104,119 +100,6 @@ namespace EmguCVDemo.BP
         {
             double result = 0;
             result = Pooling(value, x, y);
-            return result;
-        }
-        /// <summary>
-        /// 激活函数
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private double ActivationFunction(double value)
-        {
-            double result = 0;
-            //调用激活函数计算结果
-            switch (ActivationFunctionType)
-            {
-                case 1:
-                    //tanh
-                    result = ActivationFunctionTanh(value);
-                    break;
-                case 2:
-                    //PReLU
-                    result = ActivationFunctionPReLU(value);
-                    break;
-            }
-            return result;
-        }
-        /// <summary>
-        /// 激活函数导数
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private double ActivationFunctionDerivative(double value)
-        {
-            double result = 0;
-            //调用激活函数计算结果
-            switch (ActivationFunctionType)
-            {
-                case 1:
-                    //tanh
-                    result = ActivationFunctionTanhDerivative(value);
-                    break;
-                case 2:
-                    //PReLU
-                    result = ActivationFunctionPReLUDerivative(value);
-                    break;
-            }
-            return result;
-        }
-        /// <summary>
-        /// 激活函数（tanh）
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private double ActivationFunctionTanh(double value)
-        {
-            double result = 0;
-            //调用激活函数计算结果
-            result = Math.Tanh(value);
-            return result;
-        }
-        /// <summary>
-        /// 激活函数导数（tanh）
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private double ActivationFunctionTanhDerivative(double value)
-        {
-            double result = 0;
-            //激活函数导数计算结果
-            result = 1 - Math.Pow(Math.Tanh(value), 2);//旧
-            //result = 1 - Math.Pow(value, 2);
-            return result;
-        }
-        /// <summary>
-        /// 激活函数（PReLU）
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private double ActivationFunctionPReLU(double value)
-        {
-            double result = 0;
-            //调用激活函数计算结果
-            if (value >= 0)
-            {
-                result = value;
-            }
-            else
-            {
-                result = 0.05 * value;
-                //result = 0;
-            }
-            return result;
-        }
-        /// <summary>
-        /// 激活函数导数（PReLU）
-        /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
-        private double ActivationFunctionPReLUDerivative(double value)
-        {
-            double result = 0;
-            //激活函数导数计算结果
-            if (value > 0)
-            {
-                result = 1;
-            }
-            else if (value == 0)
-            {
-                result = 0;
-            }
-            else
-            {
-                result = 0.05;
-                //result = 0;
-            }
             return result;
         }
         /// <summary>

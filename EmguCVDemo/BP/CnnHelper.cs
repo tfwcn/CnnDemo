@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Drawing;
 
 namespace EmguCVDemo.BP
 {
@@ -26,6 +27,14 @@ namespace EmguCVDemo.BP
             }
             mse = mse / (2 * inputCount);
             Console.WriteLine("MSE:" + mse);
+        }
+
+        public static Bitmap GetImg(Cnn cnn)
+        {
+            int col = cnn.CnnConvolutionLayerList.Count * 2 + cnn.CnnFullLayerList.Count;
+            Bitmap img = new Bitmap(1000, 1000);
+
+            return img;
         }
     }
 }
