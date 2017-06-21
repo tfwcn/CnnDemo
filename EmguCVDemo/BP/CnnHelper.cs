@@ -13,6 +13,8 @@ namespace EmguCVDemo.BP
         public static int SumCount = 0;
         public static int TrueCount = 0;
         public static double TruePercent = 0;
+        public static int LabelsNum = 0;
+        public static int ResultNum = 0;
 
         public static void ShowChange(double[] output, double[] labels, int inputCount)
         {
@@ -43,9 +45,11 @@ namespace EmguCVDemo.BP
                 //Console.Write(output[i] + " ");
             }
             if (outputValue == labelsValue) TrueCount++;
+            ResultNum = outputValue;
+            LabelsNum = labelsValue;
             TruePercent = TrueCount / (double)SumCount;
             //Console.WriteLine("");
-            Console.WriteLine(String.Format("TrueCount:{0}/{1} {2}", TrueCount, SumCount, (TrueCount / (double)SumCount)));
+            //Console.WriteLine(String.Format("TrueCount:{0}/{1} {2}", TrueCount, SumCount, (TrueCount / (double)SumCount)));
             //均方差
             //double mse = 0;
             //for (int i = 0; i < output.Length; i++)

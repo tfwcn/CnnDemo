@@ -18,6 +18,8 @@ namespace EmguCVDemo
     {
         private Thread threadCnn;
         private Cnn cnn;
+        private int trainCount = 0;
+        private double learningRate;
         public Form4()
         {
             InitializeComponent();
@@ -39,52 +41,74 @@ namespace EmguCVDemo
             {
                 return;
             }
+            learningRate = (double)numLearningRate.Value;
             threadCnn = new Thread(() =>
             {
-                CnnHelper.SumCount = 0;
-                CnnHelper.TrueCount = 0;
-                using (FileStream fs = new FileStream("train-labels.idx1-ubyte", FileMode.Open))
+                try
                 {
-                    using (FileStream fsImages = new FileStream("train-images.idx3-ubyte", FileMode.Open))
+                    trainCount = 0;
+                    while (true)
                     {
-                        byte[] bytes4 = new byte[4];
-                        fsImages.Seek(4, SeekOrigin.Current);
-                        fs.Seek(8, SeekOrigin.Current);
-                        fsImages.Read(bytes4, 0, 4);
-                        int count = ToInt32(bytes4);
-                        fsImages.Read(bytes4, 0, 4);
-                        int height = ToInt32(bytes4);
-                        fsImages.Read(bytes4, 0, 4);
-                        int width = ToInt32(bytes4);
-                        for (int i = 0; i < count; i++)
+                        trainCount++;
+                        CnnHelper.SumCount = 0;
+                        CnnHelper.TrueCount = 0;
+                        using (FileStream fs = new FileStream("train-labels.idx1-ubyte", FileMode.Open))
                         {
-                            Bitmap img = GetImage(fsImages, width, height);
-                            byte label = GetLable(fs);
-                            double[] labels = new double[10];
-                            for (int i2 = 0; i2 < 10; i2++)
+                            using (FileStream fsImages = new FileStream("train-images.idx3-ubyte", FileMode.Open))
                             {
-                                labels[i2] = 0;
-                            }
-                            labels[label] = 1;
-                            Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
-                            double[,] input = new double[width, height];
-                            for (int w = 0; w < width; w++)
-                            {
-                                for (int h = 0; h < height; h++)
+                                byte[] bytes4 = new byte[4];
+                                fsImages.Seek(4, SeekOrigin.Current);
+                                fs.Seek(8, SeekOrigin.Current);
+                                fsImages.Read(bytes4, 0, 4);
+                                int count = ToInt32(bytes4);
+                                fsImages.Read(bytes4, 0, 4);
+                                int height = ToInt32(bytes4);
+                                fsImages.Read(bytes4, 0, 4);
+                                int width = ToInt32(bytes4);
+                                for (int i = 0; i < count; i++)
                                 {
-                                    input[w, h] = Color.FromArgb(0,
-                                        (int)trainingData.Data[h, w, 2],
-                                        (int)trainingData.Data[h, w, 1],
-                                        (int)trainingData.Data[h, w, 0]
-                                        ).ToArgb() / (double)0xFFFFFF;
+                                    Bitmap img = GetImage(fsImages, width, height);
+                                    byte label = GetLable(fs);
+                                    double[] labels = new double[10];
+                                    for (int i2 = 0; i2 < 10; i2++)
+                                    {
+                                        labels[i2] = 0;
+                                    }
+                                    labels[label] = 1;
+                                    Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
+                                    double[,] input = new double[width, height];
+                                    for (int w = 0; w < width; w++)
+                                    {
+                                        for (int h = 0; h < height; h++)
+                                        {
+                                            input[w, h] = Color.FromArgb(0,
+                                                (int)trainingData.Data[h, w, 2],
+                                                (int)trainingData.Data[h, w, 1],
+                                                (int)trainingData.Data[h, w, 0]
+                                                ).ToArgb() / (double)0xFFFFFF;
+                                        }
+                                    }
+                                    cnn.Train(input, labels, learningRate * (1 - CnnHelper.TruePercent));
+                                    this.Invoke(new Action(() =>
+                                    {
+                                        lblInfo.Text = String.Format("训练周期:{0} 训练次数:{1}/{2} 正确率:{3:00.####%}", trainCount, CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
+                                        if (i % 20 == 0)
+                                        {
+                                            lblResult.Text = CnnHelper.LabelsNum + " " + CnnHelper.ResultNum;
+                                            pbImage.Image = img;
+                                        }
+                                    }));
+                                    //img.Save("imgs/" + i + "_" + label + ".jpg");
                                 }
+                                fsImages.Close();
+                                fs.Close();
                             }
-                            cnn.Train(input, labels, 0.01 * (1 - CnnHelper.TruePercent));
-                            //img.Save("imgs/" + i + "_" + label + ".jpg");
                         }
-                        fsImages.Close();
-                        fs.Close();
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
                 }
             });
             threadCnn.Start();
@@ -208,7 +232,7 @@ namespace EmguCVDemo
             }
         }
 
-        private void Form4_FormClosed(object sender, FormClosedEventArgs e)
+        private void Form4_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (threadCnn != null && threadCnn.ThreadState == ThreadState.Running)
             {
