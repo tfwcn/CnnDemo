@@ -8,6 +8,7 @@ namespace EmguCVDemo.BP
     /// <summary>
     /// 卷积核(池化)
     /// </summary>
+    [Serializable]
     public class CnnPooling : CnnNode
     {
         /// <summary>
@@ -49,17 +50,27 @@ namespace EmguCVDemo.BP
         /// <summary>
         /// 原输入值
         /// </summary>
-        public double[,] InputValue { get; set; }
+        [NonSerialized]
+        public double[,] InputValue;
         /// <summary>
         /// 原输出值
         /// </summary>
-        public double[,] OutputValue { get; set; }
+        [NonSerialized]
+        public double[,] OutputValue;
         /// <summary>
         /// 最大值池化时的最大值指针
         /// </summary>
         private int[,] OutputPoolingMax;
-
-        public CnnPooling(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, int activationFunctionType = 1, int poolingType = 1)
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="inputWidth"></param>
+        /// <param name="inputHeight"></param>
+        /// <param name="receptiveFieldWidth"></param>
+        /// <param name="receptiveFieldHeight"></param>
+        /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
+        /// <param name="poolingType">池化类型，1:平均池化(Mean Pooling),2:最大值池化(Max Pooling)</param>
+        public CnnPooling(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, int activationFunctionType, int poolingType)
         {
             this.receptiveFieldWidth = receptiveFieldWidth;
             this.receptiveFieldHeight = receptiveFieldHeight;
@@ -172,9 +183,12 @@ namespace EmguCVDemo.BP
         /// </summary>
         private void InitShareWeight()
         {
-            Random random = new Random();
-            ShareWeight = GetRandom(random);
-            OutputOffset = GetRandom(random);
+            //Random random = new Random();
+            //ShareWeight = GetRandom(random);
+            //OutputOffset = GetRandom(random);
+            //权重和偏置都为1，取消权重和偏置
+            ShareWeight = 1;
+            OutputOffset = 0;
         }
         /// <summary>
         /// 获取随机值
@@ -258,7 +272,7 @@ namespace EmguCVDemo.BP
                     {
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * receptiveFieldHeight + j2 < inputHeight; j2++)
                         {
-                            //计算输入值残差
+                            //计算输入值残差，梯度直接往上传
                             result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] += ShareWeight * residual[i, j];
                             //计算权重残差
                             deltaWeight += InputValue[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] * residual[i, j];
@@ -272,14 +286,16 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < inputHeight; j++)
                 {
-                    result[i, j] /= receptiveFieldWidth * receptiveFieldHeight;
-                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);//旧代码没有
+                    //梯度=(扩展后梯度*导数(输入值))/卷积核大小
+                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]) / (receptiveFieldWidth * receptiveFieldHeight);
+                    result[i, j] = InputValue[i, j] - result[i, j];
                 }
             }
             deltaWeight /= receptiveFieldWidth * receptiveFieldHeight;
             //更新权重和偏置
-            UpdateWeight(ShareWeight, deltaWeight, learningRate);
-            UpdateOffset(OutputOffset, deltaOffset, learningRate);
+            //取消权重和偏置
+            //UpdateWeight(ShareWeight, deltaWeight, learningRate);
+            //UpdateOffset(OutputOffset, deltaOffset, learningRate);
             return result;
         }
         /// <summary>
@@ -312,8 +328,8 @@ namespace EmguCVDemo.BP
                     {
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * receptiveFieldHeight + j2 < inputHeight; j2++)
                         {
-                            //计算输入值残差
-                            if (OutputPoolingMax[ConvolutionKernelWidth, ConvolutionKernelWidth] == i2 + j2 * receptiveFieldHeight)
+                            //计算输入值残差，梯度直接往上传
+                            if (OutputPoolingMax[i, j] == i2 + j2 * receptiveFieldHeight)
                             {
                                 result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] += ShareWeight * residual[i, j];
                                 //计算权重残差
@@ -331,12 +347,14 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < inputHeight; j++)
                 {
-                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);//旧代码没有
+                    //梯度=扩展后梯度*导数(输入值)
+                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);
+                    result[i, j] = InputValue[i, j] - result[i, j];
                 }
             }
             //更新权重和偏置
-            UpdateWeight(ShareWeight, deltaWeight, learningRate);
-            UpdateOffset(OutputOffset, deltaOffset, learningRate);
+            //UpdateWeight(ShareWeight, deltaWeight, learningRate);
+            //UpdateOffset(OutputOffset, deltaOffset, learningRate);
             return result;
         }
         /// <summary>
@@ -347,8 +365,7 @@ namespace EmguCVDemo.BP
         /// <param name="learningRate">学习率</param>
         private void UpdateWeight(double weight, double delta, double learningRate)
         {
-            //weight -= learningRate * delta / (delta + 1e-8);
-            weight -= learningRate * delta;//旧
+            weight -= learningRate * delta;
         }
         /// <summary>
         /// 更新偏置
@@ -358,8 +375,7 @@ namespace EmguCVDemo.BP
         /// <param name="learningRate">学习率</param>
         private void UpdateOffset(double offset, double delta, double learningRate)
         {
-            //offset -= learningRate * delta / (delta + 1e-8);
-            offset -= learningRate * delta;//旧
+            offset -= learningRate * delta;
         }
     }
 }

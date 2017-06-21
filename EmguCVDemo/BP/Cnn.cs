@@ -5,6 +5,7 @@ using System.Text;
 
 namespace EmguCVDemo.BP
 {
+    [Serializable]
     public class Cnn
     {
         /// <summary>
@@ -31,14 +32,14 @@ namespace EmguCVDemo.BP
         /// <param name="cnnConvolutionLayer"></param>
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, int activationFunctionType = 1,
-            int poolingReceptiveFieldWidth = 2, int poolingReceptiveFieldHeight = 2, int poolingActivationFunctionType = 1)
+            int offsetWidth, int offsetHeight, int activationFunctionType,
+            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, int poolingActivationFunctionType, int poolingType)
         {
             CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
             //创建卷积层
-            cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, inputWidth, inputHeight, receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType);
+            cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, inputWidth, inputHeight, receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType, 1);
             //创建池化层
-            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, poolingActivationFunctionType);
+            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, poolingActivationFunctionType, poolingType);
             CnnConvolutionLayerList.Add(cnnConvolutionLayer);
         }
         /// <summary>
@@ -47,16 +48,16 @@ namespace EmguCVDemo.BP
         /// <param name="cnnConvolutionLayer"></param>
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, int activationFunctionType = 1,
-            int poolingReceptiveFieldWidth = 2, int poolingReceptiveFieldHeight = 2, int poolingActivationFunctionType = 1)
+            int offsetWidth, int offsetHeight, int activationFunctionType,
+            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, int poolingActivationFunctionType, int poolingType)
         {
             var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
             CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
             //创建卷积层
             cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, cnnConvolutionLayerLast.OutputWidth, cnnConvolutionLayerLast.OutputHeight,
-                receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType);
+                receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType, cnnConvolutionLayerLast.ConvolutionKernelCount);
             //创建池化层
-            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, poolingActivationFunctionType);
+            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, poolingActivationFunctionType, poolingType);
             CnnConvolutionLayerList.Add(cnnConvolutionLayer);
             //随机创建卷积层间连接
             bool[,] oneLinks = new bool[convolutionKernelCount, cnnConvolutionLayerLast.ConvolutionKernelCount];

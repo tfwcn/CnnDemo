@@ -5,10 +5,11 @@ using System.Text;
 
 namespace EmguCVDemo.BP
 {
+    [Serializable]
     public class CnnNode
     {
         /// <summary>
-        /// 激活函数类型，1:tanh,2:池化(Mean Pooling),3:池化(Max Pooling)
+        /// 激活函数类型，1:tanh,2:PReLU,3:Sigmoid
         /// </summary>
         public int ActivationFunctionType { get; set; }
         /// <summary>
@@ -29,6 +30,10 @@ namespace EmguCVDemo.BP
                 case 2:
                     //PReLU
                     result = ActivationFunctionPReLU(value);
+                    break;
+                case 3:
+                    //Sigmoid
+                    result = ActivationFunctionSigmoid(value);
                     break;
             }
             return result;
@@ -52,12 +57,16 @@ namespace EmguCVDemo.BP
                     //PReLU
                     result = ActivationFunctionPReLUDerivative(value);
                     break;
+                case 3:
+                    //Sigmoid
+                    result = ActivationFunctionSigmoidDerivative(value);
+                    break;
             }
             return result;
         }
-        private const double X_STRETCH = 2.0 / 3.0;
-        private const double Y_STRETCH = 1.7159;
-        private const double DERIVATIVE_STRETCH = 4.57573;
+        //private const double X_STRETCH = 2.0 / 3.0;
+        //private const double Y_STRETCH = 1.7159;
+        //private const double DERIVATIVE_STRETCH = 4.57573;
         /// <summary>
         /// 激活函数（tanh）
         /// </summary>
@@ -105,7 +114,6 @@ namespace EmguCVDemo.BP
             }
             else
             {
-                //result = 0.05 * value;
                 result = 0;
             }
             if (double.IsNaN(result))
@@ -125,15 +133,39 @@ namespace EmguCVDemo.BP
             {
                 result = 1;
             }
-            else if (value == 0)
+            else if (value <= 0)
             {
                 result = 0;
             }
-            else
-            {
-                //result = 0.05;
-                result = 0;
-            }
+            if (double.IsNaN(result))
+                throw new Exception("NaN!");
+            return result;
+        }
+        /// <summary>
+        /// 激活函数（Sigmoid）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionSigmoid(double value)
+        {
+            double result = 0;
+            //调用激活函数计算结果
+            result = 1 / (1 + Math.Pow(Math.E, -value));
+            if (double.IsNaN(result))
+                throw new Exception("NaN!");
+            return result;
+        }
+        /// <summary>
+        /// 激活函数导数（Sigmoid）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        private double ActivationFunctionSigmoidDerivative(double value)
+        {
+            double result = 0;
+            //激活函数导数计算结果
+            result = ActivationFunctionSigmoid(value);
+            result = result * (1 - result);
             if (double.IsNaN(result))
                 throw new Exception("NaN!");
             return result;

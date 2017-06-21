@@ -8,6 +8,7 @@ namespace EmguCVDemo.BP
     /// <summary>
     /// 卷积核
     /// </summary>
+    [Serializable]
     public class CnnKernel : CnnNode
     {
         /// <summary>
@@ -53,13 +54,35 @@ namespace EmguCVDemo.BP
         /// <summary>
         /// 原输入值
         /// </summary>
-        public double[,] InputValue { get; set; }
+        [NonSerialized]
+        public double[,] InputValue;
         /// <summary>
         /// 原输出值
         /// </summary>
-        public double[,] OutputValue { get; set; }
-
-        public CnnKernel(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth, int offsetHeight, int activationFunctionType = 1)
+        [NonSerialized]
+        public double[,] OutputValue;
+        /// <summary>
+        /// 输入数量
+        /// </summary>
+        public int InputCount { get; set; }
+        /// <summary>
+        /// 输出数量（该层卷积核数量）
+        /// </summary>
+        public int OutputCount { get; set; }
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="inputWidth"></param>
+        /// <param name="inputHeight"></param>
+        /// <param name="receptiveFieldWidth"></param>
+        /// <param name="receptiveFieldHeight"></param>
+        /// <param name="offsetWidth"></param>
+        /// <param name="offsetHeight"></param>
+        /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
+        /// <param name="inputCount"></param>
+        /// <param name="outputCount"></param>
+        public CnnKernel(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
+            int offsetWidth, int offsetHeight, int activationFunctionType, int inputCount, int outputCount)
         {
             this.receptiveFieldWidth = receptiveFieldWidth;
             this.receptiveFieldHeight = receptiveFieldHeight;
@@ -68,6 +91,8 @@ namespace EmguCVDemo.BP
             this.offsetWidth = offsetWidth;
             this.offsetHeight = offsetHeight;
             this.ActivationFunctionType = activationFunctionType;
+            this.InputCount = inputCount;
+            this.OutputCount = outputCount;
             this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling((inputWidth - receptiveFieldWidth) / (double)offsetWidth)) + 1;
             this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling((inputHeight - receptiveFieldHeight) / (double)offsetHeight)) + 1;
             ShareWeight = new double[receptiveFieldWidth, receptiveFieldHeight];
@@ -131,8 +156,6 @@ namespace EmguCVDemo.BP
         private double GetRandom(Random random)
         {
             double result = 0;
-            int inputCount = inputWidth * inputHeight;
-            int outputCount = ConvolutionKernelWidth;
             switch (ActivationFunctionType)
             {
                 case 2:
@@ -140,7 +163,7 @@ namespace EmguCVDemo.BP
                     result = random.NextDouble() * 0.0001;
                     break;
                 default:
-                    result = random.NextDouble() * (Math.Sqrt(6) / Math.Sqrt(inputCount + outputCount)) * 2 - (Math.Sqrt(6) / Math.Sqrt(inputCount + outputCount));
+                    result = (random.NextDouble() * 2 - 1) * Math.Sqrt((float)6.0 / (float)(receptiveFieldWidth * receptiveFieldHeight * (InputCount + OutputCount)));
                     break;
             }
             return result;
@@ -179,6 +202,9 @@ namespace EmguCVDemo.BP
                     residual[i, j] = OutputValue[i, j] - output[i, j];
                 }
             }
+            //double[,] result2 = CnnHelper.Convolution(ShareWeight, residual, offsetWidth, offsetHeight, 1);
+            //double[,] deltaWeight2 = CnnHelper.Convolution(residual, InputValue, offsetWidth, offsetHeight, 3);
+            //deltaWeight2 = CnnHelper.MatrixRotate180(deltaWeight2);
             //计算残差
             for (int i = 0; i < ConvolutionKernelWidth; i++)
             {
@@ -198,13 +224,7 @@ namespace EmguCVDemo.BP
                     deltaOffset += residual[i, j];
                 }
             }
-            for (int i = 0; i < inputWidth; i++)
-            {
-                for (int j = 0; j < inputHeight; j++)
-                {
-                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);//旧代码没有
-                }
-            }
+            deltaWeight = CnnHelper.MatrixRotate180(deltaWeight);
             //更新权重和偏置
             UpdateWeight(ShareWeight, deltaWeight, learningRate);
             UpdateOffset(OutputOffset, deltaOffset, learningRate);
@@ -230,8 +250,7 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < receptiveFieldHeight; j++)
                 {
-                    //weight[i, j] -= learningRate * delta[i, j] / (delta[i, j] + 1e-8);
-                    weight[i, j] -= learningRate * delta[i, j];//旧
+                    weight[i, j] -= learningRate * delta[i, j];
                 }
             }
         }
@@ -243,8 +262,7 @@ namespace EmguCVDemo.BP
         /// <param name="learningRate">学习率</param>
         private void UpdateOffset(double offset, double delta, double learningRate)
         {
-            //offset -= learningRate * delta / (delta + 1e-8);
-            offset -= learningRate * delta;//旧
+            offset -= learningRate * delta;
         }
     }
 }

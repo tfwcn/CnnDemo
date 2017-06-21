@@ -261,10 +261,10 @@ namespace EmguCVDemo
         private void CreateBP()
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, 1, 2, 2, 2);
-            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 2, 2, 2);
-            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 2);
-            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 2, 2, 2);
+            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, 1, 2, 2, 1, 2);
+            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 2, 2, 1, 2);
+            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, 2);
+            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 2, 2, 1, 2);
             //cnn.AddCnnConvolutionLayer(80, 5, 5, 1, 1, 1, 2, 2, 1);
             //cnn.AddCnnConvolutionLayer(100, 5, 5, 1, 1, 1, 2, 2, 1);
             //cnn.AddCnnFullLayer(300, 1);

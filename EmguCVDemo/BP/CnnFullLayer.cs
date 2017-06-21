@@ -8,6 +8,7 @@ namespace EmguCVDemo.BP
     /// <summary>
     /// 全链接层
     /// </summary>
+    [Serializable]
     public class CnnFullLayer : CnnNode
     {
         /// <summary>
@@ -29,13 +30,20 @@ namespace EmguCVDemo.BP
         /// <summary>
         /// 原输入值
         /// </summary>
-        public double[] InputValue { get; set; }
+        [NonSerialized]
+        public double[] InputValue;
         /// <summary>
         /// 原输出值
         /// </summary>
-        public double[] OutputValue { get; set; }
-
-        public CnnFullLayer(int InputCount, int OutputCount, int activationFunctionType = 1)
+        [NonSerialized]
+        public double[] OutputValue;
+        /// <summary>
+        /// 构造函数
+        /// </summary>
+        /// <param name="InputCount"></param>
+        /// <param name="OutputCount"></param>
+        /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
+        public CnnFullLayer(int InputCount, int OutputCount, int activationFunctionType)
         {
             this.InputCount = InputCount;
             this.OutputCount = OutputCount;
@@ -104,9 +112,7 @@ namespace EmguCVDemo.BP
                     result = random.NextDouble() * 0.0001;
                     break;
                 default:
-                    //result = random.NextDouble() * (Math.Sqrt(6) / Math.Sqrt(InputCount + OutputCount)) * 2 - (Math.Sqrt(6) / Math.Sqrt(InputCount + OutputCount));
-                    //result = (random.NextDouble() * Math.Abs(InputCount - OutputCount) + (InputCount > OutputCount ? OutputCount : InputCount)) * Math.Sqrt(InputCount);
-                    result = (random.NextDouble() - 0.5) * (4.8 / InputCount);
+                    result = (random.NextDouble() * 2 - 1) * Math.Sqrt((float)6.0 / (float)(InputCount + OutputCount));
                     break;
             }
             return result;
@@ -162,7 +168,7 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < OutputCount; j++)
                 {
-                    weight[j, i] -= learningRate * delta[j, i];//旧
+                    weight[j, i] -= learningRate * delta[j, i];
                     //Console.Write(weight[j, i] + " ");
                 }
                 //Console.WriteLine("");
@@ -180,7 +186,7 @@ namespace EmguCVDemo.BP
             //Console.WriteLine(String.Format("FullUpdateOffset {0}->{1}", InputCount, OutputCount));
             for (int i = 0; i < OutputCount; i++)
             {
-                offset[i] -= learningRate * delta[i];//旧
+                offset[i] -= learningRate * delta[i];
                 //Console.Write(offset[i] + " ");
             }
             //Console.WriteLine("");

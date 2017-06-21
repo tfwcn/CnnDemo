@@ -6,6 +6,7 @@ using System.Threading;
 
 namespace EmguCVDemo.BP
 {
+    [Serializable]
     public class CnnConvolutionLayer
     {
         /// <summary>
@@ -51,13 +52,17 @@ namespace EmguCVDemo.BP
         /// <param name="offsetWidth"></param>
         /// <param name="offsetHeight"></param>
         /// <param name="activationFunctionType"></param>
-        public void CreateCnnKernel(int convolutionKernelCount, int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth, int offsetHeight, int activationFunctionType = 1)
+        public void CreateCnnKernel(int convolutionKernelCount, int inputWidth, int inputHeight, 
+            int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth,
+            int offsetHeight, int activationFunctionType, int inputCount)
         {
             this.ConvolutionKernelCount = convolutionKernelCount;
             CnnKernelList = new List<CnnKernel>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
-                CnnKernelList.Add(new CnnKernel(inputWidth, inputHeight, receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType));
+                CnnKernelList.Add(new CnnKernel(inputWidth, inputHeight,
+                    receptiveFieldWidth, receptiveFieldHeight,
+                    offsetWidth, offsetHeight, activationFunctionType, inputCount, ConvolutionKernelCount));
             }
         }
         /// <summary>
@@ -66,14 +71,15 @@ namespace EmguCVDemo.BP
         /// <param name="receptiveFieldWidth"></param>
         /// <param name="receptiveFieldHeight"></param>
         /// <param name="activationFunctionType"></param>
-        public void CreateCnnPooling(int receptiveFieldWidth, int receptiveFieldHeight, int activationFunctionType = 1)
+        public void CreateCnnPooling(int receptiveFieldWidth, int receptiveFieldHeight, int activationFunctionType, int poolingType)
         {
             if (CnnKernelList == null || CnnKernelList.Count == 0)
                 throw new Exception("需先创建卷积层");
             CnnPoolingList = new List<CnnPooling>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
-                CnnPoolingList.Add(new CnnPooling(CnnKernelList[0].ConvolutionKernelWidth, CnnKernelList[0].ConvolutionKernelHeight, receptiveFieldWidth, receptiveFieldHeight, activationFunctionType));
+                CnnPoolingList.Add(new CnnPooling(CnnKernelList[0].ConvolutionKernelWidth, CnnKernelList[0].ConvolutionKernelHeight,
+                    receptiveFieldWidth, receptiveFieldHeight, activationFunctionType, poolingType));
             }
         }
         /// <summary>
