@@ -117,18 +117,18 @@ namespace EmguCVDemo.BP
                     result[i, j] = ActivationFunction(result[i, j]);
                 }
             }
-            //double mean = CnnHelper.GetMean(result);
-            //double variance = CnnHelper.GetVariance(result, mean);
-            ////归一化每个结果
-            //for (int i = 0; i < ConvolutionKernelWidth; i++)
-            //{
-            //    for (int j = 0; j < ConvolutionKernelHeight; j++)
-            //    {
-            //        double z = (result[i, j] - mean) / Math.Sqrt(variance);
-            //        //调用激活函数计算结果
-            //        result[i, j] = ActivationFunction(z * Math.Sqrt(variance) + mean);
-            //    }
-            //}
+            double mean = CnnHelper.GetMean(result);
+            double variance = CnnHelper.GetVariance(result, mean);
+            //归一化每个结果
+            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            {
+                for (int j = 0; j < ConvolutionKernelHeight; j++)
+                {
+                    double z = (result[i, j] - mean) / Math.Sqrt(variance);
+                    //调用激活函数计算结果
+                    result[i, j] = ActivationFunction(z);
+                }
+            }
             OutputValue = result;
             return result;
         }
