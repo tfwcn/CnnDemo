@@ -28,10 +28,10 @@ namespace EmguCVDemo
         private void Form4_Load(object sender, EventArgs e)
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(6, 28, 28, 5, 5, 1, 1, 1, 2, 2, 1, 2);
-            cnn.AddCnnConvolutionLayer(18, 5, 5, 1, 1, 1, 2, 2, 1, 1);
-            //cnn.AddCnnConvolutionLayer(120, 2, 2, 1, 1, 1, 2, 2, 1, 1);
-            cnn.AddCnnFullLayer(192, 1);
+            cnn.AddCnnConvolutionLayer(20, 28, 28, 5, 5, 1, 1, 1, 2, 2, 1, 1);
+            //cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, 2);
+            //cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, 1, 0, 0, 0, 0);
+            cnn.AddCnnFullLayer(100, 1);
             cnn.AddCnnFullLayer(10, 1);
         }
 
@@ -47,6 +47,7 @@ namespace EmguCVDemo
                 try
                 {
                     trainCount = 0;
+                    //int retry = 0;
                     while (true)
                     {
                         trainCount++;
@@ -88,7 +89,8 @@ namespace EmguCVDemo
                                                 ).ToArgb() / (double)0xFFFFFF;
                                         }
                                     }
-                                    cnn.Train(input, labels, learningRate * (1 - CnnHelper.TruePercent));
+                                    //input = CnnHelper.MatrixExpand(input, 2, 2);
+                                    cnn.Train(input, labels, learningRate * (1 - CnnHelper.TruePercent * CnnHelper.TruePercent));
                                     this.Invoke(new Action(() =>
                                     {
                                         lblInfo.Text = String.Format("训练周期:{0} 训练次数:{1}/{2} 正确率:{3:00.####%}", trainCount, CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
@@ -97,6 +99,15 @@ namespace EmguCVDemo
                                             lblResult.Text = CnnHelper.LabelsNum + " " + CnnHelper.ResultNum;
                                             pbImage.Image = img;
                                         }
+                                        //if (CnnHelper.LabelsNum != CnnHelper.ResultNum && retry < 5)
+                                        //{
+                                        //    i--;
+                                        //    retry++;
+                                        //}
+                                        //else
+                                        //{
+                                        //    retry = 0;
+                                        //}
                                     }));
                                     //img.Save("imgs/" + i + "_" + label + ".jpg");
                                 }
@@ -122,6 +133,8 @@ namespace EmguCVDemo
             }
             threadCnn = new Thread(() =>
             {
+                CnnHelper.SumCount = 0;
+                CnnHelper.TrueCount = 0;
                 using (FileStream fs = new FileStream("t10k-labels.idx1-ubyte", FileMode.Open))
                 {
                     using (FileStream fsImages = new FileStream("t10k-images.idx3-ubyte", FileMode.Open))
@@ -152,7 +165,9 @@ namespace EmguCVDemo
                                         ).ToArgb() / (double)0xFFFFFF;
                                 }
                             }
+                            //input = CnnHelper.MatrixExpand(input, 2, 2);
                             double[] labels = cnn.Predict(input);
+                            double[] labelsTrue = new double[10];
                             double maxtype = labels[0], max = 0;
                             for (int n = 0; n < 10; n++)
                             {
@@ -161,8 +176,19 @@ namespace EmguCVDemo
                                     max = n;
                                     maxtype = labels[n];
                                 }
+                                if (label == n) labelsTrue[n] = 1;
                             }
-                            Console.WriteLine(i + ":" + label + "," + max);
+                            //Console.WriteLine(i + ":" + label + "," + max);
+                            CnnHelper.ShowChange(labels, labelsTrue, 10000);
+                            this.Invoke(new Action(() =>
+                            {
+                                lblInfo.Text = String.Format("识别次数:{0}/{1} 正确率:{2:00.####%}", CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
+                                if (i % 20 == 0)
+                                {
+                                    lblResult.Text = CnnHelper.LabelsNum + " " + CnnHelper.ResultNum;
+                                    pbImage.Image = img;
+                                }
+                            }));
                             //img.Save("imgs/" + i + "_" + label + ".jpg");
                         }
                         fsImages.Close();

@@ -70,6 +70,7 @@ namespace EmguCVDemo.BP
         /// 输出数量（该层卷积核数量）
         /// </summary>
         public int OutputCount { get; set; }
+
         /// <summary>
         /// 构造函数
         /// </summary>
@@ -116,6 +117,18 @@ namespace EmguCVDemo.BP
                     result[i, j] = ActivationFunction(result[i, j]);
                 }
             }
+            //double mean = CnnHelper.GetMean(result);
+            //double variance = CnnHelper.GetVariance(result, mean);
+            ////归一化每个结果
+            //for (int i = 0; i < ConvolutionKernelWidth; i++)
+            //{
+            //    for (int j = 0; j < ConvolutionKernelHeight; j++)
+            //    {
+            //        double z = (result[i, j] - mean) / Math.Sqrt(variance);
+            //        //调用激活函数计算结果
+            //        result[i, j] = ActivationFunction(z * Math.Sqrt(variance) + mean);
+            //    }
+            //}
             OutputValue = result;
             return result;
         }
@@ -203,6 +216,7 @@ namespace EmguCVDemo.BP
                     residual[i, j] = OutputValue[i, j] - output[i, j];
                 }
             }
+            //result = CnnHelper.Convolution(ShareWeight, residual, offsetWidth, offsetHeight, 1);
             //double[,] result2 = CnnHelper.Convolution(ShareWeight, residual, offsetWidth, offsetHeight, 1);
             //double[,] deltaWeight2 = CnnHelper.Convolution(residual, InputValue, offsetWidth, offsetHeight, 3);
             //deltaWeight2 = CnnHelper.MatrixRotate180(deltaWeight2);
@@ -216,7 +230,7 @@ namespace EmguCVDemo.BP
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * offsetHeight + j2 < inputHeight; j2++)
                         {
                             //计算输入值残差
-                            result[i * offsetWidth + i2, j * offsetHeight + j2] += ShareWeight[i2, j2] * residual[i, j];
+                            result[i * offsetWidth + i2, j * offsetHeight + j2] += ShareWeight[i2, j2] * residual[i, j];// / (receptiveFieldWidth * receptiveFieldHeight));
                             //计算权重残差
                             deltaWeight[i2, j2] += InputValue[i * offsetWidth + i2, j * offsetHeight + j2] * residual[i, j];
                         }
@@ -234,6 +248,7 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < inputHeight; j++)
                 {
+                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);
                     result[i, j] = InputValue[i, j] - result[i, j];
                 }
             }

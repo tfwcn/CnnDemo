@@ -165,7 +165,8 @@ namespace EmguCVDemo.BP
         {
             double result = 0;
             //激活函数导数计算结果
-            result = ActivationFunctionSigmoid(value);
+            //result = ActivationFunctionSigmoid(value);
+            result = value;
             result = result * (1 - result);
             if (double.IsNaN(result))
                 throw new Exception("NaN!");

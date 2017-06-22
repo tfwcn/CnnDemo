@@ -223,5 +223,43 @@ namespace EmguCVDemo.BP
             }
             return cnn;
         }
+        /// <summary>
+        /// 求均值
+        /// </summary>
+        /// <returns></returns>
+        public static double GetMean(double[,] value)
+        {
+            int valueWidth = value.GetLength(0);
+            int valueHeight = value.GetLength(1);
+            double result = 0;
+            for (int i = 0; i < valueWidth; i++)
+            {
+                for (int j = 0; j < valueHeight; j++)
+                {
+                    result += value[i, j];
+                }
+            }
+            result /= valueWidth * valueHeight;
+            return result;
+        }
+        /// <summary>
+        /// 求方差
+        /// </summary>
+        /// <returns></returns>
+        public static double GetVariance(double[,] value, double mean)
+        {
+            int valueWidth = value.GetLength(0);
+            int valueHeight = value.GetLength(1);
+            double result = 0;
+            for (int i = 0; i < valueWidth; i++)
+            {
+                for (int j = 0; j < valueHeight; j++)
+                {
+                    result += Math.Pow(value[i, j] - mean, 2);
+                }
+            }
+            result /= valueWidth * valueHeight;
+            return result;
+        }
     }
 }

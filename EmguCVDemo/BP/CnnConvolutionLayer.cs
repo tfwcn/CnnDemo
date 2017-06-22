@@ -28,7 +28,14 @@ namespace EmguCVDemo.BP
         {
             get
             {
-                return CnnPoolingList[0].ConvolutionKernelWidth;
+                if (CnnPoolingList != null)
+                {
+                    return CnnPoolingList[0].ConvolutionKernelWidth;
+                }
+                else
+                {
+                    return CnnKernelList[0].ConvolutionKernelWidth;
+                }
             }
         }
         /// <summary>
@@ -38,7 +45,14 @@ namespace EmguCVDemo.BP
         {
             get
             {
-                return CnnPoolingList[0].ConvolutionKernelHeight;
+                if (CnnPoolingList != null)
+                {
+                    return CnnPoolingList[0].ConvolutionKernelHeight;
+                }
+                else
+                {
+                    return CnnKernelList[0].ConvolutionKernelWidth;
+                }
             }
         }
         /// <summary>
@@ -52,7 +66,7 @@ namespace EmguCVDemo.BP
         /// <param name="offsetWidth"></param>
         /// <param name="offsetHeight"></param>
         /// <param name="activationFunctionType"></param>
-        public void CreateCnnKernel(int convolutionKernelCount, int inputWidth, int inputHeight, 
+        public void CreateCnnKernel(int convolutionKernelCount, int inputWidth, int inputHeight,
             int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth,
             int offsetHeight, int activationFunctionType, int inputCount)
         {
@@ -90,7 +104,14 @@ namespace EmguCVDemo.BP
             List<double[,]> result = new List<double[,]>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
-                result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
+                if (CnnPoolingList != null)
+                {
+                    result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
+                }
+                else
+                {
+                    result.Add(CnnKernelList[i].CalculatedConvolutionResult(value[i]));
+                }
             }
             return result;
         }
@@ -105,7 +126,14 @@ namespace EmguCVDemo.BP
             List<double[,]> result = new List<double[,]>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
-                result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate));
+                if (CnnPoolingList != null)
+                {
+                    result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate));
+                }
+                else
+                {
+                    result.Add(CnnKernelList[i].BackPropagation(output[i], learningRate));
+                }
             }
             return result;
         }
