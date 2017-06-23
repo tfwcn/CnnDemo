@@ -70,6 +70,14 @@ namespace EmguCVDemo.BP
         /// 输出数量（该层卷积核数量）
         /// </summary>
         public int OutputCount { get; set; }
+        /// <summary>
+        /// 输出平均值
+        /// </summary>
+        private double mean;
+        /// <summary>
+        /// 输出方差
+        /// </summary>
+        private double variance;
 
         /// <summary>
         /// 构造函数
@@ -112,13 +120,13 @@ namespace EmguCVDemo.BP
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
                     result[i, j] = CalculatedConvolutionPointResult(value, i, j);//卷积
-                    result[i, j] += OutputOffset;//偏置
+                    //result[i, j] += OutputOffset;//偏置
                     //调用激活函数计算结果
-                    result[i, j] = ActivationFunction(result[i, j]);
+                    //result[i, j] = ActivationFunction(result[i, j]);
                 }
             }
-            double mean = CnnHelper.GetMean(result);
-            double variance = CnnHelper.GetVariance(result, mean);
+            mean = CnnHelper.GetMean(result);
+            variance = CnnHelper.GetVariance(result, mean);
             //归一化每个结果
             for (int i = 0; i < ConvolutionKernelWidth; i++)
             {
@@ -126,7 +134,7 @@ namespace EmguCVDemo.BP
                 {
                     double z = (result[i, j] - mean) / Math.Sqrt(variance);
                     //调用激活函数计算结果
-                    result[i, j] = ActivationFunction(z);
+                    result[i, j] = ActivationFunction(z + OutputOffset);
                 }
             }
             OutputValue = result;
@@ -162,7 +170,7 @@ namespace EmguCVDemo.BP
                     ShareWeight[i, j] = GetRandom(random);
                 }
             }
-            OutputOffset = GetRandom(random);
+            //OutputOffset = GetRandom(random);
         }
         /// <summary>
         /// 获取随机值
@@ -250,6 +258,8 @@ namespace EmguCVDemo.BP
                 {
                     result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);
                     result[i, j] = InputValue[i, j] - result[i, j];
+                    //反归一化每个结果
+                    result[i, j] = result[i, j] * Math.Sqrt(variance) + mean;
                 }
             }
             return result;

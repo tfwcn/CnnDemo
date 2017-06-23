@@ -62,6 +62,22 @@ namespace EmguCVDemo.BP
         /// </summary>
         private int[,] OutputPoolingMax;
         /// <summary>
+        /// 输入数量
+        /// </summary>
+        public int InputCount { get; set; }
+        /// <summary>
+        /// 输出数量（该层卷积核数量）
+        /// </summary>
+        public int OutputCount { get; set; }
+        /// <summary>
+        /// 输出平均值
+        /// </summary>
+        private double mean;
+        /// <summary>
+        /// 输出方差
+        /// </summary>
+        private double variance;
+        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="inputWidth"></param>
@@ -70,7 +86,8 @@ namespace EmguCVDemo.BP
         /// <param name="receptiveFieldHeight"></param>
         /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
         /// <param name="poolingType">池化类型，1:平均池化(Mean Pooling),2:最大值池化(Max Pooling)</param>
-        public CnnPooling(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, int activationFunctionType, int poolingType)
+        public CnnPooling(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, int activationFunctionType,
+            int poolingType, int inputCount, int outputCount)
         {
             this.receptiveFieldWidth = receptiveFieldWidth;
             this.receptiveFieldHeight = receptiveFieldHeight;
@@ -78,6 +95,8 @@ namespace EmguCVDemo.BP
             this.inputHeight = inputHeight;
             this.ActivationFunctionType = activationFunctionType;
             this.PoolingType = poolingType;
+            this.InputCount = inputCount;
+            this.OutputCount = outputCount;
             this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling(inputWidth / (double)receptiveFieldWidth));
             this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling(inputHeight / (double)receptiveFieldWidth));
             OutputPoolingMax = new int[ConvolutionKernelWidth, ConvolutionKernelHeight];
@@ -100,6 +119,18 @@ namespace EmguCVDemo.BP
                     result[i, j] = ActivationFunction(result[i, j]);
                 }
             }
+            //mean = CnnHelper.GetMean(result);
+            //variance = CnnHelper.GetVariance(result, mean);
+            ////归一化每个结果
+            //for (int i = 0; i < ConvolutionKernelWidth; i++)
+            //{
+            //    for (int j = 0; j < ConvolutionKernelHeight; j++)
+            //    {
+            //        double z = (result[i, j] - mean) / Math.Sqrt(variance);
+            //        //调用激活函数计算结果
+            //        result[i, j] = ActivationFunction(z);
+            //    }
+            //}
             OutputValue = result;
             return result;
         }
@@ -183,7 +214,7 @@ namespace EmguCVDemo.BP
         /// </summary>
         private void InitShareWeight()
         {
-            //Random random = new Random();
+            Random random = new Random();
             //ShareWeight = GetRandom(random);
             //OutputOffset = GetRandom(random);
             //权重和偏置都为1，取消权重和偏置
@@ -205,7 +236,8 @@ namespace EmguCVDemo.BP
                     result = random.NextDouble() * 0.0001;
                     break;
                 default:
-                    result = 1;
+                    //result = 1;
+                    result = (random.NextDouble() * 2 - 1) * Math.Sqrt((float)6.0 / (float)(receptiveFieldWidth * receptiveFieldHeight * (InputCount + OutputCount)));
                     break;
             }
             return result;
@@ -289,6 +321,8 @@ namespace EmguCVDemo.BP
                     //梯度=(扩展后梯度*导数(输入值))/卷积核大小
                     result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]) / (receptiveFieldWidth * receptiveFieldHeight);
                     result[i, j] = InputValue[i, j] - result[i, j];
+                    //反归一化每个结果
+                    //result[i, j] = result[i, j] * Math.Sqrt(variance) + mean;
                 }
             }
             deltaWeight /= receptiveFieldWidth * receptiveFieldHeight;
@@ -350,6 +384,8 @@ namespace EmguCVDemo.BP
                     //梯度=扩展后梯度*导数(输入值)
                     result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);
                     result[i, j] = InputValue[i, j] - result[i, j];
+                    //反归一化每个结果
+                    result[i, j] = result[i, j] * Math.Sqrt(variance) + mean;
                 }
             }
             //更新权重和偏置

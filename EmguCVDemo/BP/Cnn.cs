@@ -106,7 +106,7 @@ namespace EmguCVDemo.BP
         /// 增加全连接层，在卷积层后，要先创建完卷积层
         /// </summary>
         /// <param name="cnnFullLayer"></param>
-        public void AddCnnFullLayer(int outputCount, int activationFunctionType = 1)
+        public void AddCnnFullLayer(int outputCount, int activationFunctionType)
         {
             if (CnnFullLayerList.Count == 0)
             {
@@ -115,14 +115,15 @@ namespace EmguCVDemo.BP
                 CnnFullLayer cnnFullLayer = new CnnFullLayer(cnnConvolutionLayerLast.ConvolutionKernelCount
                     * cnnConvolutionLayerLast.OutputWidth
                     * cnnConvolutionLayerLast.OutputHeight,
-                    outputCount, activationFunctionType);
+                    outputCount, activationFunctionType, false);
                 CnnFullLayerList.Add(cnnFullLayer);
             }
             else
             {
                 var cnnFullLayerLast = CnnFullLayerList[CnnFullLayerList.Count - 1];//最后的卷积层
+                cnnFullLayerLast.Standardization = true;//自动归一化
                 CnnFullLayer cnnFullLayer = new CnnFullLayer(cnnFullLayerLast.OutputCount,
-                    outputCount, activationFunctionType);
+                    outputCount, activationFunctionType, false);
                 CnnFullLayerList.Add(cnnFullLayer);
             }
         }
@@ -130,10 +131,10 @@ namespace EmguCVDemo.BP
         /// 增加全连接层,仅用于BP网络
         /// </summary>
         /// <param name="cnnFullLayer"></param>
-        public void AddCnnFullLayer(int inputCount, int outputCount, int activationFunctionType = 1)
+        public void AddCnnFullLayer(int inputCount, int outputCount, int activationFunctionType)
         {
             CnnFullLayer cnnFullLayer = new CnnFullLayer(inputCount,
-                outputCount, activationFunctionType);
+                outputCount, activationFunctionType, true);
             CnnFullLayerList.Add(cnnFullLayer);
         }
         /// <summary>

@@ -262,12 +262,12 @@ namespace EmguCVDemo
         {
             cnn = new Cnn();
             cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, 1, 2, 2, 1, 2);
-            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 2, 2, 1, 2);
-            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, 2);
-            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 2, 2, 1, 2);
+            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 2, 2, 1, 1);
+            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, 1);
+            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 2, 2, 1, 1);
             //cnn.AddCnnConvolutionLayer(80, 5, 5, 1, 1, 1, 2, 2, 1);
             //cnn.AddCnnConvolutionLayer(100, 5, 5, 1, 1, 1, 2, 2, 1);
-            //cnn.AddCnnFullLayer(300, 1);
+            cnn.AddCnnFullLayer(300, 1);
             cnn.AddCnnFullLayer(bpRectangleCount * 4, 1);
         }
         private void TrainBP(Dictionary<Bitmap, List<Rectangle>> imgs)
@@ -287,7 +287,7 @@ namespace EmguCVDemo
                     {
                         for (int j = 0; j < bpHeight; j++)
                         {
-                            input[i, j] = Color.FromArgb(
+                            input[i, j] = Color.FromArgb(0,
                                 (int)trainingData.Data[j, i, 2],
                                 (int)trainingData.Data[j, i, 1],
                                 (int)trainingData.Data[j, i, 0]
@@ -349,8 +349,8 @@ namespace EmguCVDemo
             g.Clear(Color.Black);
             int x = 0, y = 0, w = width, h = height;
             double b1, b2;
-            b1 = width / height;
-            b2 = img.Width / img.Height;
+            b1 = width / (double)height;
+            b2 = img.Width / (double)img.Height;
             if (b1 > b2)
             {
                 w = (int)(h * b2);
@@ -548,6 +548,7 @@ namespace EmguCVDemo
             int typeCount = 3;
             Cnn tmpCnn = new Cnn();
             tmpCnn.AddCnnFullLayer(4, 14, 1);
+            tmpCnn.AddCnnFullLayer(10, 1);
             tmpCnn.AddCnnFullLayer(3, 1);
             for (int i = 0; i < nIter; i++)
             {

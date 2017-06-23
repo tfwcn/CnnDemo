@@ -93,7 +93,7 @@ namespace EmguCVDemo.BP
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
                 CnnPoolingList.Add(new CnnPooling(CnnKernelList[0].ConvolutionKernelWidth, CnnKernelList[0].ConvolutionKernelHeight,
-                    receptiveFieldWidth, receptiveFieldHeight, activationFunctionType, poolingType));
+                    receptiveFieldWidth, receptiveFieldHeight, activationFunctionType, poolingType, CnnKernelList[0].InputCount, CnnKernelList[0].OutputCount));
             }
         }
         /// <summary>

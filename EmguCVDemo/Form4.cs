@@ -28,8 +28,8 @@ namespace EmguCVDemo
         private void Form4_Load(object sender, EventArgs e)
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(20, 28, 28, 5, 5, 1, 1, 1, 2, 2, 1, 1);
-            //cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, 2);
+            cnn.AddCnnConvolutionLayer(20, 28, 28, 5, 5, 1, 1, 1, 2, 2, 1, 2);
+            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, 1);
             //cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, 1, 0, 0, 0, 0);
             cnn.AddCnnFullLayer(100, 1);
             cnn.AddCnnFullLayer(10, 1);

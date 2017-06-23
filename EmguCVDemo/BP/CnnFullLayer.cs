@@ -38,16 +38,29 @@ namespace EmguCVDemo.BP
         [NonSerialized]
         public double[] OutputValue;
         /// <summary>
+        /// 输出平均值
+        /// </summary>
+        private double mean;
+        /// <summary>
+        /// 输出方差
+        /// </summary>
+        private double variance;
+        /// <summary>
+        /// 归一化
+        /// </summary>
+        public bool Standardization { get; set; }
+        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="InputCount"></param>
         /// <param name="OutputCount"></param>
         /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
-        public CnnFullLayer(int InputCount, int OutputCount, int activationFunctionType)
+        public CnnFullLayer(int InputCount, int OutputCount, int activationFunctionType, bool standardization)
         {
             this.InputCount = InputCount;
             this.OutputCount = OutputCount;
             this.ActivationFunctionType = activationFunctionType;
+            this.Standardization = standardization;
             InputWeight = new double[OutputCount, InputCount];
             OutputOffset = new double[OutputCount];
             InitInputWeight();
@@ -62,7 +75,22 @@ namespace EmguCVDemo.BP
             for (int i = 0; i < OutputCount; i++)
             {
                 result[i] = CalculatedPointResult(value, i);
-                result[i] = ActivationFunction(result[i] + OutputOffset[i]);
+                //result[i] = CalculatedPointResult(value, i) + OutputOffset[i];
+                //调用激活函数计算结果
+                if (!Standardization)
+                    result[i] = ActivationFunction(result[i] + OutputOffset[i]);
+            }
+            if (Standardization)
+            {
+                mean = CnnHelper.GetMean(result);
+                variance = CnnHelper.GetVariance(result, mean);
+                //归一化每个结果
+                for (int i = 0; i < OutputCount; i++)
+                {
+                    double z = (result[i] - mean) / Math.Sqrt(variance);
+                    //调用激活函数计算结果
+                    result[i] = ActivationFunction(z + OutputOffset[i]);
+                }
             }
             OutputValue = result;
             return result;
@@ -134,7 +162,8 @@ namespace EmguCVDemo.BP
             for (int i = 0; i < OutputCount; i++)
             {
                 //残差=导数(输出值)*(输出值-正确值)
-                double residual = ActivationFunctionDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
+                //double residual = ActivationFunctionDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
+                double residual = OutputValue[i] - output[i];
                 for (int j = 0; j < InputCount; j++)
                 {
                     //sum(残差)=更新前的权重*残差
@@ -151,7 +180,11 @@ namespace EmguCVDemo.BP
             for (int i = 0; i < InputCount; i++)
             {
                 //正确输入值=旧输入值-sum(残差*更新前的权重)
+                result[i] *= ActivationFunctionDerivative(InputValue[i]);
                 result[i] = InputValue[i] - result[i];
+                //反归一化每个结果
+                if (Standardization)
+                    result[i] = result[i] * Math.Sqrt(variance) + mean;
             }
             return result;
         }

@@ -37,6 +37,7 @@
             this.pbImage = new System.Windows.Forms.PictureBox();
             this.lblResult = new System.Windows.Forms.Label();
             this.numLearningRate = new System.Windows.Forms.NumericUpDown();
+            this.textBox1 = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.pbImage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numLearningRate)).BeginInit();
             this.SuspendLayout();
@@ -137,11 +138,19 @@
             0,
             131072});
             // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(182, 43);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(120, 21);
+            this.textBox1.TabIndex = 9;
+            // 
             // Form4
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(344, 263);
+            this.Controls.Add(this.textBox1);
             this.Controls.Add(this.numLearningRate);
             this.Controls.Add(this.lblResult);
             this.Controls.Add(this.pbImage);
@@ -176,5 +185,6 @@
         private System.Windows.Forms.PictureBox pbImage;
         private System.Windows.Forms.Label lblResult;
         private System.Windows.Forms.NumericUpDown numLearningRate;
+        private System.Windows.Forms.TextBox textBox1;
     }
 }

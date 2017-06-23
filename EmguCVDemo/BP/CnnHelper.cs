@@ -18,14 +18,6 @@ namespace EmguCVDemo.BP
 
         public static void ShowChange(double[] output, double[] labels, int inputCount)
         {
-            //double subVal = 0;
-            //for (int i = 0; i < output.Length; i++)
-            //{
-            //    subVal += output[i] - labels[i];
-            //    Console.Write(output[i] + " ");
-            //}
-            //Console.WriteLine("");
-            //Console.WriteLine("CnnChange:" + subVal);
             //正确率
             SumCount++;
             int outputValue = 0, labelsValue = 0;
@@ -42,23 +34,11 @@ namespace EmguCVDemo.BP
                     labelsValue = i;
                     labelsMax = labels[i];
                 }
-                //Console.Write(output[i] + " ");
             }
             if (outputValue == labelsValue) TrueCount++;
             ResultNum = outputValue;
             LabelsNum = labelsValue;
             TruePercent = TrueCount / (double)SumCount;
-            //Console.WriteLine("");
-            //Console.WriteLine(String.Format("TrueCount:{0}/{1} {2}", TrueCount, SumCount, (TrueCount / (double)SumCount)));
-            //均方差
-            //double mse = 0;
-            //for (int i = 0; i < output.Length; i++)
-            //{
-            //    //残差=导数(输出值)*(输出值-正确值)
-            //    mse += Math.Pow(labels[i] - output[i], 2);
-            //}
-            //mse = mse / (2 * inputCount);
-            //Console.WriteLine("MSE:" + mse);
         }
 
         public static Bitmap GetImg(Cnn cnn)
@@ -243,6 +223,21 @@ namespace EmguCVDemo.BP
             return result;
         }
         /// <summary>
+        /// 求均值
+        /// </summary>
+        /// <returns></returns>
+        public static double GetMean(double[] value)
+        {
+            int valueLenght = value.GetLength(0);
+            double result = 0;
+            for (int i = 0; i < valueLenght; i++)
+            {
+                result += value[i];
+            }
+            result /= valueLenght;
+            return result;
+        }
+        /// <summary>
         /// 求方差
         /// </summary>
         /// <returns></returns>
@@ -261,5 +256,57 @@ namespace EmguCVDemo.BP
             result /= valueWidth * valueHeight;
             return result;
         }
+        /// <summary>
+        /// 求方差
+        /// </summary>
+        /// <returns></returns>
+        public static double GetVariance(double[] value, double mean)
+        {
+            int valueLenght = value.GetLength(0);
+            double result = 0;
+            for (int i = 0; i < valueLenght; i++)
+            {
+                result += Math.Pow(value[i] - mean, 2);
+            }
+            result /= valueLenght;
+            return result;
+        }
+        /*public delegate void ForeachHandler1(ref int i, ref double value);
+        public delegate void ForeachHandler2(ref int i, ref int j, ref double value);
+        /// <summary>
+        /// 循环二维数组
+        /// </summary>
+        public static void Foreach(double[,] array, ForeachHandler2 foreachHandler)
+        {
+            int i = 0, j = 0;
+            int w = array.GetLength(0), h = array.GetLength(1);
+            foreach (double value in array)
+            {
+                double tmpValue = value;
+                foreachHandler(ref i, ref j, ref tmpValue);
+                array[i, j] = tmpValue;
+                j++;
+                if (j >= h)
+                {
+                    i++;
+                    j = 0;
+                }
+            }
+        }
+        /// <summary>
+        /// 循环一维数组
+        /// </summary>
+        public static void Foreach(double[] array, ForeachHandler1 foreachHandler)
+        {
+            int i = 0;
+            int len = array.GetLength(0);
+            foreach (double value in array)
+            {
+                double tmpValue = value;
+                foreachHandler(ref i, ref tmpValue);
+                array[i] = tmpValue;
+                i++;
+            }
+        }*/
     }
 }
