@@ -88,6 +88,7 @@ namespace EmguCVDemo.BP
                 for (int i = 0; i < OutputCount; i++)
                 {
                     double z = (result[i] - mean) / Math.Sqrt(variance);
+                    //if (Double.IsNaN(z)) z = 0;
                     //调用激活函数计算结果
                     result[i] = ActivationFunction(z + OutputOffset[i]);
                 }

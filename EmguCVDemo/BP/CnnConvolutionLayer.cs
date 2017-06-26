@@ -96,23 +96,43 @@ namespace EmguCVDemo.BP
                     receptiveFieldWidth, receptiveFieldHeight, activationFunctionType, poolingType, CnnKernelList[0].InputCount, CnnKernelList[0].OutputCount));
             }
         }
+        public object lockObj = new object();
         /// <summary>
         /// 前向传播,计算结果
         /// </summary>
         public List<double[,]> CalculatedResult(List<double[,]> value)
         {
             List<double[,]> result = new List<double[,]>();
-            for (int i = 0; i < ConvolutionKernelCount; i++)
+            //for (int i = 0; i < ConvolutionKernelCount; i++)
+            //{
+            //    if (CnnPoolingList != null)
+            //    {
+            //        result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
+            //    }
+            //    else
+            //    {
+            //        result.Add(CnnKernelList[i].CalculatedConvolutionResult(value[i]));
+            //    }
+            //}
+
+            //多线程
+            System.Threading.Tasks.Parallel.For(0, ConvolutionKernelCount, i =>
             {
                 if (CnnPoolingList != null)
                 {
-                    result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
+                    var tmpResult = CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i]));
+                    System.Threading.Monitor.Enter(lockObj);
+                    result.Add(tmpResult);
+                    System.Threading.Monitor.Exit(lockObj);
                 }
                 else
                 {
-                    result.Add(CnnKernelList[i].CalculatedConvolutionResult(value[i]));
+                    var tmpResult = CnnKernelList[i].CalculatedConvolutionResult(value[i]);
+                    System.Threading.Monitor.Enter(lockObj);
+                    result.Add(tmpResult);
+                    System.Threading.Monitor.Exit(lockObj);
                 }
-            }
+            });
             return result;
         }
         /// <summary>
@@ -124,17 +144,36 @@ namespace EmguCVDemo.BP
         public List<double[,]> BackPropagation(List<double[,]> output, double learningRate)
         {
             List<double[,]> result = new List<double[,]>();
-            for (int i = 0; i < ConvolutionKernelCount; i++)
+            //for (int i = 0; i < ConvolutionKernelCount; i++)
+            //{
+            //    if (CnnPoolingList != null)
+            //    {
+            //        result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate));
+            //    }
+            //    else
+            //    {
+            //        result.Add(CnnKernelList[i].BackPropagation(output[i], learningRate));
+            //    }
+            //}
+
+            //多线程
+            System.Threading.Tasks.Parallel.For(0, ConvolutionKernelCount, i =>
             {
                 if (CnnPoolingList != null)
                 {
-                    result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate));
+                    var tmpResult = CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate);
+                    System.Threading.Monitor.Enter(lockObj);
+                    result.Add(tmpResult);
+                    System.Threading.Monitor.Exit(lockObj);
                 }
                 else
                 {
-                    result.Add(CnnKernelList[i].BackPropagation(output[i], learningRate));
+                    var tmpResult = CnnKernelList[i].BackPropagation(output[i], learningRate);
+                    System.Threading.Monitor.Enter(lockObj);
+                    result.Add(tmpResult);
+                    System.Threading.Monitor.Exit(lockObj);
                 }
-            }
+            });
             return result;
         }
     }

@@ -133,6 +133,7 @@ namespace EmguCVDemo.BP
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
                     double z = (result[i, j] - mean) / Math.Sqrt(variance);
+                    //if (Double.IsNaN(z)) z = 0;
                     //调用激活函数计算结果
                     result[i, j] = ActivationFunction(z + OutputOffset);
                 }
@@ -238,7 +239,7 @@ namespace EmguCVDemo.BP
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * offsetHeight + j2 < inputHeight; j2++)
                         {
                             //计算输入值残差
-                            result[i * offsetWidth + i2, j * offsetHeight + j2] += ShareWeight[i2, j2] * residual[i, j];// / (receptiveFieldWidth * receptiveFieldHeight));
+                            result[i * offsetWidth + i2, j * offsetHeight + j2] += ShareWeight[i2, j2] * residual[i, j];
                             //计算权重残差
                             deltaWeight[i2, j2] += InputValue[i * offsetWidth + i2, j * offsetHeight + j2] * residual[i, j];
                         }
