@@ -14,25 +14,28 @@ using System.Threading;
 
 namespace EmguCVDemo
 {
-    public partial class Form4 : Form
+    public partial class Form4_2 : Form
     {
         private Thread threadCnn;
-        private Cnn cnn;
+        private Cnn cnn1;
+        private Cnn cnn2;
         private int trainCount = 0;
         private double learningRate;
-        public Form4()
+        public Form4_2()
         {
             InitializeComponent();
         }
 
-        private void Form4_Load(object sender, EventArgs e)
+        private void Form4_2_Load(object sender, EventArgs e)
         {
-            cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(30, 28, 28, 5, 5, 1, 1, 1, 2, 2, 1, 2);
+            cnn1 = new Cnn();
+            cnn1.AddCnnConvolutionLayer(40, 150, 150, 5, 5, 1, 1, 1, 2, 2, 1, 2);
+            cnn1.AddCnnConvolutionLayer(80, 5, 5, 1, 1, 1, 2, 2, 1, 1);
+            cnn1.AddCnnConvolutionLayer(160, 5, 5, 1, 1, 1, 2, 2, 1, 1);
+            cnn1.AddCnnConvolutionLayer(320, 5, 5, 1, 1, 1, 2, 2, 1, 1);
             //cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, 1);
-            //cnn.AddCnnConvolutionLayer(120, 3, 3, 1, 1, 1, 0, 0, 0, 0);
-            cnn.AddCnnFullLayer(100, 1);
-            cnn.AddCnnFullLayer(10, 1);
+            //cnn.AddCnnConvolutionLayer(120, 4, 4, 1, 1, 1, 0, 0, 0, 0);
+            cnn1.AddCnnFullLayer(100, 1);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -69,6 +72,7 @@ namespace EmguCVDemo
                                 for (int i = 0; i < count; i++)
                                 {
                                     Bitmap img = GetImage(fsImages, width, height);
+                                    img = CnnHelper.ZoomImg(img, 150, 150);
                                     byte label = GetLable(fs);
                                     double[] labels = new double[10];
                                     for (int i2 = 0; i2 < 10; i2++)
@@ -90,26 +94,7 @@ namespace EmguCVDemo
                                         }
                                     }
                                     //input = CnnHelper.MatrixExpand(input, 2, 2);
-                                    cnn.Train(input, labels, learningRate * (1 - CnnHelper.TruePercent * CnnHelper.TruePercent),
-                                        new Cnn.TrainInterferenceHandler((value) =>
-                                        {
-                                            if (CnnHelper.TrueCount / (double)CnnHelper.SumCount < 0.9)
-                                                return false;
-                                            int outputValue = 0;
-                                            double outputMax = value[0];
-                                            for (int i2 = 0; i2 < value.Length; i2++)
-                                            {
-                                                if (outputMax < value[i2])
-                                                {
-                                                    outputValue = i2;
-                                                    outputMax = value[i2];
-                                                }
-                                            }
-                                            if (outputValue == label)
-                                                return true;
-                                            else
-                                                return false;
-                                        }));
+                                    cnn1.Train(input, labels, learningRate * (1 - CnnHelper.TruePercent * CnnHelper.TruePercent), null);
                                     this.Invoke(new Action(() =>
                                     {
                                         lblInfo.Text = String.Format("训练周期:{0} 训练次数:{1}/{2} 正确率:{3:00.####%}", trainCount, CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
@@ -170,6 +155,7 @@ namespace EmguCVDemo
                         for (int i = 0; i < count; i++)
                         {
                             Bitmap img = GetImage(fsImages, width, height);
+                            img = CnnHelper.ZoomImg(img, 150, 150);
                             byte label = GetLable(fs);
                             Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
                             double[,] input = new double[width, height];
@@ -185,7 +171,7 @@ namespace EmguCVDemo
                                 }
                             }
                             //input = CnnHelper.MatrixExpand(input, 2, 2);
-                            double[] labels = cnn.Predict(input);
+                            double[] labels = cnn1.Predict(input);
                             double[] labelsTrue = new double[10];
                             double maxtype = labels[0], max = 0;
                             for (int n = 0; n < 10; n++)
@@ -221,27 +207,13 @@ namespace EmguCVDemo
         private Bitmap GetImage(FileStream fs, int width, int height)
         {
             Bitmap img = new Bitmap(width, height);
-            Random random = new Random();
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     byte[] bytes1 = new byte[1];
                     fs.Read(bytes1, 0, 1);
-                    int r, g, b;
-                    if (bytes1[0] < 10)
-                    {
-                        r = bytes1[0] + (byte)random.Next(0, 100);
-                        g = bytes1[0] + (byte)random.Next(0, 100);
-                        b = bytes1[0] + (byte)random.Next(0, 100);
-                    }
-                    else
-                    {
-                        r = bytes1[0];
-                        g = bytes1[0];
-                        b = bytes1[0];
-                    }
-                    img.SetPixel(x, y, Color.FromArgb(r, g, b));
+                    img.SetPixel(x, y, Color.FromArgb(bytes1[0], bytes1[0], bytes1[0]));
                 }
             }
             return img;
@@ -277,7 +249,7 @@ namespace EmguCVDemo
             sfd.Filter = "*.cnn|*.cnn";
             if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                CnnHelper.SaveCnn(cnn, sfd.FileName);
+                CnnHelper.SaveCnn(cnn1, sfd.FileName);
             }
         }
 
@@ -287,64 +259,16 @@ namespace EmguCVDemo
             ofd.Filter = "*.cnn|*.cnn";
             if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                cnn = CnnHelper.LoadCnn(ofd.FileName);
+                cnn1 = CnnHelper.LoadCnn(ofd.FileName);
             }
         }
 
-        private void Form4_FormClosing(object sender, FormClosingEventArgs e)
+        private void Form4_2_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (threadCnn != null && threadCnn.ThreadState == ThreadState.Running)
             {
                 threadCnn.Abort();
             }
-        }
-
-        private void btnPic_Click(object sender, EventArgs e)
-        {
-            OpenFileDialog ofd = new OpenFileDialog();
-            ofd.Filter = "*.jpg|*.jpg";
-            if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                Bitmap img = new Bitmap(ofd.FileName);
-                //img = CnnHelper.ZoomImg(img, 28, 28);
-                Image<Bgr, float> trainingData = new Image<Bgr, float>(img);
-                double[,] input = new double[28, 28];
-                for (int w = 0; w < 28; w++)
-                {
-                    for (int h = 0; h < 28; h++)
-                    {
-                        input[w, h] = Color.FromArgb(0,
-                            (int)trainingData.Data[h, w, 2],
-                            (int)trainingData.Data[h, w, 1],
-                            (int)trainingData.Data[h, w, 0]
-                            ).ToArgb() / (double)0xFFFFFF;
-                    }
-                }
-                //input = CnnHelper.MatrixExpand(input, 2, 2);
-                double[] labels = cnn.Predict(input);
-                double[] labelsTrue = new double[10];
-                double maxtype = labels[0], max = 0;
-                for (int n = 0; n < 10; n++)
-                {
-                    if (maxtype < labels[n])
-                    {
-                        max = n;
-                        maxtype = labels[n];
-                    }
-                }
-                //Console.WriteLine(i + ":" + label + "," + max);
-                //CnnHelper.ShowChange(labels, labelsTrue, 10000);
-                this.Invoke(new Action(() =>
-                {
-                    lblResult.Text = max.ToString();
-                    pbImage.Image = img;
-                }));
-            }
-        }
-
-        private void btnPicTrain_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }

@@ -20,6 +20,10 @@ namespace EmguCVDemo.BP
         /// 卷积层间连接
         /// </summary>
         private List<bool[,]> convolutionLinkList;
+        /// <summary>
+        /// 训练干涉
+        /// </summary>
+        public delegate bool TrainInterferenceHandler(double[] value);
         public Cnn()
         {
             CnnConvolutionLayerList = new List<CnnConvolutionLayer>();
@@ -134,13 +138,13 @@ namespace EmguCVDemo.BP
         public void AddCnnFullLayer(int inputCount, int outputCount, int activationFunctionType)
         {
             CnnFullLayer cnnFullLayer = new CnnFullLayer(inputCount,
-                outputCount, activationFunctionType, true);
+                outputCount, activationFunctionType, false);
             CnnFullLayerList.Add(cnnFullLayer);
         }
         /// <summary>
         /// 训练
         /// </summary>
-        public void Train(double[,] input, double[] output, double learningRate)
+        public List<double[,]> Train(double[,] input, double[] output, double learningRate, TrainInterferenceHandler interference)
         {
             #region 正向传播
             //计算卷积层输出
@@ -204,6 +208,13 @@ namespace EmguCVDemo.BP
                 outputFullTmp = cnnFullLayer.CalculatedResult(outputFullTmp);
             }
             #endregion
+
+            CnnHelper.ShowChange(outputFullTmp, output, 60000);
+            //训练干涉
+            if (interference != null && interference(outputFullTmp) == true)
+            {
+                return null;
+            }
             #region 反向传播
             //计算全连接层
             double[] inputFullTmp = output;
@@ -263,7 +274,7 @@ namespace EmguCVDemo.BP
             }
             //Console.WriteLine("end");
             #endregion
-            CnnHelper.ShowChange(outputFullTmp, output, 60000);
+            return inputConvolutionTmp;
         }
         /// <summary>
         /// 训练,仅用于BP网络

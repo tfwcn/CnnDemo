@@ -78,6 +78,26 @@ namespace EmguCVDemo.BP
         /// 输出方差
         /// </summary>
         private double variance;
+        /// <summary>
+        /// 共享权重梯度集，用于计算平均权重梯度
+        /// </summary>
+        private List<double[,]> meanListDeltaWeight;
+        /// <summary>
+        /// 偏置梯度集，用于计算平均偏置梯度
+        /// </summary>
+        private List<double> meanListDeltaOffset;
+        /// <summary>
+        /// 平均共享权重梯度
+        /// </summary>
+        private double[,] meanDeltaWeight;
+        /// <summary>
+        /// 平均偏置梯度
+        /// </summary>
+        private double meanDeltaOffset;
+        /// <summary>
+        /// 平均梯度集上限
+        /// </summary>
+        private int miniBatchSize = 100;
 
         /// <summary>
         /// 构造函数
@@ -106,6 +126,9 @@ namespace EmguCVDemo.BP
             this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling((inputWidth - receptiveFieldWidth) / (double)offsetWidth)) + 1;
             this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling((inputHeight - receptiveFieldHeight) / (double)offsetHeight)) + 1;
             ShareWeight = new double[receptiveFieldWidth, receptiveFieldHeight];
+            meanDeltaWeight = new double[receptiveFieldWidth, receptiveFieldHeight];
+            meanListDeltaWeight = new List<double[,]>();
+            meanListDeltaOffset = new List<double>();
             InitShareWeight();
         }
         /// <summary>
@@ -121,7 +144,7 @@ namespace EmguCVDemo.BP
                 {
                     result[i, j] = CalculatedConvolutionPointResult(value, i, j);//卷积
                     //result[i, j] += OutputOffset;//偏置
-                    //调用激活函数计算结果
+                    ////调用激活函数计算结果
                     //result[i, j] = ActivationFunction(result[i, j]);
                 }
             }
@@ -132,9 +155,10 @@ namespace EmguCVDemo.BP
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
-                    double z = (result[i, j] - mean) / Math.Sqrt(variance);
-                    //if (Double.IsNaN(z)) z = 0;
                     //调用激活函数计算结果
+                    double z = (result[i, j] - mean) / Math.Sqrt(variance);
+                    //if (double.IsNaN(z))
+                    //    z = result[i, j] > 0 ? 1 : -1;
                     result[i, j] = ActivationFunction(z + OutputOffset);
                 }
             }
@@ -249,9 +273,48 @@ namespace EmguCVDemo.BP
                 }
             }
             deltaWeight = CnnHelper.MatrixRotate180(deltaWeight);
+            //计算平均梯度
+            meanListDeltaWeight.Add(deltaWeight);
+            for (int i = 0; i < receptiveFieldWidth; i++)
+            {
+                for (int j = 0; j < receptiveFieldHeight; j++)
+                {
+                    if (meanListDeltaWeight.Count > miniBatchSize)
+                    {
+                        meanDeltaWeight[i, j] -= meanListDeltaWeight[0][i, j] / miniBatchSize;
+                        meanDeltaWeight[i, j] += deltaWeight[i, j] / miniBatchSize;
+                        meanListDeltaWeight.RemoveAt(0);
+                    }
+                    else
+                    {
+                        meanDeltaWeight[i, j] = 0;
+                        foreach (var tmpShareWeight in meanListDeltaWeight)
+                        {
+                            meanDeltaWeight[i, j] += tmpShareWeight[i, j] / meanListDeltaWeight.Count;
+                        }
+                    }
+                }
+            }
+            meanListDeltaOffset.Add(deltaOffset);
+            if (meanListDeltaOffset.Count > miniBatchSize)
+            {
+                meanDeltaOffset -= meanListDeltaOffset[0] / miniBatchSize;
+                meanDeltaOffset += deltaOffset / miniBatchSize;
+                meanListDeltaOffset.RemoveAt(0);
+            }
+            else
+            {
+                meanDeltaOffset = 0;
+                foreach (var tmpShareOffset in meanListDeltaOffset)
+                {
+                    meanDeltaOffset += tmpShareOffset / meanListDeltaOffset.Count;
+                }
+            }
             //更新权重和偏置
-            UpdateWeight(ShareWeight, deltaWeight, learningRate);
-            UpdateOffset(OutputOffset, deltaOffset, learningRate);
+            //UpdateWeight(ShareWeight, deltaWeight, learningRate);
+            //UpdateOffset(OutputOffset, deltaOffset, learningRate);
+            UpdateWeight(ShareWeight, meanDeltaWeight, learningRate);
+            UpdateOffset(OutputOffset, meanDeltaOffset, learningRate);
             //计算正确输入值
             for (int i = 0; i < inputWidth; i++)
             {

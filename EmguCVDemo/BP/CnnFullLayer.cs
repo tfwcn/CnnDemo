@@ -50,6 +50,26 @@ namespace EmguCVDemo.BP
         /// </summary>
         public bool Standardization { get; set; }
         /// <summary>
+        /// 共享权重梯度集，用于计算平均权重梯度
+        /// </summary>
+        private List<double[,]> meanListDeltaWeight;
+        /// <summary>
+        /// 偏置梯度集，用于计算平均偏置梯度
+        /// </summary>
+        private List<double[]> meanListDeltaOffset;
+        /// <summary>
+        /// 平均共享权重梯度
+        /// </summary>
+        private double[,] meanDeltaWeight;
+        /// <summary>
+        /// 平均偏置梯度
+        /// </summary>
+        private double[] meanDeltaOffset;
+        /// <summary>
+        /// 平均梯度集上限
+        /// </summary>
+        private int miniBatchSize = 10;
+        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="InputCount"></param>
@@ -63,6 +83,10 @@ namespace EmguCVDemo.BP
             this.Standardization = standardization;
             InputWeight = new double[OutputCount, InputCount];
             OutputOffset = new double[OutputCount];
+            meanDeltaWeight = new double[OutputCount, InputCount];
+            meanDeltaOffset = new double[OutputCount];
+            meanListDeltaWeight = new List<double[,]>();
+            meanListDeltaOffset = new List<double[]>();
             InitInputWeight();
         }
         /// <summary>
@@ -87,9 +111,8 @@ namespace EmguCVDemo.BP
                 //归一化每个结果
                 for (int i = 0; i < OutputCount; i++)
                 {
-                    double z = (result[i] - mean) / Math.Sqrt(variance);
-                    //if (Double.IsNaN(z)) z = 0;
                     //调用激活函数计算结果
+                    double z = (result[i] - mean) / Math.Sqrt(variance);
                     result[i] = ActivationFunction(z + OutputOffset[i]);
                 }
             }
@@ -174,9 +197,53 @@ namespace EmguCVDemo.BP
                 }
                 deltaOffset[i] = residual;
             }
+            //计算平均梯度
+            /*
+            meanListDeltaWeight.Add(deltaWeight);
+            for (int i = 0; i < OutputCount; i++)
+            {
+                for (int j = 0; j < InputCount; j++)
+                {
+                    if (meanListDeltaWeight.Count > miniBatchSize)
+                    {
+                        meanDeltaWeight[i, j] -= meanListDeltaWeight[0][i, j] / miniBatchSize;
+                        meanDeltaWeight[i, j] += deltaWeight[i, j] / miniBatchSize;
+                        meanListDeltaWeight.RemoveAt(0);
+                    }
+                    else
+                    {
+                        meanDeltaWeight[i, j] = 0;
+                        foreach (var tmpShareWeight in meanListDeltaWeight)
+                        {
+                            meanDeltaWeight[i, j] += tmpShareWeight[i, j] / meanListDeltaWeight.Count;
+                        }
+                    }
+                }
+            }
+            meanListDeltaOffset.Add(deltaOffset);
+            for (int i = 0; i < OutputCount; i++)
+            {
+                if (meanListDeltaOffset.Count > miniBatchSize)
+                {
+                    meanDeltaOffset[i] -= meanListDeltaOffset[i][0] / miniBatchSize;
+                    meanDeltaOffset[i] += deltaOffset[i] / miniBatchSize;
+                    meanListDeltaOffset.RemoveAt(0);
+                }
+                else
+                {
+                    meanDeltaOffset[i] = 0;
+                    foreach (var tmpShareOffset in meanListDeltaOffset)
+                    {
+                        meanDeltaOffset[i] += tmpShareOffset[i] / meanListDeltaOffset.Count;
+                    }
+                }
+            }
+            //*/
             //更新权重和偏置
             UpdateWeight(InputWeight, deltaWeight, learningRate);
             UpdateOffset(OutputOffset, deltaOffset, learningRate);
+            //UpdateWeight(InputWeight, meanDeltaWeight, learningRate);
+            //UpdateOffset(OutputOffset, meanDeltaOffset, learningRate);
             //计算正确输入值
             for (int i = 0; i < InputCount; i++)
             {

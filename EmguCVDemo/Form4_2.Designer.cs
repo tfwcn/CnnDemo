@@ -1,6 +1,6 @@
 ﻿namespace EmguCVDemo
 {
-    partial class Form4
+    partial class Form4_2
     {
         /// <summary>
         /// Required designer variable.
@@ -38,8 +38,6 @@
             this.lblResult = new System.Windows.Forms.Label();
             this.numLearningRate = new System.Windows.Forms.NumericUpDown();
             this.textBox1 = new System.Windows.Forms.TextBox();
-            this.btnPic = new System.Windows.Forms.Button();
-            this.btnPicTrain = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pbImage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numLearningRate)).BeginInit();
             this.SuspendLayout();
@@ -147,33 +145,11 @@
             this.textBox1.Size = new System.Drawing.Size(120, 21);
             this.textBox1.TabIndex = 9;
             // 
-            // btnPic
-            // 
-            this.btnPic.Location = new System.Drawing.Point(182, 70);
-            this.btnPic.Name = "btnPic";
-            this.btnPic.Size = new System.Drawing.Size(75, 23);
-            this.btnPic.TabIndex = 10;
-            this.btnPic.Text = "打开图片";
-            this.btnPic.UseVisualStyleBackColor = true;
-            this.btnPic.Click += new System.EventHandler(this.btnPic_Click);
-            // 
-            // btnPicTrain
-            // 
-            this.btnPicTrain.Location = new System.Drawing.Point(263, 70);
-            this.btnPicTrain.Name = "btnPicTrain";
-            this.btnPicTrain.Size = new System.Drawing.Size(106, 23);
-            this.btnPicTrain.TabIndex = 11;
-            this.btnPicTrain.Text = "打开图片(训练)";
-            this.btnPicTrain.UseVisualStyleBackColor = true;
-            this.btnPicTrain.Click += new System.EventHandler(this.btnPicTrain_Click);
-            // 
-            // Form4
+            // Form4_2
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(402, 265);
-            this.Controls.Add(this.btnPicTrain);
-            this.Controls.Add(this.btnPic);
+            this.ClientSize = new System.Drawing.Size(344, 263);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.numLearningRate);
             this.Controls.Add(this.lblResult);
@@ -187,10 +163,10 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Name = "Form4";
-            this.Text = "Form4";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form4_FormClosing);
-            this.Load += new System.EventHandler(this.Form4_Load);
+            this.Name = "Form4_2";
+            this.Text = "Form4_2";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form4_2_FormClosing);
+            this.Load += new System.EventHandler(this.Form4_2_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pbImage)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numLearningRate)).EndInit();
             this.ResumeLayout(false);
@@ -210,7 +186,5 @@
         private System.Windows.Forms.Label lblResult;
         private System.Windows.Forms.NumericUpDown numLearningRate;
         private System.Windows.Forms.TextBox textBox1;
-        private System.Windows.Forms.Button btnPic;
-        private System.Windows.Forms.Button btnPicTrain;
     }
 }

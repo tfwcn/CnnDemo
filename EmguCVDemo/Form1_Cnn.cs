@@ -305,7 +305,7 @@ namespace EmguCVDemo
                     }
                     tmpImg.Dispose();
                     tmpImg = null;
-                    cnn.Train(input, output, 0.01);
+                    cnn.Train(input, output, 0.01, null);
                 }
             }
         }

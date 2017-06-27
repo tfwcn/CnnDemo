@@ -40,13 +40,37 @@ namespace EmguCVDemo.BP
             LabelsNum = labelsValue;
             TruePercent = TrueCount / (double)SumCount;
         }
-
-        public static Bitmap GetImg(Cnn cnn)
+        /// <summary>
+        /// 缩放图片
+        /// </summary>
+        /// <param name="img"></param>
+        /// <param name="width"></param>
+        /// <param name="height"></param>
+        /// <param name="rects"></param>
+        /// <returns></returns>
+        public static Bitmap ZoomImg(Bitmap img, int width, int height)
         {
-            int col = cnn.CnnConvolutionLayerList.Count * 2 + cnn.CnnFullLayerList.Count;
-            Bitmap img = new Bitmap(1000, 1000);
-
-            return img;
+            //缩放图片
+            Bitmap tmpZoomImg = new Bitmap(width, height);
+            Graphics g = Graphics.FromImage(tmpZoomImg);
+            g.Clear(Color.Black);
+            int x = 0, y = 0, w = width, h = height;
+            double b1, b2;
+            b1 = width / (double)height;
+            b2 = img.Width / (double)img.Height;
+            if (b1 > b2)
+            {
+                w = (int)(h * b2);
+                x = (width - w) / 2;
+            }
+            else if (b2 > b1)
+            {
+                h = (int)(w / b2);
+                y = (height - h) / 2;
+            }
+            g.DrawImage(img, x, y, w, h);
+            g.Dispose();
+            return tmpZoomImg;
         }
         /// <summary>
         /// 卷积操作
