@@ -30,7 +30,7 @@ namespace CnnDemo
         {
             cnn = new Cnn();
             cnn.AddCnnConvolutionLayer(30, 28, 28, 5, 5, 1, 1, 1, 2, 2, 2, false);
-            //cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, false);
+            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, false);
             //cnn.AddCnnConvolutionLayer(120, 3, 3, 1, 1, 1, 0, 0, 0);
             cnn.AddCnnFullLayer(100, 1, false);
             cnn.AddCnnFullLayer(10, 1, false);

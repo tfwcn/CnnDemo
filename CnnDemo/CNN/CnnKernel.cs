@@ -276,10 +276,10 @@ namespace CnnDemo.CNN
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
-                    residual[i, j] = OutputValue[i, j] - output[i, j];
+                    residual[i, j] = ActivationFunctionDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
                 }
             }
-            resultDelta = CnnHelper.Convolution(ShareWeight, residual, offsetWidth, offsetHeight, 1);
+            //resultDelta = CnnHelper.Convolution(ShareWeight, residual, offsetWidth, offsetHeight, 1);
             //double[,] result2 = CnnHelper.Convolution(ShareWeight, residual, offsetWidth, offsetHeight, 1);
             //double[,] deltaWeight2 = CnnHelper.Convolution(residual, InputValue, offsetWidth, offsetHeight, 3);
             //deltaWeight2 = CnnHelper.MatrixRotate180(deltaWeight2);
@@ -293,7 +293,7 @@ namespace CnnDemo.CNN
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * offsetHeight + j2 < inputHeight; j2++)
                         {
                             //计算输入值残差
-                            //resultDelta[i * offsetWidth + i2, j * offsetHeight + j2] += ShareWeight[i2, j2] * residual[i, j];
+                            resultDelta[i * offsetWidth + i2, j * offsetHeight + j2] += ShareWeight[i2, j2] * residual[i, j];
                             //计算权重残差
                             deltaWeight[i2, j2] += InputValue[i * offsetWidth + i2, j * offsetHeight + j2] * residual[i, j];
                         }
@@ -302,7 +302,7 @@ namespace CnnDemo.CNN
                     deltaOffset += residual[i, j];
                 }
             }
-            deltaWeight = CnnHelper.MatrixRotate180(deltaWeight);
+            //deltaWeight = CnnHelper.MatrixRotate180(deltaWeight);
             //计算平均梯度
             /*
             meanListDeltaWeight.Add(deltaWeight);
@@ -352,7 +352,8 @@ namespace CnnDemo.CNN
             {
                 for (int j = 0; j < inputHeight; j++)
                 {
-                    resultDelta[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);
+                    //resultDelta[i, j] /= receptiveFieldWidth * receptiveFieldHeight;
+                    //resultDelta[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);
                     result[i, j] = InputValue[i, j] - resultDelta[i, j];
                     if (Standardization)
                     {
