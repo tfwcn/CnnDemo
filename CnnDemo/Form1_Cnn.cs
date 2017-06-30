@@ -541,7 +541,7 @@ namespace CnnDemo
             String trainfile = @".\data\train.txt";
             String testfile = @".\data\test.txt";
             String outputfile = "outputfile.txt";
-            float eta = 0.01f;
+            float eta = 0.005f;
             int nIter = 1000;
             List<CnnDemo.BP.DataNode> trainList = GetDataList(trainfile);
             List<CnnDemo.BP.DataNode> testList = GetDataList(testfile);

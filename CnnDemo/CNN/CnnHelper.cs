@@ -141,6 +141,42 @@ namespace CnnDemo.CNN
             }
         }
         /// <summary>
+        /// 卷积操作(扩大)
+        /// </summary>
+        public static double[,] ConvolutionMax(double[,] shareWeight, double[,] value)
+        {
+            int shareWeightWidth = shareWeight.GetLength(0);
+            int shareWeightHeight = shareWeight.GetLength(1);
+            double[,] exInputData = MatrixExpand(value, shareWeightWidth - 1, shareWeightHeight - 1);
+            double[,] result = ConvolutionMin(shareWeight, exInputData);
+            return result;
+        }
+        /// <summary>
+        /// 卷积操作(缩小)
+        /// </summary>
+        public static double[,] ConvolutionMin(double[,] shareWeight, double[,] value)
+        {
+            int shareWeightWidth = shareWeight.GetLength(0);
+            int shareWeightHeight = shareWeight.GetLength(1);
+            int valueWidth = value.GetLength(0);
+            int valueHeight = value.GetLength(1);
+            double[,] result = new double[valueWidth - (shareWeightWidth - 1), valueHeight - (shareWeightHeight - 1)];
+            for (int i = 0; i < result.GetLength(0); i++)
+            {
+                for (int j = 0; j < result.GetLength(1); j++)
+                {
+                    for (int c = 0; c < shareWeightWidth; c++)
+                    {
+                        for (int r = 0; r < shareWeightHeight; r++)
+                        {
+                            result[i, j] += shareWeight[c, r] * value[i + c, j + r];
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+        /// <summary>
         /// 周围扩展矩阵，补0
         /// </summary>
         /// <returns></returns>
@@ -194,6 +230,24 @@ namespace CnnDemo.CNN
                 for (int j = 0; j < valueHeight; j++)
                 {
                     result[valueWidth - i - 1, valueHeight - j - 1] = value[i, j];
+                }
+            }
+            return result;
+        }
+        /// <summary>
+        /// 矩阵克隆
+        /// </summary>
+        /// <returns></returns>
+        public static double[,] MatrixClone(double[,] value)
+        {
+            int valueWidth = value.GetLength(0);
+            int valueHeight = value.GetLength(1);
+            double[,] result = new double[valueWidth, valueHeight];
+            for (int i = 0; i < valueWidth; i++)
+            {
+                for (int j = 0; j < valueHeight; j++)
+                {
+                    result[i, j] = value[i, j];
                 }
             }
             return result;

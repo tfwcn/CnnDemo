@@ -58,6 +58,11 @@ namespace CnnDemo.CNN
         [NonSerialized]
         public double[,] InputValue;
         /// <summary>
+        /// 原计算激活函数前的输出值
+        /// </summary>
+        [NonSerialized]
+        public double[,] OutputValueReal;
+        /// <summary>
         /// 原输出值
         /// </summary>
         [NonSerialized]
@@ -161,6 +166,7 @@ namespace CnnDemo.CNN
         {
             InputValue = value;
             double[,] result = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
+            double[,] resultReal = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
             for (int i = 0; i < ConvolutionKernelWidth; i++)
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
@@ -168,6 +174,7 @@ namespace CnnDemo.CNN
                     result[i, j] = CalculatedConvolutionPointResult(value, i, j);//卷积
                     if (!Standardization)
                     {
+                        resultReal[i, j] = result[i, j] + OutputOffset;
                         //调用激活函数计算结果
                         result[i, j] = ActivationFunction(result[i, j] + OutputOffset);
                     }
@@ -186,11 +193,13 @@ namespace CnnDemo.CNN
                         double z = (result[i, j] - mean) / Math.Sqrt(variance);
                         //if (double.IsNaN(z))
                         //    z = result[i, j] > 0 ? 1 : -1;
+                        resultReal[i, j] = z + OutputOffset;
                         result[i, j] = ActivationFunction(z + OutputOffset);
                     }
                 }
             }
             OutputValue = result;
+            OutputValueReal = resultReal;
             return result;
         }
         /// <summary>
@@ -268,7 +277,7 @@ namespace CnnDemo.CNN
             //输出残差
             double[,] residual = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
             //权重残差
-            double[,] deltaWeight = new double[receptiveFieldWidth, receptiveFieldHeight];
+            //double[,] deltaWeight = new double[receptiveFieldWidth, receptiveFieldHeight];
             //偏置残差
             double deltaOffset = 0;
             //残差
@@ -276,13 +285,13 @@ namespace CnnDemo.CNN
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
-                    residual[i, j] = ActivationFunctionDerivative(OutputValue[i, j]) * (OutputValue[i, j] - output[i, j]);
+                    residual[i, j] = ActivationFunctionDerivative(OutputValueReal[i, j]) * (OutputValue[i, j] - output[i, j]);
                 }
             }
             //resultDelta = CnnHelper.Convolution(ShareWeight, residual, offsetWidth, offsetHeight, 1);
+            resultDelta = CnnHelper.ConvolutionMax(CnnHelper.MatrixRotate180(ShareWeight), residual);
             //double[,] result2 = CnnHelper.Convolution(ShareWeight, residual, offsetWidth, offsetHeight, 1);
-            //double[,] deltaWeight2 = CnnHelper.Convolution(residual, InputValue, offsetWidth, offsetHeight, 3);
-            //deltaWeight2 = CnnHelper.MatrixRotate180(deltaWeight2);
+            double[,] deltaWeight = CnnHelper.ConvolutionMin(CnnHelper.MatrixRotate180(residual), InputValue);
             //计算残差
             for (int i = 0; i < ConvolutionKernelWidth; i++)
             {
@@ -293,16 +302,16 @@ namespace CnnDemo.CNN
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * offsetHeight + j2 < inputHeight; j2++)
                         {
                             //计算输入值残差
-                            resultDelta[i * offsetWidth + i2, j * offsetHeight + j2] += ShareWeight[i2, j2] * residual[i, j];
+                            //resultDelta[i * offsetWidth + i2, j * offsetHeight + j2] += ShareWeight[i2, j2] * residual[i, j];
                             //计算权重残差
-                            deltaWeight[i2, j2] += InputValue[i * offsetWidth + i2, j * offsetHeight + j2] * residual[i, j];
+                            //deltaWeight[i2, j2] += InputValue[i * offsetWidth + i2, j * offsetHeight + j2] * residual[i, j];
                         }
                     }
                     //计算偏置残差
                     deltaOffset += residual[i, j];
                 }
             }
-            //deltaWeight = CnnHelper.MatrixRotate180(deltaWeight);
+            deltaWeight = CnnHelper.MatrixRotate180(deltaWeight);
             //计算平均梯度
             /*
             meanListDeltaWeight.Add(deltaWeight);
@@ -354,6 +363,7 @@ namespace CnnDemo.CNN
                 {
                     //resultDelta[i, j] /= receptiveFieldWidth * receptiveFieldHeight;
                     //resultDelta[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);
+                    resultDelta[i, j] *= InputValue[i, j];
                     result[i, j] = InputValue[i, j] - resultDelta[i, j];
                     if (Standardization)
                     {

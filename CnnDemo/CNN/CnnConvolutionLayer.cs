@@ -118,19 +118,27 @@ namespace CnnDemo.CNN
             //多线程
             System.Threading.Tasks.Parallel.For(0, ConvolutionKernelCount, i =>
             {
-                if (CnnPoolingList != null)
+                try
                 {
-                    var tmpResult = CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i]));
-                    System.Threading.Monitor.Enter(lockObj);
-                    result.Add(tmpResult);
-                    System.Threading.Monitor.Exit(lockObj);
+                    if (CnnPoolingList != null)
+                    {
+                        var tmpResult = CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i]));
+                        System.Threading.Monitor.Enter(lockObj);
+                        result.Add(tmpResult);
+                        System.Threading.Monitor.Exit(lockObj);
+                    }
+                    else
+                    {
+                        var tmpResult = CnnKernelList[i].CalculatedConvolutionResult(value[i]);
+                        System.Threading.Monitor.Enter(lockObj);
+                        result.Add(tmpResult);
+                        System.Threading.Monitor.Exit(lockObj);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    var tmpResult = CnnKernelList[i].CalculatedConvolutionResult(value[i]);
-                    System.Threading.Monitor.Enter(lockObj);
-                    result.Add(tmpResult);
-                    System.Threading.Monitor.Exit(lockObj);
+                    Console.WriteLine(ex.ToString());
+                    throw ex;
                 }
             });
             return result;
@@ -159,21 +167,29 @@ namespace CnnDemo.CNN
             //多线程
             System.Threading.Tasks.Parallel.For(0, ConvolutionKernelCount, i =>
             {
-                if (CnnPoolingList != null)
+                try
                 {
-                    var tmpResult = CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate);
-                    System.Threading.Monitor.Enter(lockObj);
-                    result.Add(tmpResult);
-                    System.Threading.Monitor.Exit(lockObj);
-                    LogHelper.Info(CnnKernelList[i].ToString());
+                    if (CnnPoolingList != null)
+                    {
+                        var tmpResult = CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate);
+                        System.Threading.Monitor.Enter(lockObj);
+                        result.Add(tmpResult);
+                        System.Threading.Monitor.Exit(lockObj);
+                        LogHelper.Info(CnnKernelList[i].ToString());
+                    }
+                    else
+                    {
+                        var tmpResult = CnnKernelList[i].BackPropagation(output[i], learningRate);
+                        System.Threading.Monitor.Enter(lockObj);
+                        result.Add(tmpResult);
+                        System.Threading.Monitor.Exit(lockObj);
+                        LogHelper.Info(CnnKernelList[i].ToString());
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    var tmpResult = CnnKernelList[i].BackPropagation(output[i], learningRate);
-                    System.Threading.Monitor.Enter(lockObj);
-                    result.Add(tmpResult);
-                    System.Threading.Monitor.Exit(lockObj);
-                    LogHelper.Info(CnnKernelList[i].ToString());
+                    Console.WriteLine(ex.ToString());
+                    throw ex;
                 }
             });
             return result;

@@ -79,7 +79,7 @@ namespace CnnDemo.CNN
             ////调用激活函数计算结果
             result = Math.Tanh(value);
             //result = Y_STRETCH * Math.Tanh(X_STRETCH * value);
-            if (double.IsNaN(result))
+            if (double.IsNaN(result) || Double.IsInfinity(result))
                 throw new Exception("NaN!");
             return result;
         }
@@ -96,7 +96,7 @@ namespace CnnDemo.CNN
             //double coshx = Math.Cosh(X_STRETCH * value);
             //double denominator = Math.Cosh(2.0 * X_STRETCH * value) + 1;
             //result = DERIVATIVE_STRETCH * coshx * coshx / (denominator * denominator);
-            if (double.IsNaN(result))
+            if (double.IsNaN(result) || Double.IsInfinity(result))
                 throw new Exception("NaN!");
             return result;
         }
@@ -117,7 +117,7 @@ namespace CnnDemo.CNN
             {
                 result = 0;
             }
-            if (double.IsNaN(result))
+            if (double.IsNaN(result) || Double.IsInfinity(result))
                 throw new Exception("NaN!");
             return result;
         }
@@ -138,7 +138,7 @@ namespace CnnDemo.CNN
             {
                 result = 0;
             }
-            if (double.IsNaN(result))
+            if (double.IsNaN(result) || Double.IsInfinity(result))
                 throw new Exception("NaN!");
             return result;
         }
@@ -152,7 +152,7 @@ namespace CnnDemo.CNN
             double result = 0;
             //调用激活函数计算结果
             result = 1 / (1 + Math.Pow(Math.E, -value));
-            if (double.IsNaN(result))
+            if (double.IsNaN(result) || Double.IsInfinity(result))
                 throw new Exception("NaN!");
             return result;
         }
@@ -168,7 +168,7 @@ namespace CnnDemo.CNN
             //result = ActivationFunctionSigmoid(value);
             result = value;
             result = result * (1 - result);
-            if (double.IsNaN(result))
+            if (double.IsNaN(result) || Double.IsInfinity(result))
                 throw new Exception("NaN!");
             return result;
         }

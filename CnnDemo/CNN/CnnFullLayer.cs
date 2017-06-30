@@ -33,6 +33,11 @@ namespace CnnDemo.CNN
         [NonSerialized]
         public double[] InputValue;
         /// <summary>
+        /// 原计算激活函数前的输出值
+        /// </summary>
+        [NonSerialized]
+        public double[] OutputValueReal;
+        /// <summary>
         /// 原输出值
         /// </summary>
         [NonSerialized]
@@ -106,17 +111,21 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 前向传播,计算结果
         /// </summary>
-        public double[] CalculatedResult(double[] value)
+        public double[] CalculatedResult(double[] inputValue)
         {
-            InputValue = value;
+            InputValue = inputValue;
             double[] result = new double[OutputCount];
+            double[] resultReal = new double[OutputCount];
             for (int i = 0; i < OutputCount; i++)
             {
-                result[i] = CalculatedPointResult(value, i);
+                result[i] = CalculatedPointResult(inputValue, i);
                 //result[i] = CalculatedPointResult(value, i) + OutputOffset[i];
                 //调用激活函数计算结果
                 if (!Standardization)
+                {
+                    resultReal[i] = result[i] + OutputOffset[i];
                     result[i] = ActivationFunction(result[i] + OutputOffset[i]);
+                }
             }
             if (Standardization)
             {
@@ -127,10 +136,12 @@ namespace CnnDemo.CNN
                 {
                     //调用激活函数计算结果
                     double z = (result[i] - mean) / Math.Sqrt(variance);
+                    resultReal[i] = z + OutputOffset[i];
                     result[i] = ActivationFunction(z + OutputOffset[i]);
                 }
             }
             OutputValue = result;
+            OutputValueReal = resultReal;
             return result;
         }
         /// <summary>
@@ -201,17 +212,23 @@ namespace CnnDemo.CNN
             //计算上一层的残差
             for (int i = 0; i < OutputCount; i++)
             {
-                //残差=导数(输出值)*(输出值-正确值)
-                //double residual = ActivationFunctionDerivative(OutputValue[i]) * (OutputValue[i] - output[i]);
-                double residual = OutputValue[i] - output[i];
+                //输出残差=导数(激活函数前的输出值)*(输出值-正确值)
+                double residual = ActivationFunctionDerivative(OutputValueReal[i]) * (OutputValue[i] - output[i]);
+                //double residual = OutputValue[i] - output[i];
                 for (int j = 0; j < InputCount; j++)
                 {
                     //sum(残差)=更新前的权重*残差
                     resultDelta[j] += InputWeight[i, j] * residual;
+                    if (Double.IsNaN(resultDelta[j]) || Double.IsInfinity(resultDelta[j]))
+                        throw new Exception("NaN");
                     //计算权重残差,sum(残差)=残差*输入值
                     deltaWeight[i, j] += residual * InputValue[j];
+                    if (Double.IsNaN(deltaWeight[i, j]) || Double.IsInfinity(deltaWeight[i, j]))
+                        throw new Exception("NaN");
                 }
                 deltaOffset[i] = residual;
+                if (Double.IsNaN(deltaOffset[i]) || Double.IsInfinity(deltaOffset[i]))
+                    throw new Exception("NaN");
             }
             //计算平均梯度
             /*
@@ -269,6 +286,8 @@ namespace CnnDemo.CNN
                 //反归一化每个结果
                 if (Standardization)
                     result[i] = result[i] * Math.Sqrt(variance) + mean;
+                if (Double.IsNaN(result[i]) || Double.IsInfinity(result[i]))
+                    throw new Exception("NaN");
             }
             //调试参数
             debugResult = resultDelta;
@@ -290,6 +309,8 @@ namespace CnnDemo.CNN
                 for (int j = 0; j < OutputCount; j++)
                 {
                     weight[j, i] -= learningRate * delta[j, i];
+                    if (Double.IsNaN(weight[j, i]) || Double.IsInfinity(weight[j, i]))
+                        throw new Exception("NaN");
                     //Console.Write(weight[j, i] + " ");
                 }
                 //Console.WriteLine("");
@@ -308,6 +329,8 @@ namespace CnnDemo.CNN
             for (int i = 0; i < OutputCount; i++)
             {
                 offset[i] -= learningRate * delta[i];
+                if (Double.IsNaN(offset[i]) || Double.IsInfinity(offset[i]))
+                    throw new Exception("NaN");
                 //Console.Write(offset[i] + " ");
             }
             //Console.WriteLine("");
