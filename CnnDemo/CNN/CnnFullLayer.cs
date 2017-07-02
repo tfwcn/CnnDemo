@@ -213,7 +213,7 @@ namespace CnnDemo.CNN
             for (int i = 0; i < OutputCount; i++)
             {
                 //输出残差=导数(激活函数前的输出值)*(输出值-正确值)
-                double residual = ActivationFunctionDerivative(OutputValueReal[i]) * (OutputValue[i] - output[i]);
+                double residual = ActivationFunctionDerivative(OutputValue[i]) * (output[i] - OutputValue[i]);
                 //double residual = OutputValue[i] - output[i];
                 for (int j = 0; j < InputCount; j++)
                 {
@@ -281,8 +281,7 @@ namespace CnnDemo.CNN
             for (int i = 0; i < InputCount; i++)
             {
                 //正确输入值=旧输入值-sum(残差*更新前的权重)
-                resultDelta[i] *= ActivationFunctionDerivative(InputValue[i]);
-                result[i] = InputValue[i] - resultDelta[i];
+                result[i] = InputValue[i] + resultDelta[i];
                 //反归一化每个结果
                 if (Standardization)
                     result[i] = result[i] * Math.Sqrt(variance) + mean;
@@ -304,12 +303,12 @@ namespace CnnDemo.CNN
         private void UpdateWeight(double[,] weight, double[,] delta, double learningRate)
         {
             //Console.WriteLine(String.Format("FullUpdateWeight {0}->{1}", InputCount, OutputCount));
-            for (int i = 0; i < InputCount; i++)
+            for (int i = 0; i < OutputCount; i++)
             {
-                for (int j = 0; j < OutputCount; j++)
+                for (int j = 0; j < InputCount; j++)
                 {
-                    weight[j, i] -= learningRate * delta[j, i];
-                    if (Double.IsNaN(weight[j, i]) || Double.IsInfinity(weight[j, i]))
+                    weight[i, j] += learningRate * delta[i, j];
+                    if (Double.IsNaN(weight[i, j]) || Double.IsInfinity(weight[i, j]))
                         throw new Exception("NaN");
                     //Console.Write(weight[j, i] + " ");
                 }
@@ -328,7 +327,7 @@ namespace CnnDemo.CNN
             //Console.WriteLine(String.Format("FullUpdateOffset {0}->{1}", InputCount, OutputCount));
             for (int i = 0; i < OutputCount; i++)
             {
-                offset[i] -= learningRate * delta[i];
+                offset[i] += learningRate * delta[i];
                 if (Double.IsNaN(offset[i]) || Double.IsInfinity(offset[i]))
                     throw new Exception("NaN");
                 //Console.Write(offset[i] + " ");

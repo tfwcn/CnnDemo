@@ -182,7 +182,24 @@ namespace CnnDemo.CNN
         /// <returns></returns>
         public double[,] BackPropagation(double[,] output, double learningRate)
         {
-            double[,] result = CalculatedBackPropagationResult(output, learningRate);//正确输入值
+            //输出残差
+            double[,] residual = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
+            //残差
+            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            {
+                for (int j = 0; j < ConvolutionKernelHeight; j++)
+                {
+                    residual[i, j] = output[i, j] - OutputValue[i, j];
+                }
+            }
+            double[,] result = CalculatedBackPropagationResult(residual, learningRate);//正确输入值
+            for (int i = 0; i < inputWidth; i++)
+            {
+                for (int j = 0; j < inputHeight; j++)
+                {
+                    result[i, j] = InputValue[i, j] + result[i, j];
+                }
+            }
             return result;
         }
         /// <summary>
@@ -210,7 +227,7 @@ namespace CnnDemo.CNN
         /// 计算反向传播结果（平均池化）
         /// </summary>
         /// <returns></returns>
-        private double[,] CalculatedBackPropagationResultMeanPooling(double[,] output, double learningRate)
+        private double[,] CalculatedBackPropagationResultMeanPooling(double[,] residual, double learningRate)
         {
             double[,] result = new double[inputWidth, inputHeight];//正确输入值=正确输出/感知野大小，放入原来位置
             //计算残差
@@ -218,24 +235,24 @@ namespace CnnDemo.CNN
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
-                    double residual = OutputValue[i, j] - output[i, j];//输出残差
                     for (int i2 = 0; i2 < receptiveFieldWidth && i * receptiveFieldWidth + i2 < inputWidth; i2++)
                     {
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * receptiveFieldHeight + j2 < inputHeight; j2++)
                         {
                             //计算输入值残差=梯度/卷积核大小，梯度直接往上传
-                            result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] = InputValue[i, j] - residual / (receptiveFieldWidth * receptiveFieldHeight);
+                            result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] = residual[i, j] / (receptiveFieldWidth * receptiveFieldHeight);
                         }
                     }
                 }
             }
+            //double[,] result = CnnHelper.MatrixScale(residual, receptiveFieldWidth, receptiveFieldHeight);
             return result;
         }
         /// <summary>
         /// 计算反向传播结果（最大值池化）
         /// </summary>
         /// <returns></returns>
-        private double[,] CalculatedBackPropagationResultMaxPooling(double[,] output, double learningRate)
+        private double[,] CalculatedBackPropagationResultMaxPooling(double[,] residual, double learningRate)
         {
             double[,] result = new double[inputWidth, inputHeight];//正确输入值=正确输出放入原来最大值位置，其余位置设置成0
             //计算残差
@@ -243,7 +260,6 @@ namespace CnnDemo.CNN
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
-                    double residual = OutputValue[i, j] - output[i, j];//输出残差
                     for (int i2 = 0; i2 < receptiveFieldWidth && i * receptiveFieldWidth + i2 < inputWidth; i2++)
                     {
                         for (int j2 = 0; j2 < receptiveFieldHeight && j * receptiveFieldHeight + j2 < inputHeight; j2++)
@@ -251,7 +267,7 @@ namespace CnnDemo.CNN
                             //计算输入值残差，梯度直接往上传
                             if (OutputPoolingMax[i, j] == i2 + j2 * receptiveFieldHeight)
                             {
-                                result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] = InputValue[i, j] - residual;
+                                result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] = residual[i, j];
                             }
                             else
                                 result[i * receptiveFieldWidth + i2, j * receptiveFieldHeight + j2] = 0;
