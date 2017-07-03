@@ -352,6 +352,7 @@ namespace CnnDemo.CNN
             //计算正确输入值
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
+                result.Add(new double[inputWidth, inputHeight]);
                 for (int i = 0; i < inputWidth; i++)
                 {
                     for (int j = 0; j < inputHeight; j++)

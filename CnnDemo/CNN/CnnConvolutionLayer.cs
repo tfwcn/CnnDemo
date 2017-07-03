@@ -77,6 +77,11 @@ namespace CnnDemo.CNN
                 int inputCount = 0;//单个卷积神经元输入数量
                 for (int j = 0; j < LastLayerCount; j++)
                 {
+                    if (layerLinks == null)
+                    {
+                        inputCount = 1;
+                        break;
+                    }
                     if (layerLinks[i, j])
                         inputCount++;
                 }

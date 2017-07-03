@@ -391,6 +391,8 @@ namespace CnnDemo.CNN
         /// <returns></returns>
         public static double GetMeanAbs(double[,] value)
         {
+            if (value == null)
+                return 0;
             int valueWidth = value.GetLength(0);
             int valueHeight = value.GetLength(1);
             double result = 0;
