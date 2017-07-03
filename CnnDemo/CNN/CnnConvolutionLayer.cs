@@ -68,12 +68,18 @@ namespace CnnDemo.CNN
         /// <param name="activationFunctionType"></param>
         public void CreateCnnKernel(int convolutionKernelCount, int inputWidth, int inputHeight,
             int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth,
-            int offsetHeight, int activationFunctionType, int inputCount, bool standardization)
+            int offsetHeight, int activationFunctionType, int LastLayerCount, bool standardization, bool[,] layerLinks)
         {
             this.ConvolutionKernelCount = convolutionKernelCount;
             CnnKernelList = new List<CnnKernel>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
+                int inputCount = 0;//单个卷积神经元输入数量
+                for (int j = 0; j < LastLayerCount; j++)
+                {
+                    if (layerLinks[i, j])
+                        inputCount++;
+                }
                 CnnKernelList.Add(new CnnKernel(inputWidth, inputHeight,
                     receptiveFieldWidth, receptiveFieldHeight,
                     offsetWidth, offsetHeight, activationFunctionType, inputCount, ConvolutionKernelCount, standardization));
@@ -100,7 +106,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 前向传播,计算结果
         /// </summary>
-        public List<double[,]> CalculatedResult(List<double[,]> value)
+        public List<double[,]> CalculatedResult(List<List<double[,]>> value)
         {
             List<double[,]> result = new List<double[,]>();
             //for (int i = 0; i < ConvolutionKernelCount; i++)
@@ -149,9 +155,9 @@ namespace CnnDemo.CNN
         /// <param name="output">正确输出值</param>
         /// <param name="learningRate">学习速率</param>
         /// <returns>返回更新权重后的输入值</returns>
-        public List<double[,]> BackPropagation(List<double[,]> output, double learningRate)
+        public List<List<double[,]>> BackPropagation(List<double[,]> output, double learningRate)
         {
-            List<double[,]> result = new List<double[,]>();
+            List<List<double[,]>> result = new List<List<double[,]>>();
             //for (int i = 0; i < ConvolutionKernelCount; i++)
             //{
             //    if (CnnPoolingList != null)

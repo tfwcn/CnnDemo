@@ -33,11 +33,6 @@ namespace CnnDemo.CNN
         [NonSerialized]
         public double[] InputValue;
         /// <summary>
-        /// 原计算激活函数前的输出值
-        /// </summary>
-        [NonSerialized]
-        public double[] OutputValueReal;
-        /// <summary>
         /// 原输出值
         /// </summary>
         [NonSerialized]
@@ -141,7 +136,6 @@ namespace CnnDemo.CNN
                 }
             }
             OutputValue = result;
-            OutputValueReal = resultReal;
             return result;
         }
         /// <summary>

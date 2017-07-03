@@ -551,6 +551,7 @@ namespace CnnDemo
             tmpCnn.AddCnnFullLayer(4, 14, 1, false);
             tmpCnn.AddCnnFullLayer(20, 1, false);
             tmpCnn.AddCnnFullLayer(10, 1, false);
+            tmpCnn.AddCnnFullLayer(10, 1, false);
             tmpCnn.AddCnnFullLayer(3, 1, false);
             for (int i = 0; i < nIter; i++)
             {
