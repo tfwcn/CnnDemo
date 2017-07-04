@@ -274,9 +274,9 @@ namespace CnnDemo.CNN
         private List<double[,]> CalculatedBackPropagationResult(double[,] output, double learningRate)
         {
             List<double[,]> result = new List<double[,]>();//正确输入值
-            //输入残差
+            //上一层残差
             List<double[,]> resultDelta = new List<double[,]>();
-            //输出残差
+            //当前层残差
             double[,] residual = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
             //权重残差
             List<double[,]> deltaWeight = new List<double[,]>();
@@ -287,14 +287,18 @@ namespace CnnDemo.CNN
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
-                    residual[i, j] = ActivationFunctionDerivative(OutputValue[i, j]) * (output[i, j] - OutputValue[i, j]);
+                    //residual[i, j] = ActivationFunctionDerivative(OutputValue[i, j]) * (output[i, j] - OutputValue[i, j]);
+                    residual[i, j] = (output[i, j] - OutputValue[i, j]);
                 }
             }
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
-                double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]), residual);
+                //double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]), residual);
+                double[,] tmpResultDelta = CnnHelper.ConvolutionFull(ShareWeight[inputIndex], residual);
                 resultDelta.Add(tmpResultDelta);
-                double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, InputValue[inputIndex]);
+                //double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, InputValue[inputIndex]);
+                double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex]));
+                //tmpDeltaWeight = CnnHelper.MatrixRotate180(tmpDeltaWeight);
                 deltaWeight.Add(tmpDeltaWeight);
             }
             //计算偏置残差
@@ -358,7 +362,7 @@ namespace CnnDemo.CNN
                     for (int j = 0; j < inputHeight; j++)
                     {
                         //resultDelta[i, j] /= receptiveFieldWidth * receptiveFieldHeight;
-                        //resultDelta[i, j] *= ActivationFunctionDerivative(InputValue[i, j]);
+                        //resultDelta[inputIndex][i, j] *= ActivationFunctionDerivative(InputValue[inputIndex][i, j]);
                         //resultDelta[i, j] *= InputValue[i, j];
                         result[inputIndex][i, j] = InputValue[inputIndex][i, j] + resultDelta[inputIndex][i, j];
                         if (Standardization)
@@ -390,7 +394,7 @@ namespace CnnDemo.CNN
                 {
                     for (int j = 0; j < receptiveFieldHeight; j++)
                     {
-                        weight[inputIndex][i, j] += learningRate * delta[inputIndex][i, j];
+                        weight[inputIndex][i, j] += learningRate * delta[inputIndex][i, j];// / InputCount;
                     }
                 }
             }

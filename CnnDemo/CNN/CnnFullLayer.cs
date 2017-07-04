@@ -197,7 +197,7 @@ namespace CnnDemo.CNN
         public double[] BackPropagation(double[] output, double learningRate)
         {
             double[] result = new double[InputCount];
-            //输入残差
+            //下一层残差
             double[] resultDelta = new double[InputCount];
             //权重残差
             double[,] deltaWeight = new double[OutputCount, InputCount];
@@ -206,9 +206,8 @@ namespace CnnDemo.CNN
             //计算上一层的残差
             for (int i = 0; i < OutputCount; i++)
             {
-                //输出残差=导数(激活函数前的输出值)*(输出值-正确值)
+                //当前层残差=导数(激活函数前的输出值)*(输出值-正确值)
                 double residual = ActivationFunctionDerivative(OutputValue[i]) * (output[i] - OutputValue[i]);
-                //double residual = OutputValue[i] - output[i];
                 for (int j = 0; j < InputCount; j++)
                 {
                     //sum(残差)=更新前的权重*残差

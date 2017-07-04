@@ -29,9 +29,9 @@ namespace CnnDemo
         private void Form4_Load(object sender, EventArgs e)
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(6, 28, 28, 5, 5, 1, 1, 1, 2, 2, 2, false);
-            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 2, 2, 2, false);
-            //cnn.AddCnnConvolutionLayer(120, 3, 3, 1, 1, 1, 0, 0, 0);
+            cnn.AddCnnConvolutionLayer(6, 28, 28, 5, 5, 1, 1, 1, 2, 2, 1, false);
+            cnn.AddCnnConvolutionLayer(12, 5, 5, 1, 1, 1, 2, 2, 1, false);
+            //cnn.AddCnnConvolutionLayer(120, 3, 3, 1, 1, 1, 0, 0, 0, false);
             cnn.AddCnnFullLayer(100, 1, false);
             cnn.AddCnnFullLayer(10, 1, false);
         }

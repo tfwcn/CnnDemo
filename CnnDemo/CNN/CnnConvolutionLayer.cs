@@ -96,7 +96,7 @@ namespace CnnDemo.CNN
         /// <param name="receptiveFieldWidth"></param>
         /// <param name="receptiveFieldHeight"></param>
         /// <param name="activationFunctionType"></param>
-        public void CreateCnnPooling(int receptiveFieldWidth, int receptiveFieldHeight, int poolingType)
+        public void CreateCnnPooling(int receptiveFieldWidth, int receptiveFieldHeight, int activationFunctionType, int poolingType)
         {
             if (CnnKernelList == null || CnnKernelList.Count == 0)
                 throw new Exception("需先创建卷积层");
@@ -104,7 +104,7 @@ namespace CnnDemo.CNN
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
                 CnnPoolingList.Add(new CnnPooling(CnnKernelList[0].ConvolutionKernelWidth, CnnKernelList[0].ConvolutionKernelHeight,
-                    receptiveFieldWidth, receptiveFieldHeight, poolingType, CnnKernelList[0].InputCount, CnnKernelList[0].OutputCount));
+                    receptiveFieldWidth, receptiveFieldHeight, activationFunctionType, poolingType, CnnKernelList[0].InputCount, CnnKernelList[0].OutputCount));
             }
         }
         public object lockObj = new object();
@@ -114,6 +114,11 @@ namespace CnnDemo.CNN
         public List<double[,]> CalculatedResult(List<List<double[,]>> value)
         {
             List<double[,]> result = new List<double[,]>();
+            //保证顺序
+            for (int i = 0; i < ConvolutionKernelCount; i++)
+            {
+                result.Add(null);
+            }
             //for (int i = 0; i < ConvolutionKernelCount; i++)
             //{
             //    if (CnnPoolingList != null)
@@ -135,14 +140,14 @@ namespace CnnDemo.CNN
                     {
                         var tmpResult = CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i]));
                         System.Threading.Monitor.Enter(lockObj);
-                        result.Add(tmpResult);
+                        result[i] = tmpResult;
                         System.Threading.Monitor.Exit(lockObj);
                     }
                     else
                     {
                         var tmpResult = CnnKernelList[i].CalculatedConvolutionResult(value[i]);
                         System.Threading.Monitor.Enter(lockObj);
-                        result.Add(tmpResult);
+                        result[i] = tmpResult;
                         System.Threading.Monitor.Exit(lockObj);
                     }
                 }
@@ -159,10 +164,15 @@ namespace CnnDemo.CNN
         /// </summary>
         /// <param name="output">正确输出值</param>
         /// <param name="learningRate">学习速率</param>
-        /// <returns>返回更新权重后的输入值</returns>
+        /// <returns>返回更新权重后的输入值,每个神经元对应的输入神经元的残差</returns>
         public List<List<double[,]>> BackPropagation(List<double[,]> output, double learningRate)
         {
             List<List<double[,]>> result = new List<List<double[,]>>();
+            //保证顺序
+            for (int i = 0; i < ConvolutionKernelCount; i++)
+            {
+                result.Add(null);
+            }
             //for (int i = 0; i < ConvolutionKernelCount; i++)
             //{
             //    if (CnnPoolingList != null)
@@ -184,7 +194,7 @@ namespace CnnDemo.CNN
                     {
                         var tmpResult = CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate);
                         System.Threading.Monitor.Enter(lockObj);
-                        result.Add(tmpResult);
+                        result[i] = tmpResult;
                         System.Threading.Monitor.Exit(lockObj);
                         LogHelper.Info(CnnKernelList[i].ToString());
                     }
@@ -192,7 +202,7 @@ namespace CnnDemo.CNN
                     {
                         var tmpResult = CnnKernelList[i].BackPropagation(output[i], learningRate);
                         System.Threading.Monitor.Enter(lockObj);
-                        result.Add(tmpResult);
+                        result[i] = tmpResult;
                         System.Threading.Monitor.Exit(lockObj);
                         LogHelper.Info(CnnKernelList[i].ToString());
                     }
