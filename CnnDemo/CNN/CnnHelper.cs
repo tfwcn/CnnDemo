@@ -15,6 +15,7 @@ namespace CnnDemo.CNN
         public static double TruePercent = 0;
         public static int LabelsNum = 0;
         public static int ResultNum = 0;
+        public static Random RandomObj = new Random();
 
         public static void ShowChange(double[] output, double[] labels, int inputCount)
         {

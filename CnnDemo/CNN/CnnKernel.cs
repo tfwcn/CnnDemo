@@ -102,6 +102,14 @@ namespace CnnDemo.CNN
         /// 平均梯度集上限
         /// </summary>
         private int miniBatchSize = 20;
+        /// <summary>
+        /// 正则化概率（Dropout）
+        /// </summary>
+        private double dropoutChance = 0.5;
+        /// <summary>
+        /// 正则化状态（Dropout）
+        /// </summary>
+        private bool dropoutState = false;
         #region 调试参数
         /// <summary>
         /// 输入残差
@@ -199,6 +207,18 @@ namespace CnnDemo.CNN
                         result[i, j] = ActivationFunction(result[i, j] + OutputOffset);
                     }
                 }
+            }
+            //正则化
+            if (CnnHelper.RandomObj.NextDouble() < dropoutChance)
+            {
+                for (int i = 0; i < ConvolutionKernelWidth; i++)
+                {
+                    for (int j = 0; j < ConvolutionKernelHeight; j++)
+                    {
+                        result[i, j] = 0;
+                    }
+                }
+                dropoutState = true;
             }
             OutputValue = result;
             return result;
@@ -350,11 +370,23 @@ namespace CnnDemo.CNN
                 }
             }
             //*/
-            //更新权重和偏置
-            UpdateWeight(deltaWeight, learningRate);
-            UpdateOffset(deltaOffset, learningRate);
-            //UpdateWeight(meanDeltaWeight, learningRate);
-            //UpdateOffset(meanDeltaOffset, learningRate);
+            //正则化
+            if (dropoutState)
+            {
+                for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
+                {
+                    for (int i = 0; i < inputWidth; i++)
+                    {
+                        for (int j = 0; j < inputHeight; j++)
+                        {
+                            //反归一化每个结果
+                            result[inputIndex][i, j] = 0;
+                        }
+                    }
+                }
+                dropoutState = false;
+                return result;
+            }
             //计算正确输入值
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
@@ -371,6 +403,11 @@ namespace CnnDemo.CNN
                     }
                 }
             }
+            //更新权重和偏置
+            UpdateWeight(deltaWeight, learningRate);
+            UpdateOffset(deltaOffset, learningRate);
+            //UpdateWeight(meanDeltaWeight, learningRate);
+            //UpdateOffset(meanDeltaOffset, learningRate);
             //调试参数
             //debugResult = resultDelta;
             //debugResidual = residual;
