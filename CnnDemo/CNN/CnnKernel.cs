@@ -105,7 +105,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 正则化概率（Dropout）
         /// </summary>
-        private double dropoutChance = 0.5;
+        private double dropoutChance = 0.3;
         /// <summary>
         /// 正则化状态（Dropout）
         /// </summary>
@@ -302,6 +302,16 @@ namespace CnnDemo.CNN
             List<double[,]> deltaWeight = new List<double[,]>();
             //偏置残差
             double deltaOffset = 0;
+            //正则化
+            if (dropoutState)
+            {
+                for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
+                {
+                    result.Add(new double[inputWidth, inputHeight]);
+                }
+                dropoutState = false;
+                return result;
+            }
             //残差
             for (int i = 0; i < ConvolutionKernelWidth; i++)
             {
@@ -370,23 +380,6 @@ namespace CnnDemo.CNN
                 }
             }
             //*/
-            //正则化
-            if (dropoutState)
-            {
-                for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
-                {
-                    for (int i = 0; i < inputWidth; i++)
-                    {
-                        for (int j = 0; j < inputHeight; j++)
-                        {
-                            //反归一化每个结果
-                            result[inputIndex][i, j] = 0;
-                        }
-                    }
-                }
-                dropoutState = false;
-                return result;
-            }
             //计算正确输入值
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {

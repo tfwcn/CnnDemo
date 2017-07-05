@@ -69,6 +69,14 @@ namespace CnnDemo.CNN
         /// 平均梯度集上限
         /// </summary>
         private int miniBatchSize = 10;
+        /// <summary>
+        /// 正则化概率（Dropout）
+        /// </summary>
+        private double dropoutChance = 0.3;
+        /// <summary>
+        /// 正则化状态（Dropout）
+        /// </summary>
+        private bool dropoutState = false;
         #region 调试参数
         /// <summary>
         /// 输入残差
@@ -134,6 +142,15 @@ namespace CnnDemo.CNN
                     resultReal[i] = z + OutputOffset[i];
                     result[i] = ActivationFunction(z + OutputOffset[i]);
                 }
+            }
+            //正则化
+            if (CnnHelper.RandomObj.NextDouble() < dropoutChance)
+            {
+                for (int i = 0; i < OutputCount; i++)
+                {
+                    result[i] = 0;
+                }
+                dropoutState = true;
             }
             OutputValue = result;
             return result;
@@ -203,6 +220,12 @@ namespace CnnDemo.CNN
             double[,] deltaWeight = new double[OutputCount, InputCount];
             //偏置残差
             double[] deltaOffset = new double[OutputCount];
+            //正则化
+            if (dropoutState)
+            {
+                dropoutState = false;
+                return result;
+            }
             //计算上一层的残差
             for (int i = 0; i < OutputCount; i++)
             {
