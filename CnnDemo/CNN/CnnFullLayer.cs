@@ -183,7 +183,7 @@ namespace CnnDemo.CNN
                     result = random.NextDouble() * 0.0001;
                     break;
                 default:
-                    result = (random.NextDouble() * 2 - 1) * Math.Sqrt((float)6.0 / (float)(InputCount + OutputCount));
+                    result = (random.NextDouble() * 2 - 1) * Math.Sqrt(6.0 / (InputCount + OutputCount));
                     break;
             }
             return result;
@@ -194,7 +194,7 @@ namespace CnnDemo.CNN
         /// <param name="output">正确输出值</param>
         /// <param name="learningRate">学习速率</param>
         /// <returns>返回更新权重后的输入值</returns>
-        public double[] BackPropagation(double[] output, double learningRate)
+        public double[] BackPropagation(double[] residual, double learningRate)
         {
             double[] result = new double[InputCount];
             //下一层残差
@@ -207,19 +207,19 @@ namespace CnnDemo.CNN
             for (int i = 0; i < OutputCount; i++)
             {
                 //当前层残差=导数(激活函数前的输出值)*(输出值-正确值)
-                double residual = ActivationFunctionDerivative(OutputValue[i]) * (output[i] - OutputValue[i]);
+                double outputValueDerivative = ActivationFunctionDerivative(OutputValue[i]) * residual[i];
                 for (int j = 0; j < InputCount; j++)
                 {
                     //sum(残差)=更新前的权重*残差
-                    resultDelta[j] += InputWeight[i, j] * residual;
+                    resultDelta[j] += InputWeight[i, j] * outputValueDerivative;
                     if (Double.IsNaN(resultDelta[j]) || Double.IsInfinity(resultDelta[j]))
                         throw new Exception("NaN");
                     //计算权重残差,sum(残差)=残差*输入值
-                    deltaWeight[i, j] += residual * InputValue[j];
+                    deltaWeight[i, j] += outputValueDerivative * InputValue[j];
                     if (Double.IsNaN(deltaWeight[i, j]) || Double.IsInfinity(deltaWeight[i, j]))
                         throw new Exception("NaN");
                 }
-                deltaOffset[i] = residual;
+                deltaOffset[i] = outputValueDerivative;
                 if (Double.IsNaN(deltaOffset[i]) || Double.IsInfinity(deltaOffset[i]))
                     throw new Exception("NaN");
             }
@@ -266,15 +266,16 @@ namespace CnnDemo.CNN
             }
             //*/
             //更新权重和偏置
-            UpdateWeight(InputWeight, deltaWeight, learningRate);
-            UpdateOffset(OutputOffset, deltaOffset, learningRate);
+            UpdateWeight(deltaWeight, learningRate);
+            UpdateOffset(deltaOffset, learningRate);
             //UpdateWeight(InputWeight, meanDeltaWeight, learningRate);
             //UpdateOffset(OutputOffset, meanDeltaOffset, learningRate);
             //计算正确输入值
             for (int i = 0; i < InputCount; i++)
             {
                 //正确输入值=旧输入值-sum(残差*更新前的权重)
-                result[i] = InputValue[i] + resultDelta[i];
+                //result[i] = InputValue[i] + resultDelta[i];//正确
+                result[i] = resultDelta[i];//正确
                 //反归一化每个结果
                 if (Standardization)
                     result[i] = result[i] * Math.Sqrt(variance) + mean;
@@ -293,15 +294,15 @@ namespace CnnDemo.CNN
         /// <param name="weight">权重</param>
         /// <param name="delta">残差</param>
         /// <param name="learningRate">学习率</param>
-        private void UpdateWeight(double[,] weight, double[,] delta, double learningRate)
+        private void UpdateWeight(double[,] delta, double learningRate)
         {
             //Console.WriteLine(String.Format("FullUpdateWeight {0}->{1}", InputCount, OutputCount));
             for (int i = 0; i < OutputCount; i++)
             {
                 for (int j = 0; j < InputCount; j++)
                 {
-                    weight[i, j] += learningRate * delta[i, j];
-                    if (Double.IsNaN(weight[i, j]) || Double.IsInfinity(weight[i, j]))
+                    InputWeight[i, j] += learningRate * delta[i, j];
+                    if (Double.IsNaN(InputWeight[i, j]) || Double.IsInfinity(InputWeight[i, j]))
                         throw new Exception("NaN");
                     //Console.Write(weight[j, i] + " ");
                 }
@@ -315,13 +316,13 @@ namespace CnnDemo.CNN
         /// <param name="weight">偏置</param>
         /// <param name="delta">残差</param>
         /// <param name="learningRate">学习率</param>
-        private void UpdateOffset(double[] offset, double[] delta, double learningRate)
+        private void UpdateOffset(double[] delta, double learningRate)
         {
             //Console.WriteLine(String.Format("FullUpdateOffset {0}->{1}", InputCount, OutputCount));
             for (int i = 0; i < OutputCount; i++)
             {
-                offset[i] += learningRate * delta[i];
-                if (Double.IsNaN(offset[i]) || Double.IsInfinity(offset[i]))
+                OutputOffset[i] += learningRate * delta[i];
+                if (Double.IsNaN(OutputOffset[i]) || Double.IsInfinity(OutputOffset[i]))
                     throw new Exception("NaN");
                 //Console.Write(offset[i] + " ");
             }

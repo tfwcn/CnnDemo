@@ -191,8 +191,8 @@ namespace CnnDemo.CNN
         private void InitShareWeight()
         {
             Random random = new Random();
-            ShareWeight = 1;
-            //ShareWeight = GetRandom(random);
+            //ShareWeight = 1;
+            ShareWeight = GetRandom(random);
             //OutputOffset = GetRandom(random);
         }
         /// <summary>
@@ -208,7 +208,8 @@ namespace CnnDemo.CNN
                     result = random.NextDouble() * 0.0001;
                     break;
                 default:
-                    result = (random.NextDouble() * 2 - 1) * Math.Sqrt((float)6.0 / (float)(receptiveFieldWidth * receptiveFieldHeight * (InputCount + OutputCount)));
+                    //result = (random.NextDouble() * 2 - 1) * Math.Sqrt((float)6.0 / (float)(receptiveFieldWidth * receptiveFieldHeight * (InputCount + OutputCount)));
+                    result = 1 + (random.NextDouble() - 0.5);
                     break;
             }
             return result;
@@ -219,10 +220,10 @@ namespace CnnDemo.CNN
         /// <param name="input">上一层的输出值，即该层输入值</param>
         /// <param name="output">正确输出值</param>
         /// <returns></returns>
-        public double[,] BackPropagation(double[,] output, double learningRate)
+        public double[,] BackPropagation(double[,] residual, double learningRate)
         {
             //当前层残差
-            double[,] residual = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
+            double[,] residualNow = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
             //权重残差
             double deltaWeight = 0;
             //偏置残差
@@ -232,24 +233,25 @@ namespace CnnDemo.CNN
             {
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
-                    residual[i, j] = output[i, j] - OutputValue[i, j];
-                    deltaWeight += residual[i, j] * OutputValue[i, j];
-                    deltaOffset += residual[i, j];
+                    residualNow[i, j] = ActivationFunctionDerivative(OutputValue[i, j]) * residual[i, j];//CNN标准
+                    deltaWeight += residualNow[i, j] * OutputValue[i, j];//CNN标准
+                    deltaOffset += residualNow[i, j];//CNN标准
                 }
             }
             //计算上一层残差
-            double[,] result = CalculatedBackPropagationResult(residual);//反池化，向上扩充矩阵
+            double[,] result = CalculatedBackPropagationResult(residualNow);//反池化，向上采样
             for (int i = 0; i < inputWidth; i++)
             {
                 for (int j = 0; j < inputHeight; j++)
                 {
-                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]) / (receptiveFieldWidth * receptiveFieldHeight) * ShareWeight;
-                    result[i, j] = InputValue[i, j] + result[i, j];
+                    result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]) * ShareWeight;//CNN标准
+                    //result[i, j] = InputValue[i, j] + result[i, j];
+                    result[i, j] = result[i, j];
                 }
             }
             //更新权重和偏置
-            //UpdateWeight(ShareWeight, deltaWeight, learningRate);
-            //UpdateOffset(OutputOffset, deltaOffset, learningRate);
+            UpdateWeight(deltaWeight, learningRate);//CNN标准
+            UpdateOffset(deltaOffset, learningRate);//CNN标准
             return result;
         }
         /// <summary>
@@ -296,6 +298,13 @@ namespace CnnDemo.CNN
             //    }
             //}
             double[,] result = CnnHelper.MatrixScale(residual, receptiveFieldWidth, receptiveFieldHeight);
+            for (int i = 0; i < inputWidth; i++)
+            {
+                for (int j = 0; j < inputHeight; j++)
+                {
+                    result[i, j] /= receptiveFieldWidth * receptiveFieldHeight;//取平均
+                }
+            }
             return result;
         }
         /// <summary>
@@ -334,9 +343,9 @@ namespace CnnDemo.CNN
         /// <param name="weight">权重</param>
         /// <param name="delta">残差</param>
         /// <param name="learningRate">学习率</param>
-        private void UpdateWeight(double weight, double delta, double learningRate)
+        private void UpdateWeight(double delta, double learningRate)
         {
-            weight += learningRate * delta;
+            ShareWeight += learningRate * delta;
         }
         /// <summary>
         /// 更新偏置
@@ -344,9 +353,9 @@ namespace CnnDemo.CNN
         /// <param name="weight">偏置</param>
         /// <param name="delta">残差</param>
         /// <param name="learningRate">学习率</param>
-        private void UpdateOffset(double offset, double delta, double learningRate)
+        private void UpdateOffset(double delta, double learningRate)
         {
-            offset += learningRate * delta;
+            OutputOffset += learningRate * delta;
         }
     }
 }

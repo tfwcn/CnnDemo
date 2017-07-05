@@ -85,7 +85,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 共享权重梯度集，用于计算平均权重梯度
         /// </summary>
-        private List<double[,]> meanListDeltaWeight;
+        private List<List<double[,]>> meanListDeltaWeight;
         /// <summary>
         /// 偏置梯度集，用于计算平均偏置梯度
         /// </summary>
@@ -93,7 +93,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 平均共享权重梯度
         /// </summary>
-        private double[,] meanDeltaWeight;
+        private List<double[,]> meanDeltaWeight;
         /// <summary>
         /// 平均偏置梯度
         /// </summary>
@@ -101,7 +101,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 平均梯度集上限
         /// </summary>
-        private int miniBatchSize = 100;
+        private int miniBatchSize = 20;
         #region 调试参数
         /// <summary>
         /// 输入残差
@@ -149,12 +149,13 @@ namespace CnnDemo.CNN
             this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling((inputWidth - receptiveFieldWidth) / (double)offsetWidth)) + 1;
             this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling((inputHeight - receptiveFieldHeight) / (double)offsetHeight)) + 1;
             ShareWeight = new List<double[,]>();
+            meanDeltaWeight = new List<double[,]>();
             for (int i = 0; i < inputCount; i++)
             {
                 ShareWeight.Add(new double[receptiveFieldWidth, receptiveFieldHeight]);
+                meanDeltaWeight.Add(new double[receptiveFieldWidth, receptiveFieldHeight]);
             }
-            meanDeltaWeight = new double[receptiveFieldWidth, receptiveFieldHeight];
-            meanListDeltaWeight = new List<double[,]>();
+            meanListDeltaWeight = new List<List<double[,]>>();
             meanListDeltaOffset = new List<double>();
             InitShareWeight();
         }
@@ -271,13 +272,12 @@ namespace CnnDemo.CNN
         /// 计算反向传播结果
         /// </summary>
         /// <returns></returns>
-        private List<double[,]> CalculatedBackPropagationResult(double[,] output, double learningRate)
+        private List<double[,]> CalculatedBackPropagationResult(double[,] residual, double learningRate)
         {
-            List<double[,]> result = new List<double[,]>();//正确输入值
             //上一层残差
-            List<double[,]> resultDelta = new List<double[,]>();
+            List<double[,]> result = new List<double[,]>();
             //当前层残差
-            double[,] residual = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
+            //double[,] residualNow = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
             //权重残差
             List<double[,]> deltaWeight = new List<double[,]>();
             //偏置残差
@@ -288,17 +288,16 @@ namespace CnnDemo.CNN
                 for (int j = 0; j < ConvolutionKernelHeight; j++)
                 {
                     //residual[i, j] = ActivationFunctionDerivative(OutputValue[i, j]) * (output[i, j] - OutputValue[i, j]);
-                    residual[i, j] = (output[i, j] - OutputValue[i, j]);
+                    //residual[i, j] = (output[i, j] - OutputValue[i, j]);//正确
                 }
             }
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
-                //double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]), residual);
-                double[,] tmpResultDelta = CnnHelper.ConvolutionFull(ShareWeight[inputIndex], residual);
-                resultDelta.Add(tmpResultDelta);
-                //double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, InputValue[inputIndex]);
-                double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex]));
-                //tmpDeltaWeight = CnnHelper.MatrixRotate180(tmpDeltaWeight);
+                double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]), residual);//CNN标准
+                //double[,] tmpResultDelta = CnnHelper.ConvolutionFull(ShareWeight[inputIndex], residual);//CNN例子
+                result.Add(tmpResultDelta);
+                //double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex]));//CNN例子
+                double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex])));//CNN标准
                 deltaWeight.Add(tmpDeltaWeight);
             }
             //计算偏置残差
@@ -312,22 +311,25 @@ namespace CnnDemo.CNN
             //计算平均梯度
             /*
             meanListDeltaWeight.Add(deltaWeight);
-            for (int i = 0; i < receptiveFieldWidth; i++)
+            for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
-                for (int j = 0; j < receptiveFieldHeight; j++)
+                for (int i = 0; i < receptiveFieldWidth; i++)
                 {
-                    if (meanListDeltaWeight.Count > miniBatchSize)
+                    for (int j = 0; j < receptiveFieldHeight; j++)
                     {
-                        meanDeltaWeight[i, j] -= meanListDeltaWeight[0][i, j] / miniBatchSize;
-                        meanDeltaWeight[i, j] += deltaWeight[i, j] / miniBatchSize;
-                        meanListDeltaWeight.RemoveAt(0);
-                    }
-                    else
-                    {
-                        meanDeltaWeight[i, j] = 0;
-                        foreach (var tmpShareWeight in meanListDeltaWeight)
+                        if (meanListDeltaWeight.Count > miniBatchSize)
                         {
-                            meanDeltaWeight[i, j] += tmpShareWeight[i, j] / meanListDeltaWeight.Count;
+                            meanDeltaWeight[inputIndex][i, j] -= meanListDeltaWeight[0][inputIndex][i, j] / miniBatchSize;
+                            meanDeltaWeight[inputIndex][i, j] += deltaWeight[inputIndex][i, j] / miniBatchSize;
+                            meanListDeltaWeight.RemoveAt(0);
+                        }
+                        else
+                        {
+                            meanDeltaWeight[inputIndex][i, j] = 0;
+                            foreach (var tmpShareWeight in meanListDeltaWeight)
+                            {
+                                meanDeltaWeight[inputIndex][i, j] += tmpShareWeight[inputIndex][i, j] / meanListDeltaWeight.Count;
+                            }
                         }
                     }
                 }
@@ -349,22 +351,18 @@ namespace CnnDemo.CNN
             }
             //*/
             //更新权重和偏置
-            UpdateWeight(ShareWeight, deltaWeight, learningRate);
-            UpdateOffset(OutputOffset, deltaOffset, learningRate);
-            //UpdateWeight(ShareWeight, meanDeltaWeight, learningRate);
-            //UpdateOffset(OutputOffset, meanDeltaOffset, learningRate);
+            UpdateWeight(deltaWeight, learningRate);
+            UpdateOffset(deltaOffset, learningRate);
+            //UpdateWeight(meanDeltaWeight, learningRate);
+            //UpdateOffset(meanDeltaOffset, learningRate);
             //计算正确输入值
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
-                result.Add(new double[inputWidth, inputHeight]);
                 for (int i = 0; i < inputWidth; i++)
                 {
                     for (int j = 0; j < inputHeight; j++)
                     {
-                        //resultDelta[i, j] /= receptiveFieldWidth * receptiveFieldHeight;
                         //resultDelta[inputIndex][i, j] *= ActivationFunctionDerivative(InputValue[inputIndex][i, j]);
-                        //resultDelta[i, j] *= InputValue[i, j];
-                        result[inputIndex][i, j] = InputValue[inputIndex][i, j] + resultDelta[inputIndex][i, j];
                         if (Standardization)
                         {
                             //反归一化每个结果
@@ -386,7 +384,7 @@ namespace CnnDemo.CNN
         /// <param name="weight">权重</param>
         /// <param name="delta">残差</param>
         /// <param name="learningRate">学习率</param>
-        private void UpdateWeight(List<double[,]> weight, List<double[,]> delta, double learningRate)
+        private void UpdateWeight(List<double[,]> delta, double learningRate)
         {
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
@@ -394,7 +392,7 @@ namespace CnnDemo.CNN
                 {
                     for (int j = 0; j < receptiveFieldHeight; j++)
                     {
-                        weight[inputIndex][i, j] += learningRate * delta[inputIndex][i, j];// / InputCount;
+                        ShareWeight[inputIndex][i, j] += learningRate * delta[inputIndex][i, j];// / InputCount;
                     }
                 }
             }
@@ -405,9 +403,9 @@ namespace CnnDemo.CNN
         /// <param name="weight">偏置</param>
         /// <param name="delta">残差</param>
         /// <param name="learningRate">学习率</param>
-        private void UpdateOffset(double offset, double delta, double learningRate)
+        private void UpdateOffset(double delta, double learningRate)
         {
-            offset += learningRate * delta;
+            OutputOffset += learningRate * delta;
         }
         /// <summary>
         /// 神经元描述

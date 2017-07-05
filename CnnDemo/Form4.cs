@@ -29,9 +29,9 @@ namespace CnnDemo
         private void Form4_Load(object sender, EventArgs e)
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(6, 28, 28, 5, 5, 1, 1, 1, 2, 2, 1, false);
-            cnn.AddCnnConvolutionLayer(12, 5, 5, 1, 1, 1, 2, 2, 1, false);
-            //cnn.AddCnnConvolutionLayer(120, 3, 3, 1, 1, 1, 0, 0, 0, false);
+            cnn.AddCnnConvolutionLayer(6, 28, 28, 5, 5, 1, 1, 1, 2, 2, 2, false);
+            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 2, 2, 1, false);
+            //cnn.AddCnnConvolutionLayer(80, 3, 3, 1, 1, 1, 1, 1, 1, false);
             cnn.AddCnnFullLayer(100, 1, false);
             cnn.AddCnnFullLayer(10, 1, false);
         }
@@ -49,7 +49,7 @@ namespace CnnDemo
                 {
                     trainCount = 0;
                     //int retry = 0;
-                    while (true)
+                    while (CnnHelper.TruePercent != 1)
                     {
                         trainCount++;
                         CnnHelper.SumCount = 0;
@@ -94,7 +94,7 @@ namespace CnnDemo
                                             }
                                         }
                                         //input = CnnHelper.MatrixExpand(input, 2, 2);
-                                        cnn.Train(input, labels, learningRate *  CnnHelper.TruePercent* 0.05,
+                                        cnn.Train(input, labels, learningRate,
                                             new Cnn.TrainInterferenceHandler((value) =>
                                             {
                                                 if (chkSkip.Checked)
@@ -159,7 +159,8 @@ namespace CnnDemo
                                         labels[i2] = 0;
                                     }
                                     labels[label] = 1;
-                                    Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
+                                    //he
+                                    Image<Bgr, float> trainingData = new Image<Bgr, float>(img);
                                     double[,] input = new double[img.Width, img.Height];
                                     for (int w = 0; w < img.Width; w++)
                                     {
@@ -173,7 +174,7 @@ namespace CnnDemo
                                         }
                                     }
                                     //input = CnnHelper.MatrixExpand(input, 2, 2);
-                                    cnn.Train(input, labels, learningRate * CnnHelper.TruePercent*0.05,
+                                    cnn.Train(input, labels, learningRate,
                                         new Cnn.TrainInterferenceHandler((value) =>
                                         {
                                             if (chkSkip.Checked)
@@ -299,7 +300,7 @@ namespace CnnDemo
                 else
                 {
                     #region 手写字体集
-                    foreach (var file in Directory.GetFiles("img", "*.jpg"))
+                    foreach (var file in Directory.GetFiles("img2", "*.jpg"))
                     {
                         using (Bitmap img = new Bitmap(file))
                         {
@@ -397,6 +398,7 @@ namespace CnnDemo
             if (threadCnn != null && threadCnn.ThreadState == ThreadState.Running)
             {
                 threadCnn.Abort();
+                threadCnn = null;
             }
         }
 

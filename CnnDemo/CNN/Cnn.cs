@@ -42,11 +42,10 @@ namespace CnnDemo.CNN
             CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
             //创建卷积层
             cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, inputWidth, inputHeight, receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType, 1, standardization, null);
-            if (poolingType > 0)//不创建池化层
-            {
-                //创建池化层
-                cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, activationFunctionType, poolingType);
-            }
+
+            //创建池化层
+            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, activationFunctionType, poolingType);
+
             CnnConvolutionLayerList.Add(cnnConvolutionLayer);
         }
         /// <summary>
@@ -60,40 +59,40 @@ namespace CnnDemo.CNN
         {
             var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
             //随机创建卷积层间连接
-            //bool[,] layerLinks = new bool[convolutionKernelCount, cnnConvolutionLayerLast.ConvolutionKernelCount];
-            //Random random = new Random();
-            //for (int i = 0; i < convolutionKernelCount; i++)
-            //{
-            //    int linkCount = 0;//每层链接数
-            //    while (linkCount < 2)//确保最低链接数
-            //    {
-            //        for (int j = 0; j < cnnConvolutionLayerLast.ConvolutionKernelCount; j++)
-            //        {
-            //            if (random.NextDouble() < 0.5)
-            //                layerLinks[i, j] = false;
-            //            else
-            //            {
-            //                layerLinks[i, j] = true;
-            //                linkCount++;
-            //            }
-            //        }
-            //    }
-            //    //排除相同链接
-            //    for (int j = 0; j < i; j++)
-            //    {
-            //        linkCount = 0;//相同链接数
-            //        for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
-            //        {
-            //            if (layerLinks[i, k] == layerLinks[j, k])
-            //                linkCount++;
-            //        }
-            //        if (linkCount == cnnConvolutionLayerLast.ConvolutionKernelCount)
-            //        {
-            //            i--;
-            //            break;
-            //        }
-            //    }
-            //}
+            bool[,] layerLinks = new bool[convolutionKernelCount, cnnConvolutionLayerLast.ConvolutionKernelCount];
+            Random random = new Random();
+            for (int i = 0; i < convolutionKernelCount; i++)
+            {
+                int linkCount = 0;//每层链接数
+                while (linkCount < 2)//确保最低链接数
+                {
+                    for (int j = 0; j < cnnConvolutionLayerLast.ConvolutionKernelCount; j++)
+                    {
+                        if (random.NextDouble() < 0.5)
+                            layerLinks[i, j] = false;
+                        else
+                        {
+                            layerLinks[i, j] = true;
+                            linkCount++;
+                        }
+                    }
+                }
+                //排除相同链接
+                for (int j = 0; j < i; j++)
+                {
+                    linkCount = 0;//相同链接数
+                    for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
+                    {
+                        if (layerLinks[i, k] == layerLinks[j, k])
+                            linkCount++;
+                    }
+                    if (linkCount == cnnConvolutionLayerLast.ConvolutionKernelCount)
+                    {
+                        i--;
+                        break;
+                    }
+                }
+            }
             //bool[,] layerLinks = {
             //    {true ,true ,true ,false,false,false}, 
             //    {false,true ,true ,true ,false,false},
@@ -116,24 +115,24 @@ namespace CnnDemo.CNN
             //    {true ,true ,true ,true ,true ,true }
             //};
             //全链接
-            bool[,] layerLinks = new bool[convolutionKernelCount, cnnConvolutionLayerLast.ConvolutionKernelCount];
-            for (int i = 0; i < convolutionKernelCount; i++)
-            {
-                for (int j = 0; j < cnnConvolutionLayerLast.ConvolutionKernelCount; j++)
-                {
-                    layerLinks[i, j] = true;
-                }
-            }
+            //bool[,] layerLinks = new bool[convolutionKernelCount, cnnConvolutionLayerLast.ConvolutionKernelCount];
+            //for (int i = 0; i < convolutionKernelCount; i++)
+            //{
+            //    for (int j = 0; j < cnnConvolutionLayerLast.ConvolutionKernelCount; j++)
+            //    {
+            //        layerLinks[i, j] = true;
+            //    }
+            //}
             convolutionLinkList.Add(layerLinks);
             CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
             //创建卷积层
             cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, cnnConvolutionLayerLast.OutputWidth, cnnConvolutionLayerLast.OutputHeight,
                 receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType, cnnConvolutionLayerLast.ConvolutionKernelCount, standardization, layerLinks);
-            if (poolingType > 0)//不创建池化层
-            {
-                //创建池化层
-                cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, activationFunctionType, poolingType);
-            }
+
+
+            //创建池化层
+            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, activationFunctionType, poolingType);
+
             CnnConvolutionLayerList.Add(cnnConvolutionLayer);
         }
         /// <summary>
@@ -176,6 +175,7 @@ namespace CnnDemo.CNN
         public List<List<double[,]>> Train(double[,] input, double[] output, double learningRate, TrainInterferenceHandler interference)
         {
             #region 正向传播
+            /*
             //计算卷积层输出
             List<double[,]> forwardOutputConvolution = new List<double[,]>();//输出值
             for (int i = 0; i < CnnConvolutionLayerList.Count; i++)
@@ -232,6 +232,8 @@ namespace CnnDemo.CNN
                 forwardOutputFull = cnnFullLayer.CalculatedResult(forwardOutputFull);
             }
             //double[] outputFullTmp = Predict(input);
+            //*/
+            double[] forwardOutputFull = Predict(input);
             #endregion
 
             CnnHelper.ShowChange(forwardOutputFull, output, 60000);
@@ -242,8 +244,14 @@ namespace CnnDemo.CNN
             }
             #region 反向传播
             double layerCount = 0;
+            var cnnFullLayerLast = CnnFullLayerList[CnnFullLayerList.Count - 1];//最后的输出层
+            double[] backwardInputFull = new double[cnnFullLayerLast.OutputCount];
+            //计算输出误差
+            for (int i = 0; i < cnnFullLayerLast.OutputCount; i++)
+            {
+                backwardInputFull[i] = output[i] - forwardOutputFull[i];
+            }
             //计算全连接层
-            double[] backwardInputFull = output;
             for (int i = CnnFullLayerList.Count - 1; i >= 0; i--)
             {
                 backwardInputFull = CnnFullLayerList[i].BackPropagation(backwardInputFull, learningRate);
@@ -251,6 +259,7 @@ namespace CnnDemo.CNN
                 layerCount++;
             }
             //计算全连接层转卷积层
+            var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
             List<double[,]> inputConvolutionTmp = new List<double[,]>();
             for (int i = 0; i < cnnConvolutionLayerLast.ConvolutionKernelCount; i++)
             {
@@ -316,18 +325,24 @@ namespace CnnDemo.CNN
         {
             #region 正向传播
             //计算全连接层输出
-            double[] outputFullTmp = input;
+            double[] forwardOutputFull = input;
             foreach (var cnnFullLayer in CnnFullLayerList)
             {
-                outputFullTmp = cnnFullLayer.CalculatedResult(outputFullTmp);
+                forwardOutputFull = cnnFullLayer.CalculatedResult(forwardOutputFull);
             }
             #endregion
             #region 反向传播
+            var cnnFullLayerLast = CnnFullLayerList[CnnFullLayerList.Count - 1];//最后的输出层
+            double[] backwardInputFull = new double[cnnFullLayerLast.OutputCount];
+            //计算输出误差
+            for (int i = 0; i < cnnFullLayerLast.OutputCount; i++)
+            {
+                backwardInputFull[i] = output[i] - forwardOutputFull[i];
+            }
             //计算全连接层
-            double[] inputFullTmp = output;
             for (int i = CnnFullLayerList.Count - 1; i >= 0; i--)
             {
-                inputFullTmp = CnnFullLayerList[i].BackPropagation(inputFullTmp, learningRate);
+                backwardInputFull = CnnFullLayerList[i].BackPropagation(backwardInputFull, learningRate);
             }
             #endregion
         }
