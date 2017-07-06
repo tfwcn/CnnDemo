@@ -41,6 +41,13 @@ namespace CnnDemo.CNN
             LabelsNum = labelsValue;
             TruePercent = TrueCount / (double)SumCount;
         }
+        public static void ShowChange2(double[] output, double[] labels)
+        {
+            //正确率
+            SumCount++;
+            if (Math.Abs(output[0] - labels[0]) < 0.5) TrueCount++;
+            TruePercent = TrueCount / (double)SumCount;
+        }
         /// <summary>
         /// 缩放图片
         /// </summary>
@@ -181,7 +188,7 @@ namespace CnnDemo.CNN
         /// 周围扩展矩阵，补0
         /// </summary>
         /// <returns></returns>
-        public static double[,] MatrixExpand(double[,] value, int x, int y)
+        public static double[,] MatrixExpand(double[,] value, int x, int y, double defaultValue = 0)
         {
             int valueWidth = value.GetLength(0);
             int valueHeight = value.GetLength(1);
@@ -191,7 +198,7 @@ namespace CnnDemo.CNN
                 for (int j = 0; j < valueHeight + 2 * y; j++)
                 {
                     if (j < y || i < x || j >= (valueHeight + y) || i >= (valueWidth + x))
-                        result[i, j] = 0;
+                        result[i, j] = defaultValue;
                     else
                         result[i, j] = value[i - x, j - y]; // 复制原向量的数据
                 }
@@ -302,6 +309,18 @@ namespace CnnDemo.CNN
             fs.Close();
         }
         /// <summary>
+        /// 保存网络
+        /// </summary>
+        /// <param name="cnn"></param>
+        /// <param name="path"></param>
+        public static void SaveCnnGroup(CnnGroup cnn, string path)
+        {
+            FileStream fs = new FileStream(path, FileMode.Create);
+            BinaryFormatter bf = new BinaryFormatter();
+            bf.Serialize(fs, cnn);
+            fs.Close();
+        }
+        /// <summary>
         /// 加载网络
         /// </summary>
         /// <param name="path"></param>
@@ -314,6 +333,23 @@ namespace CnnDemo.CNN
                 FileStream fs = new FileStream(path, FileMode.Open);
                 BinaryFormatter bf = new BinaryFormatter();
                 cnn = bf.Deserialize(fs) as Cnn;
+                fs.Close();
+            }
+            return cnn;
+        }
+        /// <summary>
+        /// 加载网络
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
+        public static CnnGroup LoadCnnGroup(string path)
+        {
+            CnnGroup cnn = null;
+            if (File.Exists(path))
+            {
+                FileStream fs = new FileStream(path, FileMode.Open);
+                BinaryFormatter bf = new BinaryFormatter();
+                cnn = bf.Deserialize(fs) as CnnGroup;
                 fs.Close();
             }
             return cnn;

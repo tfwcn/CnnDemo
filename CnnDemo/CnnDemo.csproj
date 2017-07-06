@@ -75,6 +75,7 @@
     <Compile Include="BP\Ann.cs" />
     <Compile Include="BP\AnnClassifier.cs" />
     <Compile Include="CNN\Cnn.cs" />
+    <Compile Include="CNN\CnnGroup.cs" />
     <Compile Include="CNN\CnnHelper.cs" />
     <Compile Include="CNN\CnnKernel.cs" />
     <Compile Include="CNN\CnnConvolutionLayer.cs" />

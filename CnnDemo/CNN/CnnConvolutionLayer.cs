@@ -9,6 +9,7 @@ namespace CnnDemo.CNN
     [Serializable]
     public class CnnConvolutionLayer
     {
+        public object lockObj = new object();
         /// <summary>
         /// 卷积层
         /// </summary>
@@ -68,7 +69,7 @@ namespace CnnDemo.CNN
         /// <param name="activationFunctionType"></param>
         public void CreateCnnKernel(int convolutionKernelCount, int inputWidth, int inputHeight,
             int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth,
-            int offsetHeight, int activationFunctionType, int LastLayerCount, bool standardization, bool[,] layerLinks)
+            int offsetHeight, CnnNode.ActivationFunctionTypes activationFunctionType, int LastLayerCount, bool standardization, bool[,] layerLinks)
         {
             this.ConvolutionKernelCount = convolutionKernelCount;
             CnnKernelList = new List<CnnKernel>();
@@ -96,7 +97,7 @@ namespace CnnDemo.CNN
         /// <param name="receptiveFieldWidth"></param>
         /// <param name="receptiveFieldHeight"></param>
         /// <param name="activationFunctionType"></param>
-        public void CreateCnnPooling(int receptiveFieldWidth, int receptiveFieldHeight, int activationFunctionType, int poolingType)
+        public void CreateCnnPooling(int receptiveFieldWidth, int receptiveFieldHeight, CnnNode.ActivationFunctionTypes activationFunctionType, CnnPooling.PoolingTypes poolingType)
         {
             if (CnnKernelList == null || CnnKernelList.Count == 0)
                 throw new Exception("需先创建卷积层");
@@ -107,7 +108,6 @@ namespace CnnDemo.CNN
                     receptiveFieldWidth, receptiveFieldHeight, activationFunctionType, poolingType, CnnKernelList[0].InputCount, CnnKernelList[0].OutputCount));
             }
         }
-        public object lockObj = new object();
         /// <summary>
         /// 前向传播,计算结果
         /// </summary>

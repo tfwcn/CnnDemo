@@ -18,8 +18,7 @@ namespace CnnDemo
     public partial class Form4_2 : Form
     {
         private Thread threadCnn;
-        private Cnn cnn1;
-        private Cnn cnn2;
+        private Cnn cnn;
         private int trainCount = 0;
         private double learningRate;
         public Form4_2()
@@ -29,14 +28,27 @@ namespace CnnDemo
 
         private void Form4_2_Load(object sender, EventArgs e)
         {
-            cnn1 = new Cnn();
-            cnn1.AddCnnConvolutionLayer(40, 150, 150, 5, 5, 1, 1, 1, 2, 2, 2, false);
-            cnn1.AddCnnConvolutionLayer(80, 5, 5, 1, 1, 1, 2, 2, 1, false);
-            cnn1.AddCnnConvolutionLayer(160, 5, 5, 1, 1, 1, 2, 2, 1, false);
-            cnn1.AddCnnConvolutionLayer(320, 5, 5, 1, 1, 1, 2, 2, 1, false);
-            //cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 2, 2, 1, 1);
-            //cnn.AddCnnConvolutionLayer(120, 4, 4, 1, 1, 1, 0, 0, 0, 0);
-            cnn1.AddCnnFullLayer(100, 1, false);
+            cnn = new Cnn();
+            #region LeNet-5 结构
+            /*
+            cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
+            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
+            cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                0, 0, CnnPooling.PoolingTypes.None, false, false);
+            cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
+            //*/
+            #endregion
+            cnn.AddCnnConvolutionLayer(6, 254 * 2, 252, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
+            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
+            cnn.AddCnnConvolutionLayer(20, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
+            cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnn.AddCnnFullLayer(1, CnnNode.ActivationFunctionTypes.Tanh, false);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -52,74 +64,90 @@ namespace CnnDemo
                 {
                     trainCount = 0;
                     //int retry = 0;
-                    while (true)
+                    string path = "F:\\迅雷下载\\lfw\\";
+                    StreamReader sr = new StreamReader(path + "pairsDevTrain.txt");
+                    int trueCount = Convert.ToInt32(sr.ReadLine());//正确数
+                    string nowLine = sr.ReadLine();//当前行
+                    List<string[]> dataList = new List<string[]>();
+                    while (!String.IsNullOrEmpty(nowLine))
+                    {
+                        string[] values = nowLine.Split('\t');
+                        string[] values2 = new string[4];
+                        if (values.Length == 3)
+                        {
+                            values2[0] = values[0];
+                            values2[1] = values[1];
+                            values2[2] = values[0];
+                            values2[3] = values[2];
+                        }
+                        else
+                        {
+                            values2[0] = values[0];
+                            values2[1] = values[1];
+                            values2[2] = values[2];
+                            values2[3] = values[3];
+                        }
+                        dataList.Add(values2);
+                        nowLine = sr.ReadLine();//当前行
+                    }
+                    while (CnnHelper.TruePercent != 1)
                     {
                         trainCount++;
                         CnnHelper.SumCount = 0;
                         CnnHelper.TrueCount = 0;
-                        using (FileStream fs = new FileStream("train-labels.idx1-ubyte", FileMode.Open))
+                        #region LFW人脸集
+                        List<string[]> randomList = new List<string[]>();
+                        foreach (var data in dataList)//随机排序
                         {
-                            using (FileStream fsImages = new FileStream("train-images.idx3-ubyte", FileMode.Open))
+                            randomList.Insert(CnnHelper.RandomObj.Next(randomList.Count + 1), data);
+                        }
+                        foreach (var data in randomList)
+                        {
+                            string file1 = path + "lfw\\" + data[0] + "\\" + data[0] + "_" + Convert.ToInt32(data[1]).ToString("0000") + ".jpg";
+                            string file2 = path + "lfw\\" + data[2] + "\\" + data[2] + "_" + Convert.ToInt32(data[3]).ToString("0000") + ".jpg";
+                            using (Bitmap img1 = new Bitmap(file1))
                             {
-                                byte[] bytes4 = new byte[4];
-                                fsImages.Seek(4, SeekOrigin.Current);
-                                fs.Seek(8, SeekOrigin.Current);
-                                fsImages.Read(bytes4, 0, 4);
-                                int count = ToInt32(bytes4);
-                                fsImages.Read(bytes4, 0, 4);
-                                int height = ToInt32(bytes4);
-                                fsImages.Read(bytes4, 0, 4);
-                                int width = ToInt32(bytes4);
-                                for (int i = 0; i < count; i++)
+                                using (Bitmap img2 = new Bitmap(file2))
                                 {
-                                    Bitmap img = GetImage(fsImages, width, height);
-                                    img = CnnHelper.ZoomImg(img, 150, 150);
-                                    byte label = GetLable(fs);
-                                    double[] labels = new double[10];
-                                    for (int i2 = 0; i2 < 10; i2++)
+                                    double[] labels = new double[1];
+                                    if (dataList.IndexOf(data) < trueCount)
                                     {
-                                        labels[i2] = 0;
+                                        labels[0] = 1;
                                     }
-                                    labels[label] = 1;
-                                    Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
-                                    double[,] input = new double[width, height];
-                                    for (int w = 0; w < width; w++)
+                                    Image<Bgr, float> trainingData1 = new Image<Bgr, float>(img1);
+                                    Image<Bgr, float> trainingData2 = new Image<Bgr, float>(img2);
+                                    double[,] input = new double[img1.Width * 2 + 8, img1.Height + 2];
+                                    for (int w = 2; w < img1.Width; w++)
                                     {
-                                        for (int h = 0; h < height; h++)
+                                        for (int h = 1; h < img1.Height; h++)
                                         {
                                             input[w, h] = Color.FromArgb(0,
-                                                (int)trainingData.Data[h, w, 2],
-                                                (int)trainingData.Data[h, w, 1],
-                                                (int)trainingData.Data[h, w, 0]
+                                                (int)trainingData1.Data[h, w, 2],
+                                                (int)trainingData1.Data[h, w, 1],
+                                                (int)trainingData1.Data[h, w, 0]
+                                                ).ToArgb() / (double)0xFFFFFF;
+                                            input[img1.Width + 4 + w, h] = Color.FromArgb(0,
+                                                (int)trainingData2.Data[h, w, 2],
+                                                (int)trainingData2.Data[h, w, 1],
+                                                (int)trainingData2.Data[h, w, 0]
                                                 ).ToArgb() / (double)0xFFFFFF;
                                         }
                                     }
-                                    //input = CnnHelper.MatrixExpand(input, 2, 2);
-                                    cnn1.Train(input, labels, learningRate * (1 - CnnHelper.TruePercent * CnnHelper.TruePercent), null);
+                                    double[] forwardOutputFull = null;
+                                    cnn.Train(input, labels, learningRate, ref forwardOutputFull);
+                                    CnnHelper.ShowChange2(forwardOutputFull, labels);
                                     this.Invoke(new Action(() =>
                                     {
                                         lblInfo.Text = String.Format("训练周期:{0} 训练次数:{1}/{2} 正确率:{3:00.####%}", trainCount, CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
-                                        if (i % 20 == 0)
-                                        {
-                                            lblResult.Text = CnnHelper.LabelsNum + " " + CnnHelper.ResultNum;
-                                            pbImage.Image = img;
-                                        }
-                                        //if (CnnHelper.LabelsNum != CnnHelper.ResultNum && retry < 5)
-                                        //{
-                                        //    i--;
-                                        //    retry++;
-                                        //}
-                                        //else
-                                        //{
-                                        //    retry = 0;
-                                        //}
+
+                                        lblResult.Text = labels[0].ToString();
+                                        pbImage1.Image = new Bitmap(img1);
+                                        pbImage2.Image = new Bitmap(img2);
                                     }));
-                                    //img.Save("imgs/" + i + "_" + label + ".jpg");
                                 }
-                                fsImages.Close();
-                                fs.Close();
                             }
                         }
+                        #endregion
                     }
                 }
                 catch (Exception ex)
@@ -140,67 +168,50 @@ namespace CnnDemo
             {
                 CnnHelper.SumCount = 0;
                 CnnHelper.TrueCount = 0;
-                using (FileStream fs = new FileStream("t10k-labels.idx1-ubyte", FileMode.Open))
+                #region LFW人脸集
+                foreach (var file in Directory.GetFiles("img2", "*.jpg"))
                 {
-                    using (FileStream fsImages = new FileStream("t10k-images.idx3-ubyte", FileMode.Open))
+                    using (Bitmap img = new Bitmap(file))
                     {
-                        byte[] bytes4 = new byte[4];
-                        fsImages.Seek(4, SeekOrigin.Current);
-                        fs.Seek(8, SeekOrigin.Current);
-                        fsImages.Read(bytes4, 0, 4);
-                        int count = ToInt32(bytes4);
-                        fsImages.Read(bytes4, 0, 4);
-                        int height = ToInt32(bytes4);
-                        fsImages.Read(bytes4, 0, 4);
-                        int width = ToInt32(bytes4);
-                        for (int i = 0; i < count; i++)
+                        byte label = Convert.ToByte(file.Substring(file.LastIndexOf('\\') + 1, 1));
+                        Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
+                        double[,] input = new double[img.Width, img.Height];
+                        for (int w = 0; w < img.Width; w++)
                         {
-                            Bitmap img = GetImage(fsImages, width, height);
-                            img = CnnHelper.ZoomImg(img, 150, 150);
-                            byte label = GetLable(fs);
-                            Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
-                            double[,] input = new double[width, height];
-                            for (int w = 0; w < width; w++)
+                            for (int h = 0; h < img.Height; h++)
                             {
-                                for (int h = 0; h < height; h++)
-                                {
-                                    input[w, h] = Color.FromArgb(0,
-                                        (int)trainingData.Data[h, w, 2],
-                                        (int)trainingData.Data[h, w, 1],
-                                        (int)trainingData.Data[h, w, 0]
-                                        ).ToArgb() / (double)0xFFFFFF;
-                                }
+                                input[w, h] = Color.FromArgb(0,
+                                    (int)trainingData.Data[h, w, 2],
+                                    (int)trainingData.Data[h, w, 1],
+                                    (int)trainingData.Data[h, w, 0]
+                                    ).ToArgb() / (double)0xFFFFFF;
                             }
-                            //input = CnnHelper.MatrixExpand(input, 2, 2);
-                            double[] labels = cnn1.Predict(input);
-                            double[] labelsTrue = new double[10];
-                            double maxtype = labels[0], max = 0;
-                            for (int n = 0; n < 10; n++)
-                            {
-                                if (maxtype < labels[n])
-                                {
-                                    max = n;
-                                    maxtype = labels[n];
-                                }
-                                if (label == n) labelsTrue[n] = 1;
-                            }
-                            //Console.WriteLine(i + ":" + label + "," + max);
-                            CnnHelper.ShowChange(labels, labelsTrue, 10000);
-                            this.Invoke(new Action(() =>
-                            {
-                                lblInfo.Text = String.Format("识别次数:{0}/{1} 正确率:{2:00.####%}", CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
-                                if (i % 20 == 0)
-                                {
-                                    lblResult.Text = CnnHelper.LabelsNum + " " + CnnHelper.ResultNum;
-                                    pbImage.Image = img;
-                                }
-                            }));
-                            //img.Save("imgs/" + i + "_" + label + ".jpg");
                         }
-                        fsImages.Close();
-                        fs.Close();
+                        input = CnnHelper.MatrixExpand(input, 2, 2);
+                        double[] labels = cnn.Predict(input);
+                        double[] labelsTrue = new double[10];
+                        double maxtype = labels[0], max = 0;
+                        for (int n = 0; n < 10; n++)
+                        {
+                            if (maxtype < labels[n])
+                            {
+                                max = n;
+                                maxtype = labels[n];
+                            }
+                            if (label == n) labelsTrue[n] = 1;
+                        }
+                        //Console.WriteLine(i + ":" + label + "," + max);
+                        CnnHelper.ShowChange(labels, labelsTrue, 10000);
+                        this.Invoke(new Action(() =>
+                        {
+                            lblInfo.Text = String.Format("识别次数:{0}/{1} 正确率:{2:00.####%}", CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
+
+                            lblResult.Text = CnnHelper.LabelsNum + " " + CnnHelper.ResultNum;
+                            pbImage1.Image = new Bitmap(img);
+                        }));
                     }
                 }
+                #endregion
             });
             threadCnn.Start();
         }
@@ -208,13 +219,27 @@ namespace CnnDemo
         private Bitmap GetImage(FileStream fs, int width, int height)
         {
             Bitmap img = new Bitmap(width, height);
+            Random random = new Random();
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     byte[] bytes1 = new byte[1];
                     fs.Read(bytes1, 0, 1);
-                    img.SetPixel(x, y, Color.FromArgb(bytes1[0], bytes1[0], bytes1[0]));
+                    int r, g, b;
+                    if (bytes1[0] < 10)
+                    {
+                        r = bytes1[0] + (byte)random.Next(0, 100);
+                        g = bytes1[0] + (byte)random.Next(0, 100);
+                        b = bytes1[0] + (byte)random.Next(0, 100);
+                    }
+                    else
+                    {
+                        r = bytes1[0];
+                        g = bytes1[0];
+                        b = bytes1[0];
+                    }
+                    img.SetPixel(x, y, Color.FromArgb(r, g, b));
                 }
             }
             return img;
@@ -241,6 +266,7 @@ namespace CnnDemo
             if (threadCnn != null && threadCnn.ThreadState == ThreadState.Running)
             {
                 threadCnn.Abort();
+                threadCnn = null;
             }
         }
 
@@ -250,7 +276,8 @@ namespace CnnDemo
             sfd.Filter = "*.cnn|*.cnn";
             if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                CnnHelper.SaveCnn(cnn1, sfd.FileName);
+                CnnHelper.SaveCnn(cnn, sfd.FileName);
+                //CnnHelper.SaveCnnGroup(cnn, sfd.FileName);
             }
         }
 
@@ -260,7 +287,8 @@ namespace CnnDemo
             ofd.Filter = "*.cnn|*.cnn";
             if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
-                cnn1 = CnnHelper.LoadCnn(ofd.FileName);
+                cnn = CnnHelper.LoadCnn(ofd.FileName);
+                //cnn = CnnHelper.LoadCnnGroup(ofd.FileName);
             }
         }
 
@@ -269,6 +297,84 @@ namespace CnnDemo
             if (threadCnn != null && threadCnn.ThreadState == ThreadState.Running)
             {
                 threadCnn.Abort();
+            }
+        }
+
+        private void btnPic_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "*.jpg|*.jpg";
+            if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Bitmap img = new Bitmap(ofd.FileName);
+                //img = CnnHelper.ZoomImg(img, 28, 28);
+                Image<Bgr, float> trainingData = new Image<Bgr, float>(img);
+                double[,] input = new double[28, 28];
+                for (int w = 0; w < 28; w++)
+                {
+                    for (int h = 0; h < 28; h++)
+                    {
+                        input[w, h] = Color.FromArgb(0,
+                            (int)trainingData.Data[h, w, 2],
+                            (int)trainingData.Data[h, w, 1],
+                            (int)trainingData.Data[h, w, 0]
+                            ).ToArgb() / (double)0xFFFFFF;
+                    }
+                }
+                input = CnnHelper.MatrixExpand(input, 2, 2);
+                double[] labels = cnn.Predict(input);
+                double[] labelsTrue = new double[10];
+                double maxtype = labels[0], max = 0;
+                for (int n = 0; n < 10; n++)
+                {
+                    if (maxtype < labels[n])
+                    {
+                        max = n;
+                        maxtype = labels[n];
+                    }
+                    Console.Write(labels[n] + " ");
+                }
+                Console.WriteLine("");
+                //Console.WriteLine(i + ":" + label + "," + max);
+                //CnnHelper.ShowChange(labels, labelsTrue, 10000);
+                this.Invoke(new Action(() =>
+                {
+                    lblResult.Text = max.ToString();
+                    pbImage1.Image = img;
+                }));
+            }
+        }
+
+        private void btnPicTrain_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "*.jpg|*.jpg";
+            if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                Bitmap img = new Bitmap(ofd.FileName);
+                byte label = Convert.ToByte(ofd.FileName.Substring(ofd.FileName.LastIndexOf('\\') + 1, 1));
+                double[] labels = new double[10];
+                for (int i2 = 0; i2 < 10; i2++)
+                {
+                    labels[i2] = 0;
+                }
+                labels[label] = 1;
+                Image<Bgr, float> trainingData = new Image<Bgr, float>(img); ;
+                double[,] input = new double[img.Width, img.Height];
+                for (int w = 0; w < img.Width; w++)
+                {
+                    for (int h = 0; h < img.Height; h++)
+                    {
+                        input[w, h] = Color.FromArgb(0,
+                            (int)trainingData.Data[h, w, 2],
+                            (int)trainingData.Data[h, w, 1],
+                            (int)trainingData.Data[h, w, 0]
+                            ).ToArgb() / (double)0xFFFFFF;
+                    }
+                }
+                input = CnnHelper.MatrixExpand(input, 2, 2);
+                double[] forwardOutputFull = null;
+                cnn.Train(input, labels, (double)numLearningRate.Value, ref forwardOutputFull);
             }
         }
     }

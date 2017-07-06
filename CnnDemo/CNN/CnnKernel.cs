@@ -105,7 +105,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 正则化概率（Dropout）
         /// </summary>
-        private double dropoutChance = 0.3;
+        private double dropoutChance = -1;
         /// <summary>
         /// 正则化状态（Dropout）
         /// </summary>
@@ -142,7 +142,7 @@ namespace CnnDemo.CNN
         /// <param name="inputCount"></param>
         /// <param name="outputCount"></param>
         public CnnKernel(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, int activationFunctionType, int inputCount, int outputCount, bool standardization)
+            int offsetWidth, int offsetHeight, ActivationFunctionTypes activationFunctionType, int inputCount, int outputCount, bool standardization)
         {
             this.receptiveFieldWidth = receptiveFieldWidth;
             this.receptiveFieldHeight = receptiveFieldHeight;
@@ -266,7 +266,7 @@ namespace CnnDemo.CNN
             double result = 0;
             switch (ActivationFunctionType)
             {
-                case 2:
+                case ActivationFunctionTypes.ReLU:
                     //PReLU
                     result = random.NextDouble() * 0.0001;
                     break;
@@ -422,6 +422,10 @@ namespace CnnDemo.CNN
                 {
                     for (int j = 0; j < receptiveFieldHeight; j++)
                     {
+                        if (ShareWeight.Count != delta.Count 
+                            || ShareWeight[inputIndex].GetLength(0) != delta[inputIndex].GetLength(0)
+                            || ShareWeight[inputIndex].GetLength(1) != delta[inputIndex].GetLength(1))
+                            return;
                         ShareWeight[inputIndex][i, j] += learningRate * delta[inputIndex][i, j];// / InputCount;
                     }
                 }

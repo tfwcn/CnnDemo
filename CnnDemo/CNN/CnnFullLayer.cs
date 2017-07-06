@@ -72,7 +72,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 正则化概率（Dropout）
         /// </summary>
-        private double dropoutChance = 0.3;
+        private double dropoutChance = -1;
         /// <summary>
         /// 正则化状态（Dropout）
         /// </summary>
@@ -97,7 +97,7 @@ namespace CnnDemo.CNN
         /// <param name="InputCount"></param>
         /// <param name="OutputCount"></param>
         /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
-        public CnnFullLayer(int InputCount, int OutputCount, int activationFunctionType, bool standardization)
+        public CnnFullLayer(int InputCount, int OutputCount, ActivationFunctionTypes activationFunctionType, bool standardization)
         {
             this.InputCount = InputCount;
             this.OutputCount = OutputCount;
@@ -118,7 +118,6 @@ namespace CnnDemo.CNN
         {
             InputValue = inputValue;
             double[] result = new double[OutputCount];
-            double[] resultReal = new double[OutputCount];
             for (int i = 0; i < OutputCount; i++)
             {
                 result[i] = CalculatedPointResult(inputValue, i);
@@ -126,7 +125,6 @@ namespace CnnDemo.CNN
                 //调用激活函数计算结果
                 if (!Standardization)
                 {
-                    resultReal[i] = result[i] + OutputOffset[i];
                     result[i] = ActivationFunction(result[i] + OutputOffset[i]);
                 }
             }
@@ -139,7 +137,6 @@ namespace CnnDemo.CNN
                 {
                     //调用激活函数计算结果
                     double z = (result[i] - mean) / Math.Sqrt(variance);
-                    resultReal[i] = z + OutputOffset[i];
                     result[i] = ActivationFunction(z + OutputOffset[i]);
                 }
             }
@@ -195,7 +192,7 @@ namespace CnnDemo.CNN
             double result = 0;
             switch (ActivationFunctionType)
             {
-                case 2:
+                case ActivationFunctionTypes.ReLU:
                     //PReLU
                     result = random.NextDouble() * 0.0001;
                     break;
@@ -296,8 +293,6 @@ namespace CnnDemo.CNN
             //计算正确输入值
             for (int i = 0; i < InputCount; i++)
             {
-                //正确输入值=旧输入值-sum(残差*更新前的权重)
-                //result[i] = InputValue[i] + resultDelta[i];//正确
                 result[i] = resultDelta[i];//正确
                 //反归一化每个结果
                 if (Standardization)

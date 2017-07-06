@@ -29,11 +29,26 @@ namespace CnnDemo
         private void Form4_Load(object sender, EventArgs e)
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(6, 28, 28, 5, 5, 1, 1, 1, 2, 2, 2, false);
-            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 2, 2, 1, false);
-            //cnn.AddCnnConvolutionLayer(80, 3, 3, 1, 1, 1, 1, 1, 1, false);
-            cnn.AddCnnFullLayer(100, 1, false);
-            cnn.AddCnnFullLayer(10, 1, false);
+            #region LeNet-5 结构
+            /*
+            cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
+            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
+            cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                0, 0, CnnPooling.PoolingTypes.None, false, false);
+            cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
+            //*/
+            #endregion
+            cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
+            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
+            cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                0, 0, CnnPooling.PoolingTypes.None, false, false);
+            cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -93,32 +108,10 @@ namespace CnnDemo
                                                     ).ToArgb() / (double)0xFFFFFF;
                                             }
                                         }
-                                        //input = CnnHelper.MatrixExpand(input, 2, 2);
-                                        cnn.Train(input, labels, learningRate,
-                                            new Cnn.TrainInterferenceHandler((value) =>
-                                            {
-                                                if (chkSkip.Checked)
-                                                {
-                                                    int outputValue = 0;
-                                                    double outputMax = value[0];
-                                                    for (int i2 = 0; i2 < value.Length; i2++)
-                                                    {
-                                                        if (outputMax < value[i2])
-                                                        {
-                                                            outputValue = i2;
-                                                            outputMax = value[i2];
-                                                        }
-                                                    }
-                                                    if (outputValue == label)
-                                                        return true;
-                                                    else
-                                                        return false;
-                                                }
-                                                else
-                                                {
-                                                    return false;
-                                                }
-                                            }));
+                                        input = CnnHelper.MatrixExpand(input, 2, 2);
+                                        double[] forwardOutputFull = null;
+                                        cnn.Train(input, labels, learningRate, ref forwardOutputFull);
+                                        CnnHelper.ShowChange(forwardOutputFull, labels, 60000);
                                         this.Invoke(new Action(() =>
                                         {
                                             lblInfo.Text = String.Format("训练周期:{0} 训练次数:{1}/{2} 正确率:{3:00.####%}", trainCount, CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
@@ -173,34 +166,10 @@ namespace CnnDemo
                                                 ).ToArgb() / (double)0xFFFFFF;
                                         }
                                     }
-                                    //input = CnnHelper.MatrixExpand(input, 2, 2);
-                                    cnn.Train(input, labels, learningRate,
-                                        new Cnn.TrainInterferenceHandler((value) =>
-                                        {
-                                            if (chkSkip.Checked)
-                                            {
-                                                //if (CnnHelper.TrueCount / (double)CnnHelper.SumCount < 0.9)
-                                                //return false;
-                                                int outputValue = 0;
-                                                double outputMax = value[0];
-                                                for (int i2 = 0; i2 < value.Length; i2++)
-                                                {
-                                                    if (outputMax < value[i2])
-                                                    {
-                                                        outputValue = i2;
-                                                        outputMax = value[i2];
-                                                    }
-                                                }
-                                                if (outputValue == label)
-                                                    return true;
-                                                else
-                                                    return false;
-                                            }
-                                            else
-                                            {
-                                                return false;
-                                            }
-                                        }));
+                                    input = CnnHelper.MatrixExpand(input, 2, 2);
+                                    double[] forwardOutputFull = null;
+                                    cnn.Train(input, labels, learningRate, ref forwardOutputFull);
+                                    CnnHelper.ShowChange(forwardOutputFull, labels, 60000);
                                     this.Invoke(new Action(() =>
                                     {
                                         lblInfo.Text = String.Format("训练周期:{0} 训练次数:{1}/{2} 正确率:{3:00.####%}", trainCount, CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
@@ -265,7 +234,7 @@ namespace CnnDemo
                                             ).ToArgb() / (double)0xFFFFFF;
                                     }
                                 }
-                                //input = CnnHelper.MatrixExpand(input, 2, 2);
+                                input = CnnHelper.MatrixExpand(input, 2, 2);
                                 double[] labels = cnn.Predict(input);
                                 double[] labelsTrue = new double[10];
                                 double maxtype = labels[0], max = 0;
@@ -318,7 +287,7 @@ namespace CnnDemo
                                         ).ToArgb() / (double)0xFFFFFF;
                                 }
                             }
-                            //input = CnnHelper.MatrixExpand(input, 2, 2);
+                            input = CnnHelper.MatrixExpand(input, 2, 2);
                             double[] labels = cnn.Predict(input);
                             double[] labelsTrue = new double[10];
                             double maxtype = labels[0], max = 0;
@@ -409,6 +378,7 @@ namespace CnnDemo
             if (sfd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 CnnHelper.SaveCnn(cnn, sfd.FileName);
+                //CnnHelper.SaveCnnGroup(cnn, sfd.FileName);
             }
         }
 
@@ -419,6 +389,7 @@ namespace CnnDemo
             if (ofd.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 cnn = CnnHelper.LoadCnn(ofd.FileName);
+                //cnn = CnnHelper.LoadCnnGroup(ofd.FileName);
             }
         }
 
@@ -451,7 +422,7 @@ namespace CnnDemo
                             ).ToArgb() / (double)0xFFFFFF;
                     }
                 }
-                //input = CnnHelper.MatrixExpand(input, 2, 2);
+                input = CnnHelper.MatrixExpand(input, 2, 2);
                 double[] labels = cnn.Predict(input);
                 double[] labelsTrue = new double[10];
                 double maxtype = labels[0], max = 0;
@@ -502,27 +473,9 @@ namespace CnnDemo
                             ).ToArgb() / (double)0xFFFFFF;
                     }
                 }
-                //input = CnnHelper.MatrixExpand(input, 2, 2);
-                cnn.Train(input, labels, (double)numLearningRate.Value,
-                    new Cnn.TrainInterferenceHandler((value) =>
-                    {
-                        //if (CnnHelper.TrueCount / (double)CnnHelper.SumCount < 0.9)
-                        //    return false;
-                        int outputValue = 0;
-                        double outputMax = value[0];
-                        for (int i2 = 0; i2 < value.Length; i2++)
-                        {
-                            if (outputMax < value[i2])
-                            {
-                                outputValue = i2;
-                                outputMax = value[i2];
-                            }
-                        }
-                        if (outputValue == label)
-                            return true;
-                        else
-                            return false;
-                    }));
+                input = CnnHelper.MatrixExpand(input, 2, 2);
+                double[] forwardOutputFull = null;
+                cnn.Train(input, labels, (double)numLearningRate.Value, ref forwardOutputFull);
             }
         }
     }

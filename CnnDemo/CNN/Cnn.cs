@@ -20,10 +20,6 @@ namespace CnnDemo.CNN
         /// 卷积层间连接，参数：当前层，上一层
         /// </summary>
         private List<bool[,]> convolutionLinkList;
-        /// <summary>
-        /// 训练干涉
-        /// </summary>
-        public delegate bool TrainInterferenceHandler(double[] value);
         public Cnn()
         {
             CnnConvolutionLayerList = new List<CnnConvolutionLayer>();
@@ -36,16 +32,19 @@ namespace CnnDemo.CNN
         /// <param name="cnnConvolutionLayer"></param>
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, int activationFunctionType,
-            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, int poolingType, bool standardization)
+            int offsetWidth, int offsetHeight, CnnNode.ActivationFunctionTypes activationFunctionType,
+            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPooling.PoolingTypes poolingType,
+            bool standardization)
         {
             CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
             //创建卷积层
             cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, inputWidth, inputHeight, receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType, 1, standardization, null);
 
-            //创建池化层
-            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, activationFunctionType, poolingType);
-
+            if (poolingType != 0)
+            {
+                //创建池化层
+                cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, activationFunctionType, poolingType);
+            }
             CnnConvolutionLayerList.Add(cnnConvolutionLayer);
         }
         /// <summary>
@@ -54,92 +53,78 @@ namespace CnnDemo.CNN
         /// <param name="cnnConvolutionLayer"></param>
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, int activationFunctionType,
-            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, int poolingType, bool standardization)
+            int offsetWidth, int offsetHeight, CnnNode.ActivationFunctionTypes activationFunctionType,
+            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPooling.PoolingTypes poolingType,
+            bool standardization, bool isFullLayerLinks)
         {
             var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
-            //随机创建卷积层间连接
             bool[,] layerLinks = new bool[convolutionKernelCount, cnnConvolutionLayerLast.ConvolutionKernelCount];
-            Random random = new Random();
-            for (int i = 0; i < convolutionKernelCount; i++)
+            if (!isFullLayerLinks)
             {
-                int linkCount = 0;//每层链接数
-                while (linkCount < 2)//确保最低链接数
+                //随机创建卷积层间连接
+                Random random = new Random();
+                for (int i = 0; i < convolutionKernelCount; i++)
                 {
-                    for (int j = 0; j < cnnConvolutionLayerLast.ConvolutionKernelCount; j++)
+                    int linkCount = 0;//每层链接数
+                    while (linkCount < 2)//确保最低链接数
                     {
-                        if (random.NextDouble() < 0.5)
-                            layerLinks[i, j] = false;
-                        else
+                        for (int j = 0; j < cnnConvolutionLayerLast.ConvolutionKernelCount; j++)
                         {
-                            layerLinks[i, j] = true;
-                            linkCount++;
+                            if (random.NextDouble() < 0.5)
+                                layerLinks[i, j] = false;
+                            else
+                            {
+                                layerLinks[i, j] = true;
+                                linkCount++;
+                            }
+                        }
+                    }
+                    //排除相同链接
+                    for (int j = 0; j < i; j++)
+                    {
+                        linkCount = 0;//相同链接数
+                        for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
+                        {
+                            if (layerLinks[i, k] == layerLinks[j, k])
+                                linkCount++;
+                        }
+                        if (linkCount == cnnConvolutionLayerLast.ConvolutionKernelCount)
+                        {
+                            i--;
+                            break;
                         }
                     }
                 }
-                //排除相同链接
-                for (int j = 0; j < i; j++)
+            }
+            else
+            {
+                //全链接
+                for (int i = 0; i < convolutionKernelCount; i++)
                 {
-                    linkCount = 0;//相同链接数
-                    for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
+                    for (int j = 0; j < cnnConvolutionLayerLast.ConvolutionKernelCount; j++)
                     {
-                        if (layerLinks[i, k] == layerLinks[j, k])
-                            linkCount++;
-                    }
-                    if (linkCount == cnnConvolutionLayerLast.ConvolutionKernelCount)
-                    {
-                        i--;
-                        break;
+                        layerLinks[i, j] = true;
                     }
                 }
             }
-            //bool[,] layerLinks = {
-            //    {true ,true ,true ,false,false,false}, 
-            //    {false,true ,true ,true ,false,false},
-            //    {false,false,true ,true ,true ,false},
-            //    {false,false,false,true ,true ,true },
-            //    {true ,false,false,false,true ,true },
-            //    {true ,true ,false,false,false,true },
-
-            //    {true ,true ,true ,true ,false,false}, 
-            //    {false,true ,true ,true ,true ,false},
-            //    {false,false,true ,true ,true ,true },
-            //    {true ,false,false,true ,true ,true },
-            //    {true ,true ,false,false,true ,true },
-            //    {true ,true ,true ,false,false,true },
-
-            //    {true ,true ,false,true ,true ,false},
-            //    {false,true ,true ,false,true ,true },
-            //    {true ,false,true ,true ,false,true },
-
-            //    {true ,true ,true ,true ,true ,true }
-            //};
-            //全链接
-            //bool[,] layerLinks = new bool[convolutionKernelCount, cnnConvolutionLayerLast.ConvolutionKernelCount];
-            //for (int i = 0; i < convolutionKernelCount; i++)
-            //{
-            //    for (int j = 0; j < cnnConvolutionLayerLast.ConvolutionKernelCount; j++)
-            //    {
-            //        layerLinks[i, j] = true;
-            //    }
-            //}
             convolutionLinkList.Add(layerLinks);
             CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
             //创建卷积层
             cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, cnnConvolutionLayerLast.OutputWidth, cnnConvolutionLayerLast.OutputHeight,
                 receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType, cnnConvolutionLayerLast.ConvolutionKernelCount, standardization, layerLinks);
 
-
-            //创建池化层
-            cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, activationFunctionType, poolingType);
-
+            if (poolingType != 0)
+            {
+                //创建池化层
+                cnnConvolutionLayer.CreateCnnPooling(poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, activationFunctionType, poolingType);
+            }
             CnnConvolutionLayerList.Add(cnnConvolutionLayer);
         }
         /// <summary>
         /// 增加全连接层，在卷积层后，要先创建完卷积层
         /// </summary>
         /// <param name="cnnFullLayer"></param>
-        public void AddCnnFullLayer(int outputCount, int activationFunctionType, bool standardization)
+        public void AddCnnFullLayer(int outputCount, CnnNode.ActivationFunctionTypes activationFunctionType, bool standardization)
         {
             if (CnnFullLayerList.Count == 0)
             {
@@ -163,7 +148,7 @@ namespace CnnDemo.CNN
         /// 增加全连接层,仅用于BP网络
         /// </summary>
         /// <param name="cnnFullLayer"></param>
-        public void AddCnnFullLayer(int inputCount, int outputCount, int activationFunctionType, bool standardization)
+        public void AddCnnFullLayer(int inputCount, int outputCount, CnnNode.ActivationFunctionTypes activationFunctionType, bool standardization)
         {
             CnnFullLayer cnnFullLayer = new CnnFullLayer(inputCount,
                 outputCount, activationFunctionType, standardization);
@@ -172,7 +157,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 训练
         /// </summary>
-        public List<List<double[,]>> Train(double[,] input, double[] output, double learningRate, TrainInterferenceHandler interference)
+        public List<List<double[,]>> Train(double[,] input, double[] output, double learningRate, ref double[] forwardOutputFull)
         {
             #region 正向传播
             /*
@@ -233,15 +218,9 @@ namespace CnnDemo.CNN
             }
             //double[] outputFullTmp = Predict(input);
             //*/
-            double[] forwardOutputFull = Predict(input);
+            forwardOutputFull = Predict(input);
             #endregion
 
-            CnnHelper.ShowChange(forwardOutputFull, output, 60000);
-            //训练干涉
-            if (interference != null && interference(forwardOutputFull) == true)
-            {
-                return null;
-            }
             #region 反向传播
             double layerCount = 0;
             var cnnFullLayerLast = CnnFullLayerList[CnnFullLayerList.Count - 1];//最后的输出层
@@ -321,7 +300,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 训练,仅用于BP网络
         /// </summary>
-        public void TrainFullLayer(double[] input, double[] output, double learningRate)
+        public double[] TrainFullLayer(double[] input, double[] output, double learningRate)
         {
             #region 正向传播
             //计算全连接层输出
@@ -345,6 +324,7 @@ namespace CnnDemo.CNN
                 backwardInputFull = CnnFullLayerList[i].BackPropagation(backwardInputFull, learningRate);
             }
             #endregion
+            return backwardInputFull;
         }
         /// <summary>
         /// 识别
@@ -410,12 +390,12 @@ namespace CnnDemo.CNN
         public double[] PredictFullLayer(double[] input)
         {
             //计算全连接层输出
-            double[] outputFullTmp = input;
+            double[] forwardOutputFull = input;
             foreach (var cnnFullLayer in CnnFullLayerList)
             {
-                outputFullTmp = cnnFullLayer.CalculatedResult(outputFullTmp);
+                forwardOutputFull = cnnFullLayer.CalculatedResult(forwardOutputFull);
             }
-            return outputFullTmp;
+            return forwardOutputFull;
         }
         /// <summary>
         /// 分离ARGB

@@ -41,7 +41,6 @@
             this.btnPic = new System.Windows.Forms.Button();
             this.btnPicTrain = new System.Windows.Forms.Button();
             this.chkHandwritten = new System.Windows.Forms.CheckBox();
-            this.chkSkip = new System.Windows.Forms.CheckBox();
             ((System.ComponentModel.ISupportInitialize)(this.pbImage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numLearningRate)).BeginInit();
             this.SuspendLayout();
@@ -179,22 +178,11 @@
             this.chkHandwritten.Text = "手写训练集";
             this.chkHandwritten.UseVisualStyleBackColor = true;
             // 
-            // chkSkip
-            // 
-            this.chkSkip.AutoSize = true;
-            this.chkSkip.Location = new System.Drawing.Point(312, 45);
-            this.chkSkip.Name = "chkSkip";
-            this.chkSkip.Size = new System.Drawing.Size(96, 16);
-            this.chkSkip.TabIndex = 13;
-            this.chkSkip.Text = "跳过正确样本";
-            this.chkSkip.UseVisualStyleBackColor = true;
-            // 
             // Form4
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(402, 265);
-            this.Controls.Add(this.chkSkip);
             this.Controls.Add(this.chkHandwritten);
             this.Controls.Add(this.btnPicTrain);
             this.Controls.Add(this.btnPic);
@@ -237,6 +225,5 @@
         private System.Windows.Forms.Button btnPic;
         private System.Windows.Forms.Button btnPicTrain;
         private System.Windows.Forms.CheckBox chkHandwritten;
-        private System.Windows.Forms.CheckBox chkSkip;
     }
 }

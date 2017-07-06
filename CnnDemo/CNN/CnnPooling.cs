@@ -12,6 +12,24 @@ namespace CnnDemo.CNN
     public class CnnPooling : CnnNode
     {
         /// <summary>
+        /// 池化类型
+        /// </summary>
+        public enum PoolingTypes
+        {
+            /// <summary>
+            /// 无池化层
+            /// </summary>
+            None = 0,
+            /// <summary>
+            /// 平均池化
+            /// </summary>
+            MeanPooling = 1,
+            /// <summary>
+            /// 最大值池化
+            /// </summary>
+            MaxPooling = 2
+        }
+        /// <summary>
         /// 共享权重,所有权重同一个值
         /// </summary>
         public double ShareWeight { get; set; }
@@ -46,7 +64,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 池化类型，1:平均池化(Mean Pooling),2:最大值池化(Max Pooling)
         /// </summary>
-        public int PoolingType { get; set; }
+        public PoolingTypes PoolingType { get; set; }
         /// <summary>
         /// 原输入值
         /// </summary>
@@ -78,7 +96,7 @@ namespace CnnDemo.CNN
         /// <param name="receptiveFieldHeight"></param>
         /// <param name="poolingType">池化类型，1:平均池化(Mean Pooling),2:最大值池化(Max Pooling)</param>
         public CnnPooling(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
-            int activationFunctionType, int poolingType, int inputCount, int outputCount)
+            ActivationFunctionTypes activationFunctionType, PoolingTypes poolingType, int inputCount, int outputCount)
         {
             this.receptiveFieldWidth = receptiveFieldWidth;
             this.receptiveFieldHeight = receptiveFieldHeight;
@@ -131,11 +149,11 @@ namespace CnnDemo.CNN
             //调用激活函数计算结果
             switch (PoolingType)
             {
-                case 1:
+                case PoolingTypes.MeanPooling:
                     //平均池化
                     result = MeanPooling(value, x, y);
                     break;
-                case 2:
+                case PoolingTypes.MaxPooling:
                     //最大值池化
                     result = MaxPooling(value, x, y);
                     break;
@@ -203,7 +221,7 @@ namespace CnnDemo.CNN
             double result = 0;
             switch (ActivationFunctionType)
             {
-                case 2:
+                case ActivationFunctionTypes.ReLU:
                     //PReLU
                     result = random.NextDouble() * 0.0001;
                     break;
@@ -245,7 +263,6 @@ namespace CnnDemo.CNN
                 for (int j = 0; j < inputHeight; j++)
                 {
                     result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]) * ShareWeight;//CNN标准
-                    //result[i, j] = InputValue[i, j] + result[i, j];
                     result[i, j] = result[i, j];
                 }
             }
@@ -264,11 +281,11 @@ namespace CnnDemo.CNN
             //调用激活函数计算结果
             switch (PoolingType)
             {
-                case 1:
+                case PoolingTypes.MeanPooling:
                     //平均池化
                     result = CalculatedBackPropagationResultMeanPooling(output);
                     break;
-                case 2:
+                case PoolingTypes.MaxPooling:
                     //最大值池化
                     result = CalculatedBackPropagationResultMaxPooling(output);
                     break;

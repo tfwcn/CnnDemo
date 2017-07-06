@@ -10,9 +10,27 @@ namespace CnnDemo.CNN
     public class CnnNode
     {
         /// <summary>
-        /// 激活函数类型，1:tanh,2:PReLU,3:Sigmoid
+        /// 池化类型
         /// </summary>
-        public int ActivationFunctionType { get; set; }
+        public enum ActivationFunctionTypes
+        {
+            /// <summary>
+            /// Tanh
+            /// </summary>
+            Tanh = 1,
+            /// <summary>
+            /// ReLU
+            /// </summary>
+            ReLU = 2,
+            /// <summary>
+            /// Sigmoid
+            /// </summary>
+            Sigmoid = 3
+        }
+        /// <summary>
+        /// 激活函数类型，1:tanh,2:ReLU,3:Sigmoid
+        /// </summary>
+        public ActivationFunctionTypes ActivationFunctionType { get; set; }
         /// <summary>
         /// 激活函数
         /// </summary>
@@ -24,15 +42,15 @@ namespace CnnDemo.CNN
             //调用激活函数计算结果
             switch (ActivationFunctionType)
             {
-                case 1:
-                    //tanh
+                case ActivationFunctionTypes.Tanh:
+                    //Tanh
                     result = ActivationFunctionTanh(value);
                     break;
-                case 2:
-                    //PReLU
-                    result = ActivationFunctionPReLU(value);
+                case ActivationFunctionTypes.ReLU:
+                    //ReLU
+                    result = ActivationFunctionReLU(value);
                     break;
-                case 3:
+                case ActivationFunctionTypes.Sigmoid:
                     //Sigmoid
                     result = ActivationFunctionSigmoid(value);
                     break;
@@ -50,15 +68,15 @@ namespace CnnDemo.CNN
             //调用激活函数计算结果
             switch (ActivationFunctionType)
             {
-                case 1:
+                case ActivationFunctionTypes.Tanh:
                     //tanh
                     result = ActivationFunctionTanhDerivative(value);
                     break;
-                case 2:
-                    //PReLU
-                    result = ActivationFunctionPReLUDerivative(value);
+                case ActivationFunctionTypes.ReLU:
+                    //ReLU
+                    result = ActivationFunctionReLUDerivative(value);
                     break;
-                case 3:
+                case ActivationFunctionTypes.Sigmoid:
                     //Sigmoid
                     result = ActivationFunctionSigmoidDerivative(value);
                     break;
@@ -105,7 +123,7 @@ namespace CnnDemo.CNN
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private double ActivationFunctionPReLU(double value)
+        private double ActivationFunctionReLU(double value)
         {
             double result = 0;
             //调用激活函数计算结果
@@ -126,7 +144,7 @@ namespace CnnDemo.CNN
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private double ActivationFunctionPReLUDerivative(double value)
+        private double ActivationFunctionReLUDerivative(double value)
         {
             double result = 0;
             //激活函数导数计算结果
