@@ -155,7 +155,7 @@ namespace CnnDemo.CNN
         {
             int shareWeightWidth = shareWeight.GetLength(0);
             int shareWeightHeight = shareWeight.GetLength(1);
-            double[,] exInputData = MatrixExpand(value, shareWeightWidth - 1, shareWeightHeight - 1);
+            double[,] exInputData = MatrixExpand(value, shareWeightWidth - 1, shareWeightHeight - 1, 0);
             double[,] result = ConvolutionValid(shareWeight, exInputData);
             return result;
         }
@@ -188,7 +188,7 @@ namespace CnnDemo.CNN
         /// 周围扩展矩阵，补0
         /// </summary>
         /// <returns></returns>
-        public static double[,] MatrixExpand(double[,] value, int x, int y, double defaultValue = 0)
+        public static double[,] MatrixExpand(double[,] value, int x, int y, double defaultValue)
         {
             int valueWidth = value.GetLength(0);
             int valueHeight = value.GetLength(1);
@@ -201,6 +201,27 @@ namespace CnnDemo.CNN
                         result[i, j] = defaultValue;
                     else
                         result[i, j] = value[i - x, j - y]; // 复制原向量的数据
+                }
+            }
+            return result;
+        }
+        /// <summary>
+        /// 周围扩展矩阵，补0
+        /// </summary>
+        /// <returns></returns>
+        public static double[,] MatrixExpand(double[,] value, int left, int top, int right, int bottom, double defaultValue)
+        {
+            int valueWidth = value.GetLength(0);
+            int valueHeight = value.GetLength(1);
+            double[,] result = new double[valueWidth + left + right, valueHeight + top + bottom];
+            for (int i = 0; i < valueWidth + left + right; i++)
+            {
+                for (int j = 0; j < valueHeight + top + bottom; j++)
+                {
+                    if (j < top || i < left || j >= (valueHeight + top) || i >= (valueWidth + left))
+                        result[i, j] = defaultValue;
+                    else
+                        result[i, j] = value[i - left, j - top]; // 复制原向量的数据
                 }
             }
             return result;
@@ -279,19 +300,26 @@ namespace CnnDemo.CNN
             return result;
         }
         /// <summary>
-        /// 按倍数缩放矩阵
+        /// 矩阵相乘
         /// </summary>
         /// <returns></returns>
-        public static double[,] MatrixMultiply(double[,] value, int xScale, int yScale)
+        public static double[,] MatrixMultiply(double[,] value1, double[,] value2)
         {
-            int valueWidth = value.GetLength(0);
-            int valueHeight = value.GetLength(1);
-            double[,] result = new double[valueWidth * xScale, valueHeight * yScale];
-            for (int i = 0; i < valueWidth * xScale; i++)
+            int valueCol1 = value1.GetLength(0);
+            int valueRow1 = value1.GetLength(1);
+            int valueCol2 = value2.GetLength(0);
+            int valueRow2 = value2.GetLength(1);
+            if (valueCol1 != valueRow2)
+                throw new Exception("第一矩阵行数要与第二矩阵列数相等");
+            double[,] result = new double[valueCol2, valueRow1];
+            for (int i = 0; i < valueCol1; i++)
             {
-                for (int j = 0; j < valueHeight * yScale; j++)
+                for (int j = 0; j < valueRow1; j++)
                 {
-                    result[i, j] = value[i / xScale, j / yScale];
+                    for (int i2 = 0; i2 < valueCol2; i2++)
+                    {
+                        result[i2, j] += value1[i, j] * value2[i2, i];
+                    }
                 }
             }
             return result;

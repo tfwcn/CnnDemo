@@ -85,6 +85,7 @@
     <Compile Include="BP\AnnNode.cs" />
     <Compile Include="CNN\CnnFullLayer.cs" />
     <Compile Include="CNN\CnnPooling.cs" />
+    <Compile Include="CNN\CnnSpatialTransformerLayer.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -114,6 +115,12 @@
     </Compile>
     <Compile Include="Form5.Designer.cs">
       <DependentUpon>Form5.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Form6.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Form6.Designer.cs">
+      <DependentUpon>Form6.cs</DependentUpon>
     </Compile>
     <Compile Include="LogHelper.cs" />
     <Compile Include="Program.cs" />
@@ -145,6 +152,9 @@
     <EmbeddedResource Include="Form5.resx">
       <DependentUpon>Form5.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Form6.resx">
+      <DependentUpon>Form6.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
@@ -164,6 +174,10 @@
     <None Include="app.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="data\MNIST\t10k-images.idx3-ubyte" />
+    <None Include="data\MNIST\t10k-labels.idx1-ubyte" />
+    <None Include="data\MNIST\train-images.idx3-ubyte" />
+    <None Include="data\MNIST\train-labels.idx1-ubyte" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -175,9 +189,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="BP\data\iris.txt" />
-    <Content Include="BP\data\test.txt" />
-    <Content Include="BP\data\train.txt" />
+    <Content Include="data\iris.txt" />
+    <Content Include="data\test.txt" />
+    <Content Include="data\train.txt" />
     <Content Include="DLL\Emgu.CV.DebuggerVisualizers.VS2012.dll" />
     <Content Include="DLL\Emgu.CV.DebuggerVisualizers.VS2013.dll" />
     <Content Include="DLL\Emgu.CV.DebuggerVisualizers.VS2015.dll" />

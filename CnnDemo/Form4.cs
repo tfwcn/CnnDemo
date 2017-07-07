@@ -108,7 +108,8 @@ namespace CnnDemo
                                                     ).ToArgb() / (double)0xFFFFFF;
                                             }
                                         }
-                                        input = CnnHelper.MatrixExpand(input, 2, 2);
+                                        int left = CnnHelper.RandomObj.Next(4), top = CnnHelper.RandomObj.Next(4);
+                                        input = CnnHelper.MatrixExpand(input, left, top, 4 - left, 4 - top, 0);
                                         double[] forwardOutputFull = null;
                                         cnn.Train(input, labels, learningRate, ref forwardOutputFull);
                                         CnnHelper.ShowChange(forwardOutputFull, labels, 60000);
@@ -130,7 +131,7 @@ namespace CnnDemo
                                             //    retry = 0;
                                             //}
                                         }));
-                                        //img.Save("imgs/" + i + "_" + label + ".jpg");
+                                        //img.Save("imgs/" + i + "_" + label + ".jpg", System.Drawing.Imaging.ImageFormat.Jpeg);
                                     }
                                     fsImages.Close();
                                     fs.Close();
@@ -166,7 +167,8 @@ namespace CnnDemo
                                                 ).ToArgb() / (double)0xFFFFFF;
                                         }
                                     }
-                                    input = CnnHelper.MatrixExpand(input, 2, 2);
+                                    int left = CnnHelper.RandomObj.Next(4), top = CnnHelper.RandomObj.Next(4);
+                                    input = CnnHelper.MatrixExpand(input, left, top, 4 - left, 4 - top, 0);
                                     double[] forwardOutputFull = null;
                                     cnn.Train(input, labels, learningRate, ref forwardOutputFull);
                                     CnnHelper.ShowChange(forwardOutputFull, labels, 60000);
@@ -234,7 +236,7 @@ namespace CnnDemo
                                             ).ToArgb() / (double)0xFFFFFF;
                                     }
                                 }
-                                input = CnnHelper.MatrixExpand(input, 2, 2);
+                                input = CnnHelper.MatrixExpand(input, 2, 2, 0);
                                 double[] labels = cnn.Predict(input);
                                 double[] labelsTrue = new double[10];
                                 double maxtype = labels[0], max = 0;
@@ -287,7 +289,7 @@ namespace CnnDemo
                                         ).ToArgb() / (double)0xFFFFFF;
                                 }
                             }
-                            input = CnnHelper.MatrixExpand(input, 2, 2);
+                            input = CnnHelper.MatrixExpand(input, 2, 2, 0);
                             double[] labels = cnn.Predict(input);
                             double[] labelsTrue = new double[10];
                             double maxtype = labels[0], max = 0;
@@ -422,7 +424,7 @@ namespace CnnDemo
                             ).ToArgb() / (double)0xFFFFFF;
                     }
                 }
-                input = CnnHelper.MatrixExpand(input, 2, 2);
+                input = CnnHelper.MatrixExpand(input, 2, 2, 0);
                 double[] labels = cnn.Predict(input);
                 double[] labelsTrue = new double[10];
                 double maxtype = labels[0], max = 0;
@@ -473,7 +475,7 @@ namespace CnnDemo
                             ).ToArgb() / (double)0xFFFFFF;
                     }
                 }
-                input = CnnHelper.MatrixExpand(input, 2, 2);
+                input = CnnHelper.MatrixExpand(input, 2, 2, 0);
                 double[] forwardOutputFull = null;
                 cnn.Train(input, labels, (double)numLearningRate.Value, ref forwardOutputFull);
             }
