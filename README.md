@@ -2,7 +2,10 @@
 
 ## Cnn卷积神经网络
 
-> 神经网络训练物体识别
+> 神经网络训练识别手写字体
+
+* 主分支：传统卷积神经网络
+* DCnn分支：可变卷积神经网络
 
 ### 参照资料：
 1. 《Notes on Convolutional Neural Networks》
