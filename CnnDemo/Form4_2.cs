@@ -41,11 +41,11 @@ namespace CnnDemo
             cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
             //*/
             #endregion
-            cnn.AddCnnConvolutionLayer(6, 254 * 2, 252, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn.AddCnnConvolutionLayer(6, 254 * 2, 252, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
-            cnn.AddCnnConvolutionLayer(20, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
             cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
             cnn.AddCnnFullLayer(1, CnnNode.ActivationFunctionTypes.Tanh, false);

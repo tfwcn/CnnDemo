@@ -88,6 +88,26 @@ namespace CnnDemo.CNN
         /// </summary>
         public int OutputCount { get; set; }
         /// <summary>
+        /// 共享权重梯度集，用于计算平均权重梯度
+        /// </summary>
+        private List<double> meanListDeltaWeight;
+        /// <summary>
+        /// 偏置梯度集，用于计算平均偏置梯度
+        /// </summary>
+        private List<double> meanListDeltaOffset;
+        /// <summary>
+        /// 平均共享权重梯度
+        /// </summary>
+        private double meanDeltaWeight;
+        /// <summary>
+        /// 平均偏置梯度
+        /// </summary>
+        private double meanDeltaOffset;
+        /// <summary>
+        /// 平均梯度集上限
+        /// </summary>
+        private int miniBatchSize = 10;
+        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="inputWidth"></param>
@@ -109,6 +129,8 @@ namespace CnnDemo.CNN
             this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling(inputWidth / (double)receptiveFieldWidth));
             this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling(inputHeight / (double)receptiveFieldWidth));
             OutputPoolingMax = new int[ConvolutionKernelWidth, ConvolutionKernelHeight];
+            meanListDeltaWeight = new List<double>();
+            meanListDeltaOffset = new List<double>();
             InitShareWeight();
         }
         /// <summary>
@@ -266,9 +288,44 @@ namespace CnnDemo.CNN
                     result[i, j] = result[i, j];
                 }
             }
+            //计算平均梯度
+            //*
+            meanListDeltaWeight.Add(deltaWeight);
+            if (meanListDeltaWeight.Count > miniBatchSize)
+            {
+                meanDeltaWeight -= meanListDeltaWeight[0] / miniBatchSize;
+                meanDeltaWeight += deltaWeight / miniBatchSize;
+                meanListDeltaWeight.RemoveAt(0);
+            }
+            else
+            {
+                meanDeltaWeight = 0;
+                foreach (var tmpShareWeight in meanListDeltaWeight)
+                {
+                    meanDeltaWeight += tmpShareWeight / meanListDeltaWeight.Count;
+                }
+            }
+            meanListDeltaOffset.Add(deltaOffset);
+            if (meanListDeltaOffset.Count > miniBatchSize)
+            {
+                meanDeltaOffset -= meanListDeltaOffset[0] / miniBatchSize;
+                meanDeltaOffset += deltaOffset / miniBatchSize;
+                meanListDeltaOffset.RemoveAt(0);
+            }
+            else
+            {
+                meanDeltaOffset = 0;
+                foreach (var tmpShareOffset in meanListDeltaOffset)
+                {
+                    meanDeltaOffset += tmpShareOffset / meanListDeltaOffset.Count;
+                }
+            }
+            //*/
             //更新权重和偏置
-            UpdateWeight(deltaWeight, learningRate);//CNN标准
-            UpdateOffset(deltaOffset, learningRate);//CNN标准
+            //UpdateWeight(deltaWeight, learningRate);//CNN标准
+            //UpdateOffset(deltaOffset, learningRate);//CNN标准
+            UpdateWeight(meanDeltaWeight, learningRate);
+            UpdateOffset(meanDeltaOffset, learningRate);
             return result;
         }
         /// <summary>

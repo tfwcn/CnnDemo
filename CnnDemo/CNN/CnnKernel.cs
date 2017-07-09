@@ -53,6 +53,14 @@ namespace CnnDemo.CNN
         /// </summary>
         private int offsetHeight;
         /// <summary>
+        /// 感知野偏移值（宽）
+        /// </summary>
+        private int receptiveFieldOffsetWidth;
+        /// <summary>
+        /// 感知野偏移值（高）
+        /// </summary>
+        private int receptiveFieldOffsetHeight;
+        /// <summary>
         /// 原输入值
         /// </summary>
         [NonSerialized]
@@ -101,7 +109,7 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 平均梯度集上限
         /// </summary>
-        private int miniBatchSize = 20;
+        private int miniBatchSize = 10;
         /// <summary>
         /// 正则化概率（Dropout）
         /// </summary>
@@ -142,7 +150,8 @@ namespace CnnDemo.CNN
         /// <param name="inputCount"></param>
         /// <param name="outputCount"></param>
         public CnnKernel(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, ActivationFunctionTypes activationFunctionType, int inputCount, int outputCount, bool standardization)
+            int offsetWidth, int offsetHeight, int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
+            ActivationFunctionTypes activationFunctionType, int inputCount, int outputCount, bool standardization)
         {
             this.receptiveFieldWidth = receptiveFieldWidth;
             this.receptiveFieldHeight = receptiveFieldHeight;
@@ -150,12 +159,16 @@ namespace CnnDemo.CNN
             this.inputHeight = inputHeight;
             this.offsetWidth = offsetWidth;
             this.offsetHeight = offsetHeight;
+            this.receptiveFieldOffsetWidth = receptiveFieldOffsetWidth;
+            this.receptiveFieldOffsetHeight = receptiveFieldOffsetHeight;
             this.ActivationFunctionType = activationFunctionType;
             this.InputCount = inputCount;
             this.OutputCount = outputCount;
             this.Standardization = standardization;
-            this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling((inputWidth - receptiveFieldWidth) / (double)offsetWidth)) + 1;
-            this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling((inputHeight - receptiveFieldHeight) / (double)offsetHeight)) + 1;
+            //this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling((inputWidth - receptiveFieldWidth) / (double)offsetWidth)) + 1;
+            //this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling((inputHeight - receptiveFieldHeight) / (double)offsetHeight)) + 1;
+            this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling((inputWidth + offsetWidth - receptiveFieldWidth * receptiveFieldOffsetWidth) / (double)offsetWidth));//卷积核宽
+            this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling((inputHeight + offsetHeight - receptiveFieldHeight * receptiveFieldOffsetHeight) / (double)offsetHeight));//卷积核高
             ShareWeight = new List<double[,]>();
             meanDeltaWeight = new List<double[,]>();
             for (int i = 0; i < inputCount; i++)
@@ -174,15 +187,20 @@ namespace CnnDemo.CNN
         {
             InputValue = value;
             double[,] result = new double[ConvolutionKernelWidth, ConvolutionKernelHeight];
-            for (int i = 0; i < ConvolutionKernelWidth; i++)
+            //for (int i = 0; i < ConvolutionKernelWidth; i++)
+            //{
+            //    for (int j = 0; j < ConvolutionKernelHeight; j++)
+            //    {
+            //        for (int k = 0; k < value.Count; k++)
+            //        {
+            //            result[i, j] += CalculatedConvolutionPointResult(value[k], i, j, k);//卷积
+            //        }
+            //    }
+            //}
+            for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
-                for (int j = 0; j < ConvolutionKernelHeight; j++)
-                {
-                    for (int k = 0; k < value.Count; k++)
-                    {
-                        result[i, j] += CalculatedConvolutionPointResult(value[k], i, j, k);//卷积
-                    }
-                }
+                result = CnnHelper.MatrixAdd(result, CnnHelper.ConvolutionValid(ShareWeight[inputIndex], receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
+                    value[inputIndex], offsetWidth, offsetHeight));//卷积
             }
             if (Standardization)
             {
@@ -323,11 +341,16 @@ namespace CnnDemo.CNN
             }
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
-                double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]), residual);//CNN标准
+                double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]), receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
+                    residual, offsetWidth, offsetHeight, inputWidth, inputHeight);
+                //double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]),
+                //    residual, inputWidth, inputHeight);//CNN标准
                 //double[,] tmpResultDelta = CnnHelper.ConvolutionFull(ShareWeight[inputIndex], residual);//CNN例子
                 result.Add(tmpResultDelta);
                 //double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex]));//CNN例子
-                double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex])));//CNN标准
+                //double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex])));//CNN标准
+                double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
+                    CnnHelper.MatrixRotate180(InputValue[inputIndex]), offsetWidth, offsetHeight));//错
                 deltaWeight.Add(tmpDeltaWeight);
             }
             //计算偏置残差
@@ -339,7 +362,7 @@ namespace CnnDemo.CNN
                 }
             }
             //计算平均梯度
-            /*
+            //*
             meanListDeltaWeight.Add(deltaWeight);
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
@@ -397,10 +420,10 @@ namespace CnnDemo.CNN
                 }
             }
             //更新权重和偏置
-            UpdateWeight(deltaWeight, learningRate);
-            UpdateOffset(deltaOffset, learningRate);
-            //UpdateWeight(meanDeltaWeight, learningRate);
-            //UpdateOffset(meanDeltaOffset, learningRate);
+            //UpdateWeight(deltaWeight, learningRate);
+            //UpdateOffset(deltaOffset, learningRate);
+            UpdateWeight(meanDeltaWeight, learningRate);
+            UpdateOffset(meanDeltaOffset, learningRate);
             //调试参数
             //debugResult = resultDelta;
             //debugResidual = residual;
@@ -422,7 +445,7 @@ namespace CnnDemo.CNN
                 {
                     for (int j = 0; j < receptiveFieldHeight; j++)
                     {
-                        if (ShareWeight.Count != delta.Count 
+                        if (ShareWeight.Count != delta.Count
                             || ShareWeight[inputIndex].GetLength(0) != delta[inputIndex].GetLength(0)
                             || ShareWeight[inputIndex].GetLength(1) != delta[inputIndex].GetLength(1))
                             return;

@@ -68,8 +68,9 @@ namespace CnnDemo.CNN
         /// <param name="offsetHeight"></param>
         /// <param name="activationFunctionType"></param>
         public void CreateCnnKernel(int convolutionKernelCount, int inputWidth, int inputHeight,
-            int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth,
-            int offsetHeight, CnnNode.ActivationFunctionTypes activationFunctionType, int LastLayerCount, bool standardization, bool[,] layerLinks)
+            int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth, int offsetHeight,
+             int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
+            CnnNode.ActivationFunctionTypes activationFunctionType, int LastLayerCount, bool standardization, bool[,] layerLinks)
         {
             this.ConvolutionKernelCount = convolutionKernelCount;
             CnnKernelList = new List<CnnKernel>();
@@ -88,7 +89,8 @@ namespace CnnDemo.CNN
                 }
                 CnnKernelList.Add(new CnnKernel(inputWidth, inputHeight,
                     receptiveFieldWidth, receptiveFieldHeight,
-                    offsetWidth, offsetHeight, activationFunctionType, inputCount, ConvolutionKernelCount, standardization));
+                    offsetWidth, offsetHeight, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
+                    activationFunctionType, inputCount, ConvolutionKernelCount, standardization));
             }
         }
         /// <summary>

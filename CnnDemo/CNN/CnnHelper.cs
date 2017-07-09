@@ -81,103 +81,71 @@ namespace CnnDemo.CNN
             return tmpZoomImg;
         }
         /// <summary>
-        /// 卷积操作
+        /// 离散卷积操作(扩大)
         /// </summary>
-        /// <param name="receptive">权重集</param>
-        /// <param name="value"></param>
-        /// <param name="receptiveFieldWidth"></param>
-        /// <param name="receptiveFieldHeight"></param>
-        /// <param name="offsetWidth"></param>
-        /// <param name="offsetHeight"></param>
-        /// <param name="type"></param>
-        /// <returns></returns>
-        /*public static double[,] Convolution(double[,] shareWeight, double[,] value, int offsetWidth, int offsetHeight, int type)
+        public static double[,] ConvolutionFull(double[,] receptiveField, double[,] value,
+            int outputWidth, int outputHeight)
         {
-            // 这里的互相关是在后向传播时调用，类似于将Map反转180度再卷积
-            // 为了方便计算，这里先将图像扩充一圈
-            // 这里的卷积要分成两拨，偶数模板同奇数模板
-            int i, j, c, r;
-            int halfmapsizew;
-            int halfmapsizeh;
-            int shareWeightWidth = shareWeight.GetLength(0);
-            int shareWeightHeight = shareWeight.GetLength(1);
-            int valueWidth = value.GetLength(0);
-            int valueHeight = value.GetLength(1);
-            if (shareWeightWidth % 2 == 0 && shareWeightHeight % 2 == 0)
-            { // 模板大小为偶数
-                halfmapsizew = (shareWeightWidth) / 2; // 卷积模块的半瓣大小
-                halfmapsizeh = (shareWeightHeight) / 2;
-            }
-            else
-            {
-                halfmapsizew = (shareWeightWidth - 1) / 2; // 卷积模块的半瓣大小
-                halfmapsizeh = (shareWeightHeight - 1) / 2;
-            }
-
-            // 这里先默认进行full模式的操作，full模式的输出大小为inSize+(mapSize-1)
-            int outSizeW = valueWidth + (shareWeightWidth - 1); // 这里的输出扩大一部分
-            int outSizeH = valueHeight + (shareWeightHeight - 1);
-            double[,] result = new double[outSizeW, outSizeH];
-
-            // 为了方便计算，将inputData扩大一圈
-            double[,] exInputData = MatrixExpand(value, shareWeightWidth - 1, shareWeightHeight - 1);
-
-            for (j = 0; j < outSizeH; j++)
-                for (i = 0; i < outSizeW; i++)
-                    for (r = 0; r < shareWeightHeight; r++)
-                        for (c = 0; c < shareWeightWidth; c++)
-                        {
-                            result[j, i] = result[j, i] + shareWeight[r, c] * exInputData[j + r, i + c];
-                        }
-
-            switch (type)
-            { // 根据不同的情况，返回不同的结果
-                case 1: // 完全大小的情况
-                    return result;
-                case 2://输出大小=输入大小
-                    double[,] sameres = MatrixCut(result, halfmapsizew, halfmapsizeh);
-                    return sameres;
-                case 3://卷积大小
-                    double[,] validres;
-                    if (shareWeightHeight % 2 == 0 && shareWeightWidth % 2 == 0)
-                        validres = MatrixCut(result, halfmapsizew * 2 - 1, halfmapsizeh * 2 - 1);
-                    else
-                        validres = MatrixCut(result, halfmapsizew * 2, halfmapsizeh * 2);
-                    return validres;
-                default:
-                    return result;
-            }
-        }*/
+            double[,] result = ConvolutionFull(receptiveField, 1, 1,
+                value, 1, 1,
+                outputWidth, outputHeight);
+            return result;
+        }
         /// <summary>
-        /// 卷积操作(扩大)
+        /// 离散卷积操作(扩大)
         /// </summary>
-        public static double[,] ConvolutionFull(double[,] shareWeight, double[,] value)
+        public static double[,] ConvolutionFull(double[,] receptiveField, int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
+            double[,] value, int offsetWidth, int offsetHeight,
+            int outputWidth, int outputHeight)
         {
-            int shareWeightWidth = shareWeight.GetLength(0);
-            int shareWeightHeight = shareWeight.GetLength(1);
-            double[,] exInputData = MatrixExpand(value, shareWeightWidth - 1, shareWeightHeight - 1, 0);
-            double[,] result = ConvolutionValid(shareWeight, exInputData);
+            int shareWeightWidth = receptiveField.GetLength(0);
+            int shareWeightHeight = receptiveField.GetLength(1);
+            double[,] valueScale = MatrixScale(value, offsetWidth * receptiveFieldOffsetWidth, offsetHeight * receptiveFieldOffsetHeight);//放大输入
+            valueScale = MatrixExpand(valueScale, shareWeightWidth * receptiveFieldOffsetWidth - 1, shareWeightHeight * receptiveFieldOffsetHeight - 1, 0);//扩充补0
+            double[,] valueConvolution = ConvolutionValid(receptiveField, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
+                valueScale, 1, 1);//卷积放大后的输入
+            int left = Convert.ToInt32((valueConvolution.GetLength(0) - outputWidth) / 2.0);
+            int top = Convert.ToInt32((valueConvolution.GetLength(1) - outputHeight) / 2.0);
+            int right = Convert.ToInt32(Math.Ceiling((valueConvolution.GetLength(0) - outputWidth) / 2.0));
+            int bottom = Convert.ToInt32(Math.Ceiling((valueConvolution.GetLength(1) - outputHeight) / 2.0));
+            double[,] result = MatrixCut(valueConvolution, left, top, right, bottom);//裁剪成输入大小
             return result;
         }
         /// <summary>
         /// 卷积操作(缩小)
         /// </summary>
-        public static double[,] ConvolutionValid(double[,] shareWeight, double[,] value)
+        public static double[,] ConvolutionValid(double[,] receptiveField, double[,] value)
         {
-            int shareWeightWidth = shareWeight.GetLength(0);
-            int shareWeightHeight = shareWeight.GetLength(1);
-            int valueWidth = value.GetLength(0);
-            int valueHeight = value.GetLength(1);
-            double[,] result = new double[valueWidth - (shareWeightWidth - 1), valueHeight - (shareWeightHeight - 1)];
-            for (int i = 0; i < result.GetLength(0); i++)
+            double[,] result = ConvolutionValid(receptiveField, 1, 1, value, 1, 1);
+            return result;
+        }
+        /// <summary>
+        /// 卷积操作(缩小)
+        /// </summary>
+        public static double[,] ConvolutionValid(double[,] receptiveField, int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
+            double[,] value, int offsetWidth, int offsetHeight)
+        {
+            int shareWeightWidth = receptiveField.GetLength(0);//感知野宽
+            int shareWeightHeight = receptiveField.GetLength(1);//感知野高
+            int valueWidth = value.GetLength(0);//矩阵宽
+            int valueHeight = value.GetLength(1);//矩阵高
+            int kernelWidth = Convert.ToInt32(Math.Ceiling((valueWidth + offsetWidth - shareWeightWidth * receptiveFieldOffsetWidth) / (double)offsetWidth));//卷积核宽
+            int kernelHeight = Convert.ToInt32(Math.Ceiling((valueHeight + offsetHeight - shareWeightHeight * receptiveFieldOffsetHeight) / (double)offsetHeight));//卷积核高
+            int left = Convert.ToInt32((offsetWidth * (kernelWidth - 1) + shareWeightWidth * receptiveFieldOffsetWidth - valueWidth) / 2.0);
+            int top = Convert.ToInt32((offsetHeight * (kernelHeight - 1) + shareWeightHeight * receptiveFieldOffsetHeight - valueHeight) / 2.0);
+            int right = Convert.ToInt32(Math.Ceiling((offsetWidth * (kernelWidth - 1) + shareWeightWidth * receptiveFieldOffsetWidth - valueWidth) / 2.0));
+            int bottom = Convert.ToInt32(Math.Ceiling((offsetHeight * (kernelHeight - 1) + shareWeightHeight * receptiveFieldOffsetHeight - valueHeight) / 2.0));
+            double[,] valueScale = MatrixExpand(value, left, top, right, bottom, 0);//扩充补0
+            double[,] result = new double[kernelWidth, kernelHeight];
+            for (int i = 0; i < kernelWidth; i++)
             {
-                for (int j = 0; j < result.GetLength(1); j++)
+                for (int j = 0; j < kernelHeight; j++)
                 {
                     for (int c = 0; c < shareWeightWidth; c++)
                     {
                         for (int r = 0; r < shareWeightHeight; r++)
                         {
-                            result[i, j] += shareWeight[c, r] * value[i + c, j + r];
+                            result[i, j] += receptiveField[c, r] * valueScale[i * offsetWidth + c * receptiveFieldOffsetWidth, j * offsetHeight + r * receptiveFieldOffsetHeight];
                         }
                     }
                 }
@@ -264,6 +232,25 @@ namespace CnnDemo.CNN
             return result;
         }
         /// <summary>
+        /// 以中心裁剪矩阵
+        /// </summary>
+        /// <returns></returns>
+        public static double[,] MatrixCut(double[,] value, int left, int top, int right, int bottom)
+        {
+            int valueWidth = value.GetLength(0);
+            int valueHeight = value.GetLength(1);
+            double[,] result = new double[valueWidth - left - right, valueHeight - top - bottom];
+            for (int i = 0; i < valueWidth; i++)
+            {
+                for (int j = 0; j < valueHeight; j++)
+                {
+                    if (j >= top && i >= left && j < (valueHeight - bottom) && i < (valueWidth - right))
+                        result[i - left, j - top] = value[i, j]; // 复制原向量的数据
+                }
+            }
+            return result;
+        }
+        /// <summary>
         /// 矩阵以中心旋转180度
         /// </summary>
         /// <returns></returns>
@@ -303,7 +290,7 @@ namespace CnnDemo.CNN
         /// 矩阵相乘
         /// </summary>
         /// <returns></returns>
-        public static double[,] MatrixMultiply(double[,] value1, double[,] value2)
+        public static double[,] MatrixMultiplyT(double[,] value1, double[,] value2)
         {
             int valueCol1 = value1.GetLength(0);
             int valueRow1 = value1.GetLength(1);
@@ -320,6 +307,86 @@ namespace CnnDemo.CNN
                     {
                         result[i2, j] += value1[i, j] * value2[i2, i];
                     }
+                }
+            }
+            return result;
+        }
+        /// <summary>
+        /// 矩阵相乘
+        /// </summary>
+        /// <returns></returns>
+        public static double[,] MatrixMultiply(double[,] value1, double value2)
+        {
+            int valueWidth = value1.GetLength(0);
+            int valueHeight = value1.GetLength(1);
+            double[,] result = new double[valueWidth, valueHeight];
+            for (int i = 0; i < valueWidth; i++)
+            {
+                for (int j = 0; j < valueHeight; j++)
+                {
+                    result[i, j] += value1[i, j] * value2;
+                }
+            }
+            return result;
+        }
+        /// <summary>
+        /// 矩阵相乘
+        /// </summary>
+        /// <returns></returns>
+        public static double[,] MatrixMultiply(double[,] value1, double[,] value2)
+        {
+            int valueWidth1 = value1.GetLength(0);
+            int valueHeight1 = value1.GetLength(1);
+            int valueWidth2 = value2.GetLength(0);
+            int valueHeight2 = value2.GetLength(1);
+            if (valueWidth1 != valueWidth2 || valueHeight1 != valueHeight2)
+                throw new Exception("第一矩阵行列数要与第二矩阵行列数相等");
+            double[,] result = new double[valueWidth1, valueHeight1];
+            for (int i = 0; i < valueWidth1; i++)
+            {
+                for (int j = 0; j < valueHeight1; j++)
+                {
+                    result[i, j] += value1[i, j] * value2[i, j];
+                }
+            }
+            return result;
+        }
+        /// <summary>
+        /// 矩阵相加
+        /// </summary>
+        /// <returns></returns>
+        public static double[,] MatrixAdd(double[,] value1, double value2)
+        {
+            int valueWidth = value1.GetLength(0);
+            int valueHeight = value1.GetLength(1);
+            double[,] result = new double[valueWidth, valueHeight];
+            for (int i = 0; i < valueWidth; i++)
+            {
+                for (int j = 0; j < valueHeight; j++)
+                {
+                    result[i, j] += value1[i, j] + value2;
+                }
+            }
+            return result;
+        }
+        /// <summary>
+        /// 矩阵相加
+        /// </summary>
+        /// <returns></returns>
+        public static double[,] MatrixAdd(double[,] value1, double[,] value2)
+        {
+            int valueWidth1 = value1.GetLength(0);
+            int valueHeight1 = value1.GetLength(1);
+            int valueWidth2 = value2.GetLength(0);
+            int valueHeight2 = value2.GetLength(1);
+            if (valueWidth1 != valueWidth2 || valueHeight1 != valueHeight2)
+                throw new Exception("第一矩阵行列数要与第二矩阵行列数相等");
+            double[,] result = new double[valueWidth1, valueHeight1];
+            for (int i = 0; i < valueWidth1; i++)
+            {
+                for (int j = 0; j < valueHeight1; j++)
+                {
+                    result[i, j] += value1[i, j] + value2[i, j];
                 }
             }
             return result;
@@ -488,25 +555,21 @@ namespace CnnDemo.CNN
             result /= valueLenght;
             return result;
         }
-        /*public delegate void ForeachHandler1(ref int i, ref double value);
-        public delegate void ForeachHandler2(ref int i, ref int j, ref double value);
+        /*
+        public delegate void ForeachHandler1(int i);
+        public delegate void ForeachHandler2(int i, int j);
         /// <summary>
         /// 循环二维数组
         /// </summary>
-        public static void Foreach(double[,] array, ForeachHandler2 foreachHandler)
+        public static void Foreach(double[,] value, ForeachHandler2 foreachHandler)
         {
-            int i = 0, j = 0;
-            int w = array.GetLength(0), h = array.GetLength(1);
-            foreach (double value in array)
+            int valueWidth = value.GetLength(0);
+            int valueHeight = value.GetLength(1);
+            for (int i = 0; i < valueWidth; i++)
             {
-                double tmpValue = value;
-                foreachHandler(ref i, ref j, ref tmpValue);
-                array[i, j] = tmpValue;
-                j++;
-                if (j >= h)
+                for (int j = 0; j < valueHeight; j++)
                 {
-                    i++;
-                    j = 0;
+                    foreachHandler(i, j);
                 }
             }
         }
@@ -515,15 +578,12 @@ namespace CnnDemo.CNN
         /// </summary>
         public static void Foreach(double[] array, ForeachHandler1 foreachHandler)
         {
-            int i = 0;
             int len = array.GetLength(0);
-            foreach (double value in array)
+            for (int i = 0; i < len; i++)
             {
-                double tmpValue = value;
-                foreachHandler(ref i, ref tmpValue);
-                array[i] = tmpValue;
-                i++;
+                foreachHandler(i);
             }
-        }*/
+        }
+        //*/
     }
 }

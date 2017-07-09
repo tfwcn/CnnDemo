@@ -32,13 +32,16 @@ namespace CnnDemo.CNN
         /// <param name="cnnConvolutionLayer"></param>
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, CnnNode.ActivationFunctionTypes activationFunctionType,
+            int offsetWidth, int offsetHeight,
+            int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
+            CnnNode.ActivationFunctionTypes activationFunctionType,
             int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPooling.PoolingTypes poolingType,
             bool standardization)
         {
             CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
             //创建卷积层
-            cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, inputWidth, inputHeight, receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType, 1, standardization, null);
+            cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, inputWidth, inputHeight, receptiveFieldWidth, receptiveFieldHeight,
+                offsetWidth, offsetHeight, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight, activationFunctionType, 1, standardization, null);
 
             if (poolingType != 0)
             {
@@ -53,7 +56,9 @@ namespace CnnDemo.CNN
         /// <param name="cnnConvolutionLayer"></param>
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, CnnNode.ActivationFunctionTypes activationFunctionType,
+            int offsetWidth, int offsetHeight,
+            int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
+            CnnNode.ActivationFunctionTypes activationFunctionType,
             int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPooling.PoolingTypes poolingType,
             bool standardization, bool isFullLayerLinks)
         {
@@ -111,7 +116,8 @@ namespace CnnDemo.CNN
             CnnConvolutionLayer cnnConvolutionLayer = new CnnConvolutionLayer();
             //创建卷积层
             cnnConvolutionLayer.CreateCnnKernel(convolutionKernelCount, cnnConvolutionLayerLast.OutputWidth, cnnConvolutionLayerLast.OutputHeight,
-                receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, activationFunctionType, cnnConvolutionLayerLast.ConvolutionKernelCount, standardization, layerLinks);
+                receptiveFieldWidth, receptiveFieldHeight, offsetWidth, offsetHeight, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
+                activationFunctionType, cnnConvolutionLayerLast.ConvolutionKernelCount, standardization, layerLinks);
 
             if (poolingType != 0)
             {

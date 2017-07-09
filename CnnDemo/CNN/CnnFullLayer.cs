@@ -244,7 +244,7 @@ namespace CnnDemo.CNN
                     throw new Exception("NaN");
             }
             //计算平均梯度
-            /*
+            //*
             meanListDeltaWeight.Add(deltaWeight);
             for (int i = 0; i < OutputCount; i++)
             {
@@ -286,10 +286,10 @@ namespace CnnDemo.CNN
             }
             //*/
             //更新权重和偏置
-            UpdateWeight(deltaWeight, learningRate);
-            UpdateOffset(deltaOffset, learningRate);
-            //UpdateWeight(InputWeight, meanDeltaWeight, learningRate);
-            //UpdateOffset(OutputOffset, meanDeltaOffset, learningRate);
+            //UpdateWeight(deltaWeight, learningRate);
+            //UpdateOffset(deltaOffset, learningRate);
+            UpdateWeight(meanDeltaWeight, learningRate);
+            UpdateOffset(meanDeltaOffset, learningRate);
             //计算正确输入值
             for (int i = 0; i < InputCount; i++)
             {

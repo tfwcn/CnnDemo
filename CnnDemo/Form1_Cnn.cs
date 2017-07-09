@@ -262,13 +262,13 @@ namespace CnnDemo
         private void CreateBP()
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
-            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
-            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
             //cnn.AddCnnConvolutionLayer(80, 5, 5, 1, 1, 1, 2, 2, 1);
             //cnn.AddCnnConvolutionLayer(100, 5, 5, 1, 1, 1, 2, 2, 1);
@@ -311,7 +311,7 @@ namespace CnnDemo
                     tmpImg.Dispose();
                     tmpImg = null;
                     double[] forwardOutputFull = null;
-                    cnn.Train(input, output, 0.01,ref forwardOutputFull);
+                    cnn.Train(input, output, 0.01, ref forwardOutputFull);
                 }
             }
         }

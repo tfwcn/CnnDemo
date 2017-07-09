@@ -35,7 +35,8 @@ namespace CnnDemo.CNN
         /// <param name="cnnConvolutionLayer"></param>
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, CnnNode.ActivationFunctionTypes activationFunctionType,
+            int offsetWidth, int offsetHeight, int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
+            CnnNode.ActivationFunctionTypes activationFunctionType,
             int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPooling.PoolingTypes poolingType,
             bool standardization)
         {
@@ -43,7 +44,8 @@ namespace CnnDemo.CNN
             {
                 cnn.AddCnnConvolutionLayer(convolutionKernelCount,
                     inputWidth, inputHeight, receptiveFieldWidth, receptiveFieldHeight,
-                    offsetWidth, offsetHeight, activationFunctionType,
+                    offsetWidth, offsetHeight, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
+                    activationFunctionType,
                     poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, poolingType,
                     standardization);
             }
@@ -54,7 +56,8 @@ namespace CnnDemo.CNN
         /// <param name="cnnConvolutionLayer"></param>
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int receptiveFieldWidth, int receptiveFieldHeight,
-            int offsetWidth, int offsetHeight, CnnNode.ActivationFunctionTypes activationFunctionType,
+            int offsetWidth, int offsetHeight, int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
+            CnnNode.ActivationFunctionTypes activationFunctionType,
             int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPooling.PoolingTypes poolingType,
             bool standardization, bool isFullLayerLinks)
         {
@@ -62,7 +65,8 @@ namespace CnnDemo.CNN
             {
                 cnn.AddCnnConvolutionLayer(convolutionKernelCount,
                     receptiveFieldWidth, receptiveFieldHeight,
-                    offsetWidth, offsetHeight, activationFunctionType,
+                    offsetWidth, offsetHeight, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
+                    activationFunctionType,
                     poolingReceptiveFieldWidth, poolingReceptiveFieldHeight, poolingType,
                     standardization, isFullLayerLinks);
             }
