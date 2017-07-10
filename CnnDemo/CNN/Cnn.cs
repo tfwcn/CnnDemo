@@ -228,13 +228,97 @@ namespace CnnDemo.CNN
             #endregion
 
             #region 反向传播
-            double layerCount = 0;
             var cnnFullLayerLast = CnnFullLayerList[CnnFullLayerList.Count - 1];//最后的输出层
             double[] backwardInputFull = new double[cnnFullLayerLast.OutputCount];
             //计算输出误差
             for (int i = 0; i < cnnFullLayerLast.OutputCount; i++)
             {
                 backwardInputFull[i] = output[i] - forwardOutputFull[i];
+            }
+            //计算全连接层
+            /*
+            for (int i = CnnFullLayerList.Count - 1; i >= 0; i--)
+            {
+                backwardInputFull = CnnFullLayerList[i].BackPropagation(backwardInputFull, learningRate);
+                LogHelper.Info(CnnFullLayerList[i].ToString());
+                layerCount++;
+            }
+            //计算全连接层转卷积层
+            var cnnConvolutionLayerLast = CnnConvolutionLayerList[CnnConvolutionLayerList.Count - 1];//最后的卷积层
+            List<double[,]> inputConvolutionTmp = new List<double[,]>();
+            for (int i = 0; i < cnnConvolutionLayerLast.ConvolutionKernelCount; i++)
+            {
+                inputConvolutionTmp.Add(new double[cnnConvolutionLayerLast.OutputWidth, cnnConvolutionLayerLast.OutputHeight]);
+            }
+            for (int j = 0; j < cnnConvolutionLayerLast.OutputHeight; j++)
+            {
+                for (int i = 0; i < cnnConvolutionLayerLast.OutputWidth; i++)
+                {
+                    for (int k = 0; k < cnnConvolutionLayerLast.ConvolutionKernelCount; k++)
+                    {
+                        inputConvolutionTmp[k][i, j] = backwardInputFull[i * cnnConvolutionLayerLast.ConvolutionKernelCount + j * cnnConvolutionLayerLast.OutputWidth * cnnConvolutionLayerLast.ConvolutionKernelCount + k];
+                    }
+                }
+            }
+            //计算卷积层
+            List<List<double[,]>> backwardInputConvolution = new List<List<double[,]>>();
+            for (int i = CnnConvolutionLayerList.Count - 1; i >= 0; i--)
+            {
+                
+                List<double[,]> backwardOutputConvolution = new List<double[,]>();
+                if (i == CnnConvolutionLayerList.Count - 1)//最后一层直接输入
+                {
+                    backwardOutputConvolution = inputConvolutionTmp;
+                }
+                else//随机链接
+                {
+                    int[] inputIndex = new int[backwardInputConvolution.Count];//记录当前神经元序号
+                    for (int j = 0; j < CnnConvolutionLayerList[i].ConvolutionKernelCount; j++)//对应当前层的神经元
+                    {
+                        double[,] backwardOutputConvolutionOne = new double[backwardInputConvolution[0][0].GetLength(0), backwardInputConvolution[0][0].GetLength(1)];
+                        for (int k = 0; k < backwardInputConvolution.Count; k++)//对应下一层的神经元
+                        {
+                            if (convolutionLinkList[i][k, j])
+                            {
+                                for (int x = 0; x < backwardInputConvolution[0][0].GetLength(0); x++)
+                                {
+                                    for (int y = 0; y < backwardInputConvolution[0][0].GetLength(1); y++)
+                                    {
+                                        backwardOutputConvolutionOne[x, y] += backwardInputConvolution[k][inputIndex[k]][x, y];
+                                    }
+                                }
+                                inputIndex[k]++;
+                            }
+                            //Console.Write((convolutionLinkList[i][k, j] ? 1 : 0) + " ");
+                        }
+                        backwardOutputConvolution.Add(backwardOutputConvolutionOne);
+                        //Console.WriteLine("");
+                    }
+                }
+                //Console.WriteLine("");
+                backwardInputConvolution = CnnConvolutionLayerList[i].BackPropagation(backwardOutputConvolution, learningRate);
+                LogHelper.Info(CnnConvolutionLayerList[i].ToString());
+                layerCount++;
+            }
+            //*/
+            List<List<double[,]>> backwardInputConvolution = Train(backwardInputFull, learningRate);
+            //Console.WriteLine("end");
+            #endregion
+            return backwardInputConvolution;
+        }
+        /// <summary>
+        /// 训练
+        /// </summary>
+        public List<List<double[,]>> Train(double[] residual, double learningRate)
+        {
+            #region 反向传播
+            double layerCount = 0;
+            var cnnFullLayerLast = CnnFullLayerList[CnnFullLayerList.Count - 1];//最后的输出层
+            double[] backwardInputFull = new double[cnnFullLayerLast.OutputCount];
+            //计算输出误差
+            for (int i = 0; i < cnnFullLayerLast.OutputCount; i++)
+            {
+                backwardInputFull[i] = residual[i];
             }
             //计算全连接层
             for (int i = CnnFullLayerList.Count - 1; i >= 0; i--)
@@ -323,6 +407,28 @@ namespace CnnDemo.CNN
             for (int i = 0; i < cnnFullLayerLast.OutputCount; i++)
             {
                 backwardInputFull[i] = output[i] - forwardOutputFull[i];
+            }
+            //计算全连接层
+            //for (int i = CnnFullLayerList.Count - 1; i >= 0; i--)
+            //{
+            //    backwardInputFull = CnnFullLayerList[i].BackPropagation(backwardInputFull, learningRate);
+            //}
+            backwardInputFull = TrainFullLayer(backwardInputFull, learningRate);
+            #endregion
+            return backwardInputFull;
+        }
+        /// <summary>
+        /// 训练,仅用于BP网络
+        /// </summary>
+        public double[] TrainFullLayer(double[] residual, double learningRate)
+        {
+            #region 反向传播
+            var cnnFullLayerLast = CnnFullLayerList[CnnFullLayerList.Count - 1];//最后的输出层
+            double[] backwardInputFull = new double[cnnFullLayerLast.OutputCount];
+            //计算输出误差
+            for (int i = 0; i < cnnFullLayerLast.OutputCount; i++)
+            {
+                backwardInputFull[i] = residual[i];
             }
             //计算全连接层
             for (int i = CnnFullLayerList.Count - 1; i >= 0; i--)

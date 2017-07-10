@@ -49,6 +49,7 @@ namespace CnnDemo.CNN
             if (Math.Abs(output[0] - labels[0]) < 0.5) TrueCount++;
             TruePercent = TrueCount / (double)SumCount;
         }
+        #region 图片处理
         /// <summary>
         /// 缩放图片
         /// </summary>
@@ -57,7 +58,7 @@ namespace CnnDemo.CNN
         /// <param name="height"></param>
         /// <param name="rects"></param>
         /// <returns></returns>
-        public static Bitmap ZoomImg(Bitmap img, int width, int height)
+        public static Bitmap ImageZoom(Bitmap img, int width, int height)
         {
             //缩放图片
             Bitmap tmpZoomImg = new Bitmap(width, height);
@@ -81,6 +82,40 @@ namespace CnnDemo.CNN
             g.Dispose();
             return tmpZoomImg;
         }
+        /// <summary>
+        /// 矩阵变换图片
+        /// </summary>
+        /// <param name="img"></param>
+        /// <param name="transformer">变换矩阵</param>
+        /// <returns></returns>
+        public static Bitmap ImageTransform(Bitmap img, double[,] transformer)
+        {
+            //缩放图片
+            Bitmap tmpImg = new Bitmap(img.Width, img.Height);
+            /*
+            Graphics g = Graphics.FromImage(tmpImg);
+            g.Clear(Color.Black);
+            int x = 0, y = 0, w = width, h = height;
+            double b1, b2;
+            b1 = width / (double)height;
+            b2 = img.Width / (double)img.Height;
+            if (b1 > b2)
+            {
+                w = (int)(h * b2);
+                x = (width - w) / 2;
+            }
+            else if (b2 > b1)
+            {
+                h = (int)(w / b2);
+                y = (height - h) / 2;
+            }
+            g.DrawImage(img, x, y, w, h);
+            g.Dispose();
+            */
+            return tmpImg;
+        }
+        #endregion
+        #region 矩阵操作
         /// <summary>
         /// 离散卷积操作(扩大)
         /// </summary>
@@ -396,6 +431,7 @@ namespace CnnDemo.CNN
             }
             return result;
         }
+        #endregion
         /// <summary>
         /// 保存网络
         /// </summary>

@@ -1,6 +1,6 @@
 ﻿namespace CnnDemo
 {
-    partial class Form4_2
+    partial class Form4_3
     {
         /// <summary>
         /// Required designer variable.
@@ -34,16 +34,15 @@
             this.btnSave = new System.Windows.Forms.Button();
             this.btnLoad = new System.Windows.Forms.Button();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.pbImage1 = new System.Windows.Forms.PictureBox();
+            this.pbImage = new System.Windows.Forms.PictureBox();
             this.lblResult = new System.Windows.Forms.Label();
             this.numLearningRate = new System.Windows.Forms.NumericUpDown();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.btnPic = new System.Windows.Forms.Button();
             this.btnPicTrain = new System.Windows.Forms.Button();
-            this.pbImage2 = new System.Windows.Forms.PictureBox();
-            ((System.ComponentModel.ISupportInitialize)(this.pbImage1)).BeginInit();
+            this.chkHandwritten = new System.Windows.Forms.CheckBox();
+            ((System.ComponentModel.ISupportInitialize)(this.pbImage)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numLearningRate)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbImage2)).BeginInit();
             this.SuspendLayout();
             // 
             // button1
@@ -105,20 +104,20 @@
             this.lblInfo.TabIndex = 5;
             this.lblInfo.Text = ".";
             // 
-            // pbImage1
+            // pbImage
             // 
-            this.pbImage1.Location = new System.Drawing.Point(12, 132);
-            this.pbImage1.Name = "pbImage1";
-            this.pbImage1.Size = new System.Drawing.Size(118, 118);
-            this.pbImage1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pbImage1.TabIndex = 6;
-            this.pbImage1.TabStop = false;
+            this.pbImage.Location = new System.Drawing.Point(12, 132);
+            this.pbImage.Name = "pbImage";
+            this.pbImage.Size = new System.Drawing.Size(118, 118);
+            this.pbImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.pbImage.TabIndex = 6;
+            this.pbImage.TabStop = false;
             // 
             // lblResult
             // 
             this.lblResult.AutoSize = true;
             this.lblResult.Font = new System.Drawing.Font("宋体", 42F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lblResult.Location = new System.Drawing.Point(307, 132);
+            this.lblResult.Location = new System.Drawing.Point(172, 132);
             this.lblResult.Name = "lblResult";
             this.lblResult.Size = new System.Drawing.Size(53, 56);
             this.lblResult.TabIndex = 7;
@@ -169,27 +168,28 @@
             this.btnPicTrain.UseVisualStyleBackColor = true;
             this.btnPicTrain.Click += new System.EventHandler(this.btnPicTrain_Click);
             // 
-            // pbImage2
+            // chkHandwritten
             // 
-            this.pbImage2.Location = new System.Drawing.Point(139, 132);
-            this.pbImage2.Name = "pbImage2";
-            this.pbImage2.Size = new System.Drawing.Size(118, 118);
-            this.pbImage2.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pbImage2.TabIndex = 12;
-            this.pbImage2.TabStop = false;
+            this.chkHandwritten.AutoSize = true;
+            this.chkHandwritten.Location = new System.Drawing.Point(312, 16);
+            this.chkHandwritten.Name = "chkHandwritten";
+            this.chkHandwritten.Size = new System.Drawing.Size(84, 16);
+            this.chkHandwritten.TabIndex = 12;
+            this.chkHandwritten.Text = "手写训练集";
+            this.chkHandwritten.UseVisualStyleBackColor = true;
             // 
-            // Form4_2
+            // Form4_3
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(402, 265);
-            this.Controls.Add(this.pbImage2);
+            this.Controls.Add(this.chkHandwritten);
             this.Controls.Add(this.btnPicTrain);
             this.Controls.Add(this.btnPic);
             this.Controls.Add(this.textBox1);
             this.Controls.Add(this.numLearningRate);
             this.Controls.Add(this.lblResult);
-            this.Controls.Add(this.pbImage1);
+            this.Controls.Add(this.pbImage);
             this.Controls.Add(this.lblInfo);
             this.Controls.Add(this.btnLoad);
             this.Controls.Add(this.btnSave);
@@ -199,13 +199,12 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Name = "Form4_2";
-            this.Text = "人脸测试";
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form4_2_FormClosing);
-            this.Load += new System.EventHandler(this.Form4_2_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.pbImage1)).EndInit();
+            this.Name = "Form4_3";
+            this.Text = "Form4_3";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form4_3_FormClosing);
+            this.Load += new System.EventHandler(this.Form4_3_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.pbImage)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numLearningRate)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.pbImage2)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -219,12 +218,12 @@
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.Button btnLoad;
         private System.Windows.Forms.Label lblInfo;
-        private System.Windows.Forms.PictureBox pbImage1;
+        private System.Windows.Forms.PictureBox pbImage;
         private System.Windows.Forms.Label lblResult;
         private System.Windows.Forms.NumericUpDown numLearningRate;
         private System.Windows.Forms.TextBox textBox1;
         private System.Windows.Forms.Button btnPic;
         private System.Windows.Forms.Button btnPicTrain;
-        private System.Windows.Forms.PictureBox pbImage2;
+        private System.Windows.Forms.CheckBox chkHandwritten;
     }
 }

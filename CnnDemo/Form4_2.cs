@@ -19,6 +19,9 @@ namespace CnnDemo
     {
         private Thread threadCnn;
         private Cnn cnn;
+        private Cnn cnn1;
+        private Cnn cnn2;
+        private Cnn cnnOutput;
         private int trainCount = 0;
         private double learningRate;
         public Form4_2()
@@ -28,27 +31,27 @@ namespace CnnDemo
 
         private void Form4_2_Load(object sender, EventArgs e)
         {
-            cnn = new Cnn();
-            #region LeNet-5 结构
-            /*
-            cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            //图片1
+            cnn1 = new Cnn();
+            cnn1.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 5, 5, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
-            cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                0, 0, CnnPooling.PoolingTypes.None, false, false);
-            cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
-            cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
-            //*/
-            #endregion
-            cnn.AddCnnConvolutionLayer(6, 254 * 2, 252, 10, 10, 5, 5, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn.AddCnnConvolutionLayer(16, 5, 5, 3, 3, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn1.AddCnnConvolutionLayer(16, 5, 5, 3, 3, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn.AddCnnConvolutionLayer(20, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn1.AddCnnConvolutionLayer(20, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 0, 0, CnnPooling.PoolingTypes.None, false, false);
-            cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
-            cnn.AddCnnFullLayer(1, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnn1.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
+            //图片2
+            cnn2 = new Cnn();
+            cnn2.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 5, 5, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
+            cnn2.AddCnnConvolutionLayer(16, 5, 5, 3, 3, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(20, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                0, 0, CnnPooling.PoolingTypes.None, false, false);
+            cnn2.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
+            //比较输出
+            cnnOutput.AddCnnFullLayer(100, 14, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnnOutput.AddCnnFullLayer(1, CnnNode.ActivationFunctionTypes.Tanh, false);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -114,19 +117,28 @@ namespace CnnDemo
                                     {
                                         labels[0] = 1;
                                     }
+                                    //图1
                                     Image<Bgr, float> trainingData1 = new Image<Bgr, float>(img1);
-                                    Image<Bgr, float> trainingData2 = new Image<Bgr, float>(img2);
-                                    double[,] input = new double[img1.Width * 2 + 8, img1.Height + 2];
+                                    double[,] input1 = new double[img1.Width, img1.Height];
                                     for (int w = 2; w < img1.Width; w++)
                                     {
                                         for (int h = 1; h < img1.Height; h++)
                                         {
-                                            input[w, h] = Color.FromArgb(0,
+                                            input1[w, h] = Color.FromArgb(0,
                                                 (int)trainingData1.Data[h, w, 2],
                                                 (int)trainingData1.Data[h, w, 1],
                                                 (int)trainingData1.Data[h, w, 0]
                                                 ).ToArgb() / (double)0xFFFFFF;
-                                            input[img1.Width + 4 + w, h] = Color.FromArgb(0,
+                                        }
+                                    }
+                                    //图2
+                                    Image<Bgr, float> trainingData2 = new Image<Bgr, float>(img2);
+                                    double[,] input2 = new double[img2.Width, img2.Height];
+                                    for (int w = 2; w < img2.Width; w++)
+                                    {
+                                        for (int h = 1; h < img2.Height; h++)
+                                        {
+                                            input2[w, h] = Color.FromArgb(0,
                                                 (int)trainingData2.Data[h, w, 2],
                                                 (int)trainingData2.Data[h, w, 1],
                                                 (int)trainingData2.Data[h, w, 0]
@@ -134,13 +146,15 @@ namespace CnnDemo
                                         }
                                     }
                                     double[] forwardOutputFull = null;
-                                    cnn.Train(input, labels, learningRate, ref forwardOutputFull);
+                                    cnnOutput.TrainFullLayer(input1, labels, learningRate);
+                                    //cnn1.Train(input1, labels, learningRate, ref forwardOutputFull);
+                                    //cnn2.Train(input2, labels, learningRate, ref forwardOutputFull);
                                     CnnHelper.ShowChange2(forwardOutputFull, labels);
                                     this.Invoke(new Action(() =>
                                     {
                                         lblInfo.Text = String.Format("训练周期:{0} 训练次数:{1}/{2} 正确率:{3:00.####%}", trainCount, CnnHelper.TrueCount, CnnHelper.SumCount, CnnHelper.TrueCount / (double)CnnHelper.SumCount);
 
-                                        lblResult.Text = labels[0].ToString();
+                                        lblResult.Text = labels[0].ToString() + " " + forwardOutputFull[0].ToString();
                                         pbImage1.Image = new Bitmap(img1);
                                         pbImage2.Image = new Bitmap(img2);
                                     }));
