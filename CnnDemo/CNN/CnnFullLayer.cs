@@ -66,10 +66,6 @@ namespace CnnDemo.CNN
         /// </summary>
         private double[] meanDeltaOffset;
         /// <summary>
-        /// 平均梯度集上限
-        /// </summary>
-        private int miniBatchSize = 10;
-        /// <summary>
         /// 正则化概率（Dropout）
         /// </summary>
         private double dropoutChance = -1;
@@ -250,10 +246,10 @@ namespace CnnDemo.CNN
             {
                 for (int j = 0; j < InputCount; j++)
                 {
-                    if (meanListDeltaWeight.Count > miniBatchSize)
+                    if (meanListDeltaWeight.Count > MiniBatchSize)
                     {
-                        meanDeltaWeight[i, j] -= meanListDeltaWeight[0][i, j] / miniBatchSize;
-                        meanDeltaWeight[i, j] += deltaWeight[i, j] / miniBatchSize;
+                        meanDeltaWeight[i, j] -= meanListDeltaWeight[0][i, j] / MiniBatchSize;
+                        meanDeltaWeight[i, j] += deltaWeight[i, j] / MiniBatchSize;
                         meanListDeltaWeight.RemoveAt(0);
                     }
                     else
@@ -269,10 +265,10 @@ namespace CnnDemo.CNN
             meanListDeltaOffset.Add(deltaOffset);
             for (int i = 0; i < OutputCount; i++)
             {
-                if (meanListDeltaOffset.Count > miniBatchSize)
+                if (meanListDeltaOffset.Count > MiniBatchSize)
                 {
-                    meanDeltaOffset[i] -= meanListDeltaOffset[i][0] / miniBatchSize;
-                    meanDeltaOffset[i] += deltaOffset[i] / miniBatchSize;
+                    meanDeltaOffset[i] -= meanListDeltaOffset[i][0] / MiniBatchSize;
+                    meanDeltaOffset[i] += deltaOffset[i] / MiniBatchSize;
                     meanListDeltaOffset.RemoveAt(0);
                 }
                 else

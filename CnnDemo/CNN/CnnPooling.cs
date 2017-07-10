@@ -104,10 +104,6 @@ namespace CnnDemo.CNN
         /// </summary>
         private double meanDeltaOffset;
         /// <summary>
-        /// 平均梯度集上限
-        /// </summary>
-        private int miniBatchSize = 10;
-        /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="inputWidth"></param>
@@ -285,16 +281,16 @@ namespace CnnDemo.CNN
                 for (int j = 0; j < inputHeight; j++)
                 {
                     result[i, j] *= ActivationFunctionDerivative(InputValue[i, j]) * ShareWeight;//CNN标准
-                    result[i, j] = result[i, j];
                 }
             }
+            result = CnnHelper.MatrixCut(result, 0, 0, result.GetLength(0) - inputWidth, result.GetLength(1) - inputHeight);//裁剪
             //计算平均梯度
             //*
             meanListDeltaWeight.Add(deltaWeight);
-            if (meanListDeltaWeight.Count > miniBatchSize)
+            if (meanListDeltaWeight.Count > MiniBatchSize)
             {
-                meanDeltaWeight -= meanListDeltaWeight[0] / miniBatchSize;
-                meanDeltaWeight += deltaWeight / miniBatchSize;
+                meanDeltaWeight -= meanListDeltaWeight[0] / MiniBatchSize;
+                meanDeltaWeight += deltaWeight / MiniBatchSize;
                 meanListDeltaWeight.RemoveAt(0);
             }
             else
@@ -306,10 +302,10 @@ namespace CnnDemo.CNN
                 }
             }
             meanListDeltaOffset.Add(deltaOffset);
-            if (meanListDeltaOffset.Count > miniBatchSize)
+            if (meanListDeltaOffset.Count > MiniBatchSize)
             {
-                meanDeltaOffset -= meanListDeltaOffset[0] / miniBatchSize;
-                meanDeltaOffset += deltaOffset / miniBatchSize;
+                meanDeltaOffset -= meanListDeltaOffset[0] / MiniBatchSize;
+                meanDeltaOffset += deltaOffset / MiniBatchSize;
                 meanListDeltaOffset.RemoveAt(0);
             }
             else

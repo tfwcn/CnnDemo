@@ -86,6 +86,7 @@
     <Compile Include="CNN\CnnFullLayer.cs" />
     <Compile Include="CNN\CnnPooling.cs" />
     <Compile Include="CNN\CnnSpatialTransformerLayer.cs" />
+    <Compile Include="CNN\Model\CnnPaddingSize.cs" />
     <Compile Include="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

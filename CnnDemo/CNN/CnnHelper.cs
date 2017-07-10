@@ -5,6 +5,7 @@ using System.Text;
 using System.Drawing;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using CnnDemo.CNN.Model;
 
 namespace CnnDemo.CNN
 {
@@ -103,7 +104,7 @@ namespace CnnDemo.CNN
             double[,] valueScale = MatrixScale(value, offsetWidth * receptiveFieldOffsetWidth, offsetHeight * receptiveFieldOffsetHeight);//放大输入
             valueScale = MatrixExpand(valueScale, shareWeightWidth * receptiveFieldOffsetWidth - 1, shareWeightHeight * receptiveFieldOffsetHeight - 1, 0);//扩充补0
             double[,] valueConvolution = ConvolutionValid(receptiveField, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
-                valueScale, 1, 1);//卷积放大后的输入
+                valueScale, 1, 1, null);//卷积放大后的输入
             int left = Convert.ToInt32((valueConvolution.GetLength(0) - outputWidth) / 2.0);
             int top = Convert.ToInt32((valueConvolution.GetLength(1) - outputHeight) / 2.0);
             int right = Convert.ToInt32(Math.Ceiling((valueConvolution.GetLength(0) - outputWidth) / 2.0));
@@ -116,14 +117,14 @@ namespace CnnDemo.CNN
         /// </summary>
         public static double[,] ConvolutionValid(double[,] receptiveField, double[,] value)
         {
-            double[,] result = ConvolutionValid(receptiveField, 1, 1, value, 1, 1);
+            double[,] result = ConvolutionValid(receptiveField, 1, 1, value, 1, 1, null);
             return result;
         }
         /// <summary>
         /// 卷积操作(缩小)
         /// </summary>
         public static double[,] ConvolutionValid(double[,] receptiveField, int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
-            double[,] value, int offsetWidth, int offsetHeight)
+            double[,] value, int offsetWidth, int offsetHeight, CnnPaddingSize paddingSize)
         {
             int shareWeightWidth = receptiveField.GetLength(0);//感知野宽
             int shareWeightHeight = receptiveField.GetLength(1);//感知野高
@@ -135,6 +136,10 @@ namespace CnnDemo.CNN
             int top = Convert.ToInt32((offsetHeight * (kernelHeight - 1) + shareWeightHeight * receptiveFieldOffsetHeight - valueHeight) / 2.0);
             int right = Convert.ToInt32(Math.Ceiling((offsetWidth * (kernelWidth - 1) + shareWeightWidth * receptiveFieldOffsetWidth - valueWidth) / 2.0));
             int bottom = Convert.ToInt32(Math.Ceiling((offsetHeight * (kernelHeight - 1) + shareWeightHeight * receptiveFieldOffsetHeight - valueHeight) / 2.0));
+            if (paddingSize != null)
+            {
+                paddingSize.SetSize(left, top, right, bottom);
+            }
             double[,] valueScale = MatrixExpand(value, left, top, right, bottom, 0);//扩充补0
             double[,] result = new double[kernelWidth, kernelHeight];
             for (int i = 0; i < kernelWidth; i++)

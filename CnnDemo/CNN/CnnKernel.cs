@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using CnnDemo.CNN.Model;
 
 namespace CnnDemo.CNN
 {
@@ -107,10 +108,6 @@ namespace CnnDemo.CNN
         /// </summary>
         private double meanDeltaOffset;
         /// <summary>
-        /// 平均梯度集上限
-        /// </summary>
-        private int miniBatchSize = 10;
-        /// <summary>
         /// 正则化概率（Dropout）
         /// </summary>
         private double dropoutChance = -1;
@@ -118,6 +115,10 @@ namespace CnnDemo.CNN
         /// 正则化状态（Dropout）
         /// </summary>
         private bool dropoutState = false;
+        /// <summary>
+        /// 填充
+        /// </summary>
+        private CnnPaddingSize paddingSize;
         #region 调试参数
         /// <summary>
         /// 输入残差
@@ -178,6 +179,7 @@ namespace CnnDemo.CNN
             }
             meanListDeltaWeight = new List<List<double[,]>>();
             meanListDeltaOffset = new List<double>();
+            paddingSize = new CnnPaddingSize();
             InitShareWeight();
         }
         /// <summary>
@@ -200,7 +202,7 @@ namespace CnnDemo.CNN
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
                 result = CnnHelper.MatrixAdd(result, CnnHelper.ConvolutionValid(ShareWeight[inputIndex], receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
-                    value[inputIndex], offsetWidth, offsetHeight));//卷积
+                    value[inputIndex], offsetWidth, offsetHeight, paddingSize));//卷积
             }
             if (Standardization)
             {
@@ -342,7 +344,7 @@ namespace CnnDemo.CNN
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
                 double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]), receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
-                    residual, offsetWidth, offsetHeight, inputWidth, inputHeight);
+                    residual, offsetWidth, offsetHeight, inputWidth, inputHeight);//增加偏移
                 //double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]),
                 //    residual, inputWidth, inputHeight);//CNN标准
                 //double[,] tmpResultDelta = CnnHelper.ConvolutionFull(ShareWeight[inputIndex], residual);//CNN例子
@@ -350,7 +352,7 @@ namespace CnnDemo.CNN
                 //double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex]));//CNN例子
                 //double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex])));//CNN标准
                 double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
-                    CnnHelper.MatrixRotate180(InputValue[inputIndex]), offsetWidth, offsetHeight));//错
+                    CnnHelper.MatrixRotate180(CnnHelper.MatrixExpand(InputValue[inputIndex], paddingSize.Left, paddingSize.Top, paddingSize.Right, paddingSize.Bottom, 0)), offsetWidth, offsetHeight, null));//增加偏移
                 deltaWeight.Add(tmpDeltaWeight);
             }
             //计算偏置残差
@@ -370,10 +372,10 @@ namespace CnnDemo.CNN
                 {
                     for (int j = 0; j < receptiveFieldHeight; j++)
                     {
-                        if (meanListDeltaWeight.Count > miniBatchSize)
+                        if (meanListDeltaWeight.Count > MiniBatchSize)
                         {
-                            meanDeltaWeight[inputIndex][i, j] -= meanListDeltaWeight[0][inputIndex][i, j] / miniBatchSize;
-                            meanDeltaWeight[inputIndex][i, j] += deltaWeight[inputIndex][i, j] / miniBatchSize;
+                            meanDeltaWeight[inputIndex][i, j] -= meanListDeltaWeight[0][inputIndex][i, j] / MiniBatchSize;
+                            meanDeltaWeight[inputIndex][i, j] += deltaWeight[inputIndex][i, j] / MiniBatchSize;
                             meanListDeltaWeight.RemoveAt(0);
                         }
                         else
@@ -388,10 +390,10 @@ namespace CnnDemo.CNN
                 }
             }
             meanListDeltaOffset.Add(deltaOffset);
-            if (meanListDeltaOffset.Count > miniBatchSize)
+            if (meanListDeltaOffset.Count > MiniBatchSize)
             {
-                meanDeltaOffset -= meanListDeltaOffset[0] / miniBatchSize;
-                meanDeltaOffset += deltaOffset / miniBatchSize;
+                meanDeltaOffset -= meanListDeltaOffset[0] / MiniBatchSize;
+                meanDeltaOffset += deltaOffset / MiniBatchSize;
                 meanListDeltaOffset.RemoveAt(0);
             }
             else

@@ -32,6 +32,10 @@ namespace CnnDemo.CNN
         /// </summary>
         public ActivationFunctionTypes ActivationFunctionType { get; set; }
         /// <summary>
+        /// 平均梯度集上限
+        /// </summary>
+        public static int MiniBatchSize = 10;
+        /// <summary>
         /// 激活函数
         /// </summary>
         /// <param name="input"></param>

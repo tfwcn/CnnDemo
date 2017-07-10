@@ -52,7 +52,7 @@ namespace CnnDemo.CNN
                 }
                 else
                 {
-                    return CnnKernelList[0].ConvolutionKernelWidth;
+                    return CnnKernelList[0].ConvolutionKernelHeight;
                 }
             }
         }
