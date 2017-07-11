@@ -3,3 +3,5 @@
 /*.cnn
 /*.suo
 /TestResults
+/UnitTest/bin
+/UnitTest/obj

@@ -33,25 +33,41 @@ namespace CnnDemo
         {
             //图片1
             cnn1 = new Cnn();
-            cnn1.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 3, 3, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                4, 4, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn1.AddCnnConvolutionLayer(20, 5, 5, 2, 2, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                4, 4, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(6, 250, 250, 3, 3, 2, 2, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
+            cnn1.AddCnnConvolutionLayer(20, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(40, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
             cnn1.AddCnnConvolutionLayer(60, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.None, false, false);
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(80, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(100, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            //cnn1.AddCnnConvolutionLayer(120, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            //    2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
             cnn1.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
             //图片2
             cnn2 = new Cnn();
-            cnn2.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 3, 3, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                4, 4, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn2.AddCnnConvolutionLayer(20, 5, 5, 2, 2, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                4, 4, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(6, 250, 250, 3, 3, 2, 2, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
+            cnn2.AddCnnConvolutionLayer(20, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(40, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
             cnn2.AddCnnConvolutionLayer(60, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.None, false, false);
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(80, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(100, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            //cnn2.AddCnnConvolutionLayer(120, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            //    2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
             cnn2.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
             //比较输出
             cnnOutput = new Cnn();
-            cnnOutput.AddCnnFullLayer(100, 14, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnnOutput.AddCnnFullLayer(100, 20, CnnNode.ActivationFunctionTypes.Tanh, false);
             cnnOutput.AddCnnFullLayer(1, CnnNode.ActivationFunctionTypes.Tanh, false);
         }
 

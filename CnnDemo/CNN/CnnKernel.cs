@@ -335,14 +335,14 @@ namespace CnnDemo.CNN
                 return result;
             }
             //残差
-            for (int i = 0; i < ConvolutionKernelWidth; i++)
-            {
-                for (int j = 0; j < ConvolutionKernelHeight; j++)
-                {
-                    //residual[i, j] = ActivationFunctionDerivative(OutputValue[i, j]) * (output[i, j] - OutputValue[i, j]);
-                    //residual[i, j] = (output[i, j] - OutputValue[i, j]);//正确
-                }
-            }
+            //for (int i = 0; i < ConvolutionKernelWidth; i++)
+            //{
+            //    for (int j = 0; j < ConvolutionKernelHeight; j++)
+            //    {
+            //        //residual[i, j] = ActivationFunctionDerivative(OutputValue[i, j]) * (output[i, j] - OutputValue[i, j]);
+            //        //residual[i, j] = (output[i, j] - OutputValue[i, j]);//正确
+            //    }
+            //}
             for (int inputIndex = 0; inputIndex < InputCount; inputIndex++)
             {
                 double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]), receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
@@ -356,8 +356,8 @@ namespace CnnDemo.CNN
                 //double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex])));//CNN标准
                 double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
                     CnnHelper.MatrixRotate180(InputValue[inputIndex]),
-                    Convert.ToInt32(Math.Ceiling((inputWidth - ConvolutionKernelWidth) / (double)(receptiveFieldWidth - 1))),
-                    Convert.ToInt32(Math.Ceiling((inputHeight - ConvolutionKernelHeight) / (double)(receptiveFieldHeight - 1))), null));//增加偏移，试验
+                    Convert.ToInt32(Math.Ceiling((inputWidth - ConvolutionKernelWidth) / (double)(receptiveFieldWidth * receptiveFieldOffsetWidth - 1))),
+                    Convert.ToInt32(Math.Ceiling((inputHeight - ConvolutionKernelHeight) / (double)(receptiveFieldHeight * receptiveFieldOffsetHeight - 1))), null));//增加偏移，试验
 
                 if (tmpDeltaWeight.GetLength(0) != receptiveFieldWidth || tmpDeltaWeight.GetLength(1) != receptiveFieldHeight)
                     return null;
