@@ -170,6 +170,8 @@ namespace CnnDemo.CNN
             //this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling((inputHeight - receptiveFieldHeight) / (double)offsetHeight)) + 1;
             this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling((inputWidth + offsetWidth - receptiveFieldWidth * receptiveFieldOffsetWidth) / (double)offsetWidth));//卷积核宽
             this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling((inputHeight + offsetHeight - receptiveFieldHeight * receptiveFieldOffsetHeight) / (double)offsetHeight));//卷积核高
+            if (this.ConvolutionKernelWidth <= 0 || this.ConvolutionKernelHeight <= 0)
+                throw new Exception("卷积核大小有误");
             ShareWeight = new List<double[,]>();
             meanDeltaWeight = new List<double[,]>();
             for (int i = 0; i < inputCount; i++)
@@ -354,13 +356,8 @@ namespace CnnDemo.CNN
                 //double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex])));//CNN标准
                 double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
                     CnnHelper.MatrixRotate180(InputValue[inputIndex]),
-                    offsetWidth/*Convert.ToInt32(inputWidth / Math.Ceiling(ConvolutionKernelWidth / (double)offsetWidth)) - 1*/,
-                    offsetHeight/*Convert.ToInt32(inputHeight / Math.Ceiling(ConvolutionKernelHeight / (double)offsetHeight)) - 1*/, null));//错，增加偏移
-                tmpDeltaWeight = CnnHelper.MatrixCut(tmpDeltaWeight,
-                    (tmpDeltaWeight.GetLength(0) - receptiveFieldWidth) / 2,
-                    (tmpDeltaWeight.GetLength(1) - receptiveFieldHeight) / 2,
-                    Convert.ToInt32(Math.Ceiling((tmpDeltaWeight.GetLength(0) - receptiveFieldWidth) / 2.0)),
-                    Convert.ToInt32(Math.Ceiling((tmpDeltaWeight.GetLength(1) - receptiveFieldHeight) / 2.0)));
+                    Convert.ToInt32(Math.Ceiling((inputWidth - ConvolutionKernelWidth) / (double)(receptiveFieldWidth - 1))),
+                    Convert.ToInt32(Math.Ceiling((inputHeight - ConvolutionKernelHeight) / (double)(receptiveFieldHeight - 1))), null));//增加偏移，试验
 
                 if (tmpDeltaWeight.GetLength(0) != receptiveFieldWidth || tmpDeltaWeight.GetLength(1) != receptiveFieldHeight)
                     return null;

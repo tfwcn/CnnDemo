@@ -77,6 +77,7 @@
     <Compile Include="CNN\Cnn.cs" />
     <Compile Include="CNN\CnnGroup.cs" />
     <Compile Include="CNN\CnnHelper.cs" />
+    <Compile Include="CNN\CnnHelperOld.cs" />
     <Compile Include="CNN\CnnKernel.cs" />
     <Compile Include="CNN\CnnConvolutionLayer.cs" />
     <Compile Include="CNN\CnnNode.cs" />

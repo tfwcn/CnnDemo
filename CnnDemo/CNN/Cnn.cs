@@ -390,11 +390,11 @@ namespace CnnDemo.CNN
         /// <summary>
         /// 训练,仅用于BP网络
         /// </summary>
-        public double[] TrainFullLayer(double[] input, double[] output, double learningRate)
+        public double[] TrainFullLayer(double[] input, double[] output, double learningRate, ref double[] forwardOutputFull)
         {
             #region 正向传播
             //计算全连接层输出
-            double[] forwardOutputFull = input;
+            forwardOutputFull = input;
             foreach (var cnnFullLayer in CnnFullLayerList)
             {
                 forwardOutputFull = cnnFullLayer.CalculatedResult(forwardOutputFull);

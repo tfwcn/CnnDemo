@@ -148,7 +148,8 @@ namespace CnnDemo.CNN
             {
                 try
                 {
-                    var tmpResult = cnnList[i].TrainFullLayer(input, new double[] { output[i] }, learningRate);//每个神经网络对应单个结果
+                    double[] forwardOutputFull = null;//前向传播
+                    var tmpResult = cnnList[i].TrainFullLayer(input, new double[] { output[i] }, learningRate, ref forwardOutputFull);//每个神经网络对应单个结果
                     System.Threading.Monitor.Enter(lockObj);
                     backwardInputFullList[i] = tmpResult;
                     System.Threading.Monitor.Exit(lockObj);

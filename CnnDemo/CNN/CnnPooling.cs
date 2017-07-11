@@ -124,6 +124,8 @@ namespace CnnDemo.CNN
             this.OutputCount = outputCount;
             this.ConvolutionKernelWidth = Convert.ToInt32(Math.Ceiling(inputWidth / (double)receptiveFieldWidth));
             this.ConvolutionKernelHeight = Convert.ToInt32(Math.Ceiling(inputHeight / (double)receptiveFieldWidth));
+            if (this.ConvolutionKernelWidth <= 0 || this.ConvolutionKernelHeight <= 0)
+                throw new Exception("卷积核大小有误");
             OutputPoolingMax = new int[ConvolutionKernelWidth, ConvolutionKernelHeight];
             meanListDeltaWeight = new List<double>();
             meanListDeltaOffset = new List<double>();

@@ -33,21 +33,21 @@ namespace CnnDemo
         {
             //图片1
             cnn1 = new Cnn();
-            cnn1.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn1.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 3, 3, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 4, 4, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn1.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn1.AddCnnConvolutionLayer(20, 5, 5, 2, 2, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 4, 4, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn1.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(60, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.None, false, false);
             cnn1.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
             //图片2
             cnn2 = new Cnn();
-            cnn2.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn2.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 3, 3, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 4, 4, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn2.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            cnn2.AddCnnConvolutionLayer(20, 5, 5, 2, 2, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 4, 4, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn2.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(60, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.None, false, false);
             cnn2.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
             //比较输出
             cnnOutput = new Cnn();

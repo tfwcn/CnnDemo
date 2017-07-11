@@ -562,7 +562,8 @@ namespace CnnDemo
             {
                 foreach (var t in trainList)
                 {
-                    tmpCnn.TrainFullLayer(t.getAttribList2().ToArray(), t.getTypes(), eta);
+                    double[] forwardOutputFull = null;
+                    tmpCnn.TrainFullLayer(t.getAttribList2().ToArray(), t.getTypes(), eta, ref forwardOutputFull);
                 }
             }
             for (int i = 0; i < testList.Count(); i++)
