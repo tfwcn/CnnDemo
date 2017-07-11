@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using CnnDemo.CNN.Model;
@@ -92,26 +93,48 @@ namespace CnnDemo.CNN
         {
             //缩放图片
             Bitmap tmpImg = new Bitmap(img.Width, img.Height);
-            /*
-            Graphics g = Graphics.FromImage(tmpImg);
-            g.Clear(Color.Black);
-            int x = 0, y = 0, w = width, h = height;
-            double b1, b2;
-            b1 = width / (double)height;
-            b2 = img.Width / (double)img.Height;
-            if (b1 > b2)
+            //图片固定到内存
+            BitmapData imgData = img.LockBits(new Rectangle(0, 0, img.Width, img.Height), System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            //图片固定到内存
+            BitmapData tmpImgData = tmpImg.LockBits(new Rectangle(0, 0, tmpImg.Width, tmpImg.Height), System.Drawing.Imaging.ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            int imgBytes = Math.Abs(imgData.Stride) * img.Height;
+            int tmpImgBytes = Math.Abs(tmpImgData.Stride) * tmpImg.Height;
+            byte[] imgRgbValues = new byte[imgBytes];
+            byte[] tmpImgRgbValues = new byte[tmpImgBytes];
+            //*
+            //读取颜色到数组
+            IntPtr imgPtr = imgData.Scan0;
+            System.Runtime.InteropServices.Marshal.Copy(imgPtr, imgRgbValues, 0, imgBytes);
+            for (int w = 0; w < img.Width; w++)
             {
-                w = (int)(h * b2);
-                x = (width - w) / 2;
+                for (int h = 0; h < img.Height; h++)
+                {
+                    //变换点坐标
+                    double[,] point = new double[1, 3] { { w, h, 1 } };//1列3行
+                    double[,] retPoint = CNN.CnnHelper.MatrixMultiplyT(transformer, point);
+                    int x = (int)Math.Round(retPoint[0, 0], 0, MidpointRounding.AwayFromZero);
+                    int y = (int)Math.Round(retPoint[0, 1], 0, MidpointRounding.AwayFromZero);
+                    if (x >= 0 && x < tmpImg.Width
+                        && y >= 0 && y < tmpImg.Height)
+                    {
+                        tmpImgRgbValues[x * tmpImgData.Stride / tmpImg.Width + y * tmpImgData.Stride] = imgRgbValues[w * imgData.Stride / img.Width + h * imgData.Stride];
+                        tmpImgRgbValues[x * tmpImgData.Stride / tmpImg.Width + y * tmpImgData.Stride + 1] = imgRgbValues[w * imgData.Stride / img.Width + h * imgData.Stride + 1];
+                        tmpImgRgbValues[x * tmpImgData.Stride / tmpImg.Width + y * tmpImgData.Stride + 2] = imgRgbValues[w * imgData.Stride / img.Width + h * imgData.Stride + 2];
+                    }
+                    else
+                    {
+                        //tmpImgRgbValues[(int)retPoint[0, 0] * tmpImgData.Stride / tmpImg.Width + (int)retPoint[0, 1] * tmpImgData.Stride] = 0;
+                        //tmpImgRgbValues[(int)retPoint[0, 0] * tmpImgData.Stride / tmpImg.Width + (int)retPoint[0, 1] * tmpImgData.Stride + 1] = 0;
+                        //tmpImgRgbValues[(int)retPoint[0, 0] * tmpImgData.Stride / tmpImg.Width + (int)retPoint[0, 1] * tmpImgData.Stride + 2] = 0;
+                    }
+                }
             }
-            else if (b2 > b1)
-            {
-                h = (int)(w / b2);
-                y = (height - h) / 2;
-            }
-            g.DrawImage(img, x, y, w, h);
-            g.Dispose();
-            */
+            //复制颜色到图片
+            IntPtr tmpImgPtr = tmpImgData.Scan0;
+            System.Runtime.InteropServices.Marshal.Copy(tmpImgRgbValues, 0, tmpImgPtr, tmpImgBytes);
+            //*/
+            img.UnlockBits(imgData);
+            tmpImg.UnlockBits(tmpImgData);
             return tmpImg;
         }
         #endregion

@@ -33,23 +33,24 @@ namespace CnnDemo
         {
             //图片1
             cnn1 = new Cnn();
-            cnn1.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 5, 5, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn1.AddCnnConvolutionLayer(16, 5, 5, 3, 3, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn1.AddCnnConvolutionLayer(20, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                0, 0, CnnPooling.PoolingTypes.None, false, false);
+            cnn1.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                4, 4, CnnPooling.PoolingTypes.MaxPooling, false);
+            cnn1.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                4, 4, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
             cnn1.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
             //图片2
             cnn2 = new Cnn();
-            cnn2.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 5, 5, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn2.AddCnnConvolutionLayer(16, 5, 5, 3, 3, 2, 2, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn2.AddCnnConvolutionLayer(20, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                0, 0, CnnPooling.PoolingTypes.None, false, false);
+            cnn2.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                4, 4, CnnPooling.PoolingTypes.MaxPooling, false);
+            cnn2.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                4, 4, CnnPooling.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
             cnn2.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
             //比较输出
+            cnnOutput = new Cnn();
             cnnOutput.AddCnnFullLayer(100, 14, CnnNode.ActivationFunctionTypes.Tanh, false);
             cnnOutput.AddCnnFullLayer(1, CnnNode.ActivationFunctionTypes.Tanh, false);
         }
@@ -145,10 +146,32 @@ namespace CnnDemo
                                                 ).ToArgb() / (double)0xFFFFFF;
                                         }
                                     }
-                                    double[] forwardOutputFull = null;
-                                    cnnOutput.TrainFullLayer(input1, labels, learningRate);
-                                    //cnn1.Train(input1, labels, learningRate, ref forwardOutputFull);
-                                    //cnn2.Train(input2, labels, learningRate, ref forwardOutputFull);
+                                    double[] forwardOutputFull1 = cnn1.Predict(input1);
+                                    double[] forwardOutputFull2 = cnn2.Predict(input2);
+                                    double[] forwardInputFull = new double[100];
+                                    for (int inputIndex = 0; inputIndex < 100; inputIndex++)
+                                    {
+                                        if (inputIndex < 50)
+                                            forwardInputFull[inputIndex] = forwardOutputFull1[inputIndex];
+                                        else
+                                            forwardInputFull[inputIndex] = forwardOutputFull2[inputIndex - 50];
+                                    }
+                                    double[] forwardOutputFull = cnnOutput.PredictFullLayer(forwardInputFull);
+                                    double[] backwardInputFull = new double[1];
+                                    //计算输出误差
+                                    backwardInputFull[0] = labels[0] - forwardOutputFull[0];
+                                    double[] backwardInputFullResidual = cnnOutput.TrainFullLayer(backwardInputFull, learningRate);//残差
+                                    double[] forwardInputFull1 = new double[50];
+                                    double[] forwardInputFull2 = new double[50];
+                                    for (int inputIndex = 0; inputIndex < 100; inputIndex++)
+                                    {
+                                        if (inputIndex < 50)
+                                            forwardInputFull1[inputIndex] = backwardInputFullResidual[inputIndex];
+                                        else
+                                            forwardInputFull2[inputIndex - 50] = backwardInputFullResidual[inputIndex];
+                                    }
+                                    cnn1.Train(forwardInputFull1, learningRate);
+                                    cnn2.Train(forwardInputFull2, learningRate);
                                     CnnHelper.ShowChange2(forwardOutputFull, labels);
                                     this.Invoke(new Action(() =>
                                     {

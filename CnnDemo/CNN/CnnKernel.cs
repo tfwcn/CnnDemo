@@ -345,6 +345,7 @@ namespace CnnDemo.CNN
             {
                 double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]), receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
                     residual, offsetWidth, offsetHeight, inputWidth, inputHeight);//增加偏移
+                tmpResultDelta = CnnHelper.MatrixExpand(tmpResultDelta, paddingSize.Left, paddingSize.Top, paddingSize.Right, paddingSize.Bottom, 0);
                 //double[,] tmpResultDelta = CnnHelper.ConvolutionFull(CnnHelper.MatrixRotate180(ShareWeight[inputIndex]),
                 //    residual, inputWidth, inputHeight);//CNN标准
                 //double[,] tmpResultDelta = CnnHelper.ConvolutionFull(ShareWeight[inputIndex], residual);//CNN例子
@@ -352,7 +353,17 @@ namespace CnnDemo.CNN
                 //double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex]));//CNN例子
                 //double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex])));//CNN标准
                 double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
-                    CnnHelper.MatrixRotate180(CnnHelper.MatrixExpand(InputValue[inputIndex], paddingSize.Left, paddingSize.Top, paddingSize.Right, paddingSize.Bottom, 0)), offsetWidth, offsetHeight, null));//增加偏移
+                    CnnHelper.MatrixRotate180(InputValue[inputIndex]),
+                    offsetWidth/*Convert.ToInt32(inputWidth / Math.Ceiling(ConvolutionKernelWidth / (double)offsetWidth)) - 1*/,
+                    offsetHeight/*Convert.ToInt32(inputHeight / Math.Ceiling(ConvolutionKernelHeight / (double)offsetHeight)) - 1*/, null));//错，增加偏移
+                tmpDeltaWeight = CnnHelper.MatrixCut(tmpDeltaWeight,
+                    (tmpDeltaWeight.GetLength(0) - receptiveFieldWidth) / 2,
+                    (tmpDeltaWeight.GetLength(1) - receptiveFieldHeight) / 2,
+                    Convert.ToInt32(Math.Ceiling((tmpDeltaWeight.GetLength(0) - receptiveFieldWidth) / 2.0)),
+                    Convert.ToInt32(Math.Ceiling((tmpDeltaWeight.GetLength(1) - receptiveFieldHeight) / 2.0)));
+
+                if (tmpDeltaWeight.GetLength(0) != receptiveFieldWidth || tmpDeltaWeight.GetLength(1) != receptiveFieldHeight)
+                    return null;
                 deltaWeight.Add(tmpDeltaWeight);
             }
             //计算偏置残差

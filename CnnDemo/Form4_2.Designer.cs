@@ -117,10 +117,10 @@
             // lblResult
             // 
             this.lblResult.AutoSize = true;
-            this.lblResult.Font = new System.Drawing.Font("宋体", 42F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
-            this.lblResult.Location = new System.Drawing.Point(307, 132);
+            this.lblResult.Font = new System.Drawing.Font("宋体", 21.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lblResult.Location = new System.Drawing.Point(263, 132);
             this.lblResult.Name = "lblResult";
-            this.lblResult.Size = new System.Drawing.Size(53, 56);
+            this.lblResult.Size = new System.Drawing.Size(28, 29);
             this.lblResult.TabIndex = 7;
             this.lblResult.Text = ".";
             // 
