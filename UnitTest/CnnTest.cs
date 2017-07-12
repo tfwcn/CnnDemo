@@ -72,8 +72,8 @@ namespace UnitTest
         public void TrainFullLayerTest()
         {
             Cnn target = new Cnn(); // TODO: 初始化为适当的值
-            target.AddCnnFullLayer(100, 14, CnnNode.ActivationFunctionTypes.Tanh, false);
-            target.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
+            target.AddCnnFullLayer(100, 14, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            target.AddCnnFullLayer(10, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             double[] input = new double[100]; // TODO: 初始化为适当的值
             TestMethods.InitRandom(input);
             double[] output = new double[10]; // TODO: 初始化为适当的值
@@ -102,13 +102,13 @@ namespace UnitTest
         public void TrainTest()
         {
             Cnn target = new Cnn(); // TODO: 初始化为适当的值
-            target.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                4, 4, CnnPooling.PoolingTypes.MaxPooling, false);
-            target.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                4, 4, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            target.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
-            target.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
+            target.AddCnnConvolutionLayer(6, 250, 250, 10, 10, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                4, 4, CnnPoolingNeuron.PoolingTypes.MaxPooling, false);
+            target.AddCnnConvolutionLayer(20, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                4, 4, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            target.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MeanPooling, false, false);
+            target.AddCnnFullLayer(50, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             double[,] input = new double[250, 250]; // TODO: 初始化为适当的值
             TestMethods.InitRandom(input);
             double[] output = new double[50]; // TODO: 初始化为适当的值

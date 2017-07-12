@@ -9,26 +9,34 @@ namespace CnnDemo.CNN
     /// 全链接层
     /// </summary>
     [Serializable]
-    public class CnnFullLayer : CnnNeuron
+    public class CnnFullLayerOld : CnnNeuron
     {
         /// <summary>
-        /// 池化神经元
+        /// 权重
         /// </summary>
-        private List<CnnPoolingNeuron> CnnPoolingList { get; set; }
+        public double[,] InputWeight { get; set; }
+        /// <summary>
+        /// 偏置
+        /// </summary>
+        public double[] OutputOffset { get; set; }
         /// <summary>
         /// 输入数量
         /// </summary>
-        public int InputCount
-        {
-            get
-            {
-                return CnnPoolingList[0].InputCount;
-            }
-        }
+        public int InputCount { get; set; }
         /// <summary>
         /// 输出数量(神经元数量)
         /// </summary>
         public int OutputCount { get; set; }
+        /// <summary>
+        /// 原输入值
+        /// </summary>
+        [NonSerialized]
+        public double[] InputValue;
+        /// <summary>
+        /// 原输出值
+        /// </summary>
+        [NonSerialized]
+        public double[] OutputValue;
         /// <summary>
         /// 输出平均值
         /// </summary>
@@ -41,6 +49,30 @@ namespace CnnDemo.CNN
         /// 归一化
         /// </summary>
         public bool Standardization { get; set; }
+        /// <summary>
+        /// 共享权重梯度集，用于计算平均权重梯度
+        /// </summary>
+        private List<double[,]> meanListDeltaWeight;
+        /// <summary>
+        /// 偏置梯度集，用于计算平均偏置梯度
+        /// </summary>
+        private List<double[]> meanListDeltaOffset;
+        /// <summary>
+        /// 平均共享权重梯度
+        /// </summary>
+        private double[,] meanDeltaWeight;
+        /// <summary>
+        /// 平均偏置梯度
+        /// </summary>
+        private double[] meanDeltaOffset;
+        /// <summary>
+        /// 正则化概率（Dropout）
+        /// </summary>
+        private double dropoutChance = -1;
+        /// <summary>
+        /// 正则化状态（Dropout）
+        /// </summary>
+        private bool dropoutState = false;
         #region 调试参数
         /// <summary>
         /// 输入残差
@@ -74,32 +106,6 @@ namespace CnnDemo.CNN
             meanListDeltaWeight = new List<double[,]>();
             meanListDeltaOffset = new List<double[]>();
             InitInputWeight();
-        }
-        public void CreateCnnFull(int convolutionKernelCount, int inputWidth, int inputHeight,
-            int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth, int offsetHeight,
-             int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
-            CnnNeuron.ActivationFunctionTypes activationFunctionType, int LastLayerCount, bool standardization, bool[,] layerLinks)
-        {
-            this.ConvolutionKernelCount = convolutionKernelCount;
-            CnnKernelList = new List<CnnConvolutionNeuron>();
-            for (int i = 0; i < ConvolutionKernelCount; i++)
-            {
-                int inputCount = 0;//单个卷积神经元输入数量
-                for (int j = 0; j < LastLayerCount; j++)
-                {
-                    if (layerLinks == null)
-                    {
-                        inputCount = 1;
-                        break;
-                    }
-                    if (layerLinks[i, j])
-                        inputCount++;
-                }
-                CnnKernelList.Add(new CnnConvolutionNeuron(inputWidth, inputHeight,
-                    receptiveFieldWidth, receptiveFieldHeight,
-                    offsetWidth, offsetHeight, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
-                    activationFunctionType, inputCount, ConvolutionKernelCount, standardization));
-            }
         }
         /// <summary>
         /// 前向传播,计算结果

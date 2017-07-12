@@ -262,18 +262,18 @@ namespace CnnDemo
         private void CreateBP()
         {
             cnn = new Cnn();
-            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
-            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
-            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
+            cnn.AddCnnConvolutionLayer(8, bpWidth, bpHeight, 20, 20, 5, 5, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false);
+            cnn.AddCnnConvolutionLayer(20, 10, 10, 3, 3, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MeanPooling, false, false);
+            cnn.AddCnnConvolutionLayer(40, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MeanPooling, false, false);
+            cnn.AddCnnConvolutionLayer(60, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MeanPooling, false, false);
             //cnn.AddCnnConvolutionLayer(80, 5, 5, 1, 1, 1, 2, 2, 1);
             //cnn.AddCnnConvolutionLayer(100, 5, 5, 1, 1, 1, 2, 2, 1);
-            cnn.AddCnnFullLayer(300, CnnNode.ActivationFunctionTypes.Tanh, false);
-            cnn.AddCnnFullLayer(bpRectangleCount * 4, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnn.AddCnnFullLayer(300, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            cnn.AddCnnFullLayer(bpRectangleCount * 4, CnnNeuron.ActivationFunctionTypes.Tanh, false);
         }
         private void TrainBP(Dictionary<Bitmap, List<Rectangle>> imgs)
         {
@@ -553,11 +553,11 @@ namespace CnnDemo
             StreamWriter sw = new StreamWriter(outputfile);
             int typeCount = 3;
             Cnn tmpCnn = new Cnn();
-            tmpCnn.AddCnnFullLayer(4, 14, CnnNode.ActivationFunctionTypes.Tanh, false);
-            tmpCnn.AddCnnFullLayer(20, CnnNode.ActivationFunctionTypes.Tanh, false);
-            tmpCnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
-            tmpCnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
-            tmpCnn.AddCnnFullLayer(3, CnnNode.ActivationFunctionTypes.Tanh, false);
+            tmpCnn.AddCnnFullLayer(4, 14, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            tmpCnn.AddCnnFullLayer(20, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            tmpCnn.AddCnnFullLayer(10, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            tmpCnn.AddCnnFullLayer(10, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            tmpCnn.AddCnnFullLayer(3, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             for (int i = 0; i < nIter; i++)
             {
                 foreach (var t in trainList)

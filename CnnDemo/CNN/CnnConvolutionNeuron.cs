@@ -11,7 +11,7 @@ namespace CnnDemo.CNN
     /// 卷积核
     /// </summary>
     [Serializable]
-    public class CnnKernel : CnnNode
+    public class CnnConvolutionNeuron : CnnNeuron
     {
         /// <summary>
         /// 共享权重(所有感知野共享),每个输入独立
@@ -150,7 +150,7 @@ namespace CnnDemo.CNN
         /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
         /// <param name="inputCount"></param>
         /// <param name="outputCount"></param>
-        public CnnKernel(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
+        public CnnConvolutionNeuron(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
             int offsetWidth, int offsetHeight, int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
             ActivationFunctionTypes activationFunctionType, int inputCount, int outputCount, bool standardization)
         {
@@ -290,10 +290,11 @@ namespace CnnDemo.CNN
             {
                 case ActivationFunctionTypes.ReLU:
                     //PReLU
-                    result = random.NextDouble() * 0.0001;
+                    //result = random.NextDouble() * 0.0001;
+                    result = (random.NextDouble() - 0.5) * Math.Sqrt((float)6.0 / (float)(receptiveFieldWidth * receptiveFieldHeight * (InputCount + OutputCount)));
                     break;
                 default:
-                    result = (random.NextDouble() * 2 - 1) * Math.Sqrt((float)6.0 / (float)(receptiveFieldWidth * receptiveFieldHeight * (InputCount + OutputCount)));
+                    result = (random.NextDouble() - 0.5) * Math.Sqrt((float)6.0 / (float)(receptiveFieldWidth * receptiveFieldHeight * (InputCount + OutputCount)));
                     break;
             }
             return result;
@@ -354,10 +355,15 @@ namespace CnnDemo.CNN
                 result.Add(tmpResultDelta);
                 //double[,] tmpDeltaWeight = CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex]));//CNN例子
                 //double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, CnnHelper.MatrixRotate180(InputValue[inputIndex])));//CNN标准
+                int weightOffsetWidth = 1;
+                if (receptiveFieldWidth * receptiveFieldOffsetWidth != 1)
+                    weightOffsetWidth = Convert.ToInt32(Math.Ceiling((inputWidth - ConvolutionKernelWidth) / (double)(receptiveFieldWidth * receptiveFieldOffsetWidth - 1)));
+                int weightOffsetHeight = 1;
+                if (receptiveFieldHeight * receptiveFieldOffsetHeight != 1)
+                    weightOffsetHeight = Convert.ToInt32(Math.Ceiling((inputHeight - ConvolutionKernelHeight) / (double)(receptiveFieldHeight * receptiveFieldOffsetHeight - 1)));
                 double[,] tmpDeltaWeight = CnnHelper.MatrixRotate180(CnnHelper.ConvolutionValid(residual, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
                     CnnHelper.MatrixRotate180(InputValue[inputIndex]),
-                    Convert.ToInt32(Math.Ceiling((inputWidth - ConvolutionKernelWidth) / (double)(receptiveFieldWidth * receptiveFieldOffsetWidth - 1))),
-                    Convert.ToInt32(Math.Ceiling((inputHeight - ConvolutionKernelHeight) / (double)(receptiveFieldHeight * receptiveFieldOffsetHeight - 1))), null));//增加偏移，试验
+                    weightOffsetWidth, weightOffsetHeight, null));//增加偏移，试验
 
                 if (tmpDeltaWeight.GetLength(0) != receptiveFieldWidth || tmpDeltaWeight.GetLength(1) != receptiveFieldHeight)
                     return null;

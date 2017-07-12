@@ -8,6 +8,7 @@ namespace CnnDemo.CNN.Model
     /// <summary>
     /// 填充大小
     /// </summary>
+    [Serializable]
     public class CnnPaddingSize
     {
         /// <summary>

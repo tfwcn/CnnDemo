@@ -7,7 +7,7 @@ using System.Threading;
 namespace CnnDemo.CNN
 {
     [Serializable]
-    public class CnnNode
+    public class CnnNeuron
     {
         /// <summary>
         /// 池化类型

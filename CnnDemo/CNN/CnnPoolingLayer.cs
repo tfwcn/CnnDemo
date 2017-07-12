@@ -7,16 +7,16 @@ using System.Threading;
 namespace CnnDemo.CNN
 {
     /// <summary>
-    /// 卷积层
+    /// 池化层
     /// </summary>
     [Serializable]
-    public class CnnConvolutionLayer
+    public class CnnPoolingLayer
     {
         public object lockObj = new object();
         /// <summary>
-        /// 卷积神经元
+        /// 池化神经元
         /// </summary>
-        private List<CnnConvolutionNeuron> CnnKernelList { get; set; }
+        private List<CnnPoolingNeuron> CnnPoolingList { get; set; }
         /// <summary>
         /// 卷积核数量
         /// </summary>
@@ -28,7 +28,7 @@ namespace CnnDemo.CNN
         {
             get
             {
-                return CnnKernelList[0].ConvolutionKernelWidth;
+                return CnnPoolingList[0].ConvolutionKernelWidth;
             }
         }
         /// <summary>
@@ -38,62 +38,34 @@ namespace CnnDemo.CNN
         {
             get
             {
-                return CnnKernelList[0].ConvolutionKernelHeight;
+                return CnnPoolingList[0].ConvolutionKernelHeight;
             }
         }
         /// <summary>
-        /// 创建卷积层
+        /// 创建池化层
         /// </summary>
-        /// <param name="convolutionKernelCount"></param>
-        /// <param name="inputWidth"></param>
-        /// <param name="inputHeight"></param>
         /// <param name="receptiveFieldWidth"></param>
         /// <param name="receptiveFieldHeight"></param>
-        /// <param name="offsetWidth"></param>
-        /// <param name="offsetHeight"></param>
         /// <param name="activationFunctionType"></param>
-        public void CreateCnnKernel(int convolutionKernelCount, int inputWidth, int inputHeight,
-            int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth, int offsetHeight,
-             int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
-            CnnNeuron.ActivationFunctionTypes activationFunctionType, int LastLayerCount, bool standardization, bool[,] layerLinks)
+        public void CreateCnnPooling(int convolutionKernelCount, int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, CnnNeuron.ActivationFunctionTypes activationFunctionType, CnnPoolingNeuron.PoolingTypes poolingType)
         {
             this.ConvolutionKernelCount = convolutionKernelCount;
-            CnnKernelList = new List<CnnConvolutionNeuron>();
+            CnnPoolingList = new List<CnnPoolingNeuron>();
             for (int i = 0; i < ConvolutionKernelCount; i++)
             {
-                int inputCount = 0;//单个卷积神经元输入数量
-                for (int j = 0; j < LastLayerCount; j++)
-                {
-                    if (layerLinks == null)
-                    {
-                        inputCount = 1;
-                        break;
-                    }
-                    if (layerLinks[i, j])
-                        inputCount++;
-                }
-                CnnKernelList.Add(new CnnConvolutionNeuron(inputWidth, inputHeight,
-                    receptiveFieldWidth, receptiveFieldHeight,
-                    offsetWidth, offsetHeight, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
-                    activationFunctionType, inputCount, ConvolutionKernelCount, standardization));
+                CnnPoolingList.Add(new CnnPoolingNeuron(inputWidth, inputHeight,
+                    receptiveFieldWidth, receptiveFieldHeight, activationFunctionType, poolingType, 1, convolutionKernelCount));
             }
         }
         /// <summary>
         /// 前向传播,计算结果
         /// </summary>
-        public List<double[,]> CalculatedResult(List<List<double[,]>> value)
+        public List<double[,]> CalculatedResult(List<double[,]> value)
         {
             List<double[,]> result = new List<double[,]>();
             //for (int i = 0; i < ConvolutionKernelCount; i++)
             //{
-            //    if (CnnPoolingList != null)
-            //    {
-            //        result.Add(CnnPoolingList[i].CalculatedConvolutionResult(CnnKernelList[i].CalculatedConvolutionResult(value[i])));
-            //    }
-            //    else
-            //    {
-            //        result.Add(CnnKernelList[i].CalculatedConvolutionResult(value[i]));
-            //    }
+            //    result.Add(CnnPoolingList[i].CalculatedConvolutionResult(value[i]));
             //}
 
             //保证顺序
@@ -106,7 +78,7 @@ namespace CnnDemo.CNN
             {
                 try
                 {
-                    var tmpResult = CnnKernelList[i].CalculatedConvolutionResult(value[i]);
+                    var tmpResult = CnnPoolingList[i].CalculatedConvolutionResult(value[i]);
                     System.Threading.Monitor.Enter(lockObj);
                     result[i] = tmpResult;
                     System.Threading.Monitor.Exit(lockObj);
@@ -125,19 +97,12 @@ namespace CnnDemo.CNN
         /// <param name="output">正确输出值</param>
         /// <param name="learningRate">学习速率</param>
         /// <returns>返回更新权重后的输入值,每个神经元对应的输入神经元的残差</returns>
-        public List<List<double[,]>> BackPropagation(List<double[,]> output, double learningRate)
+        public List<double[,]> BackPropagation(List<double[,]> output, double learningRate)
         {
-            List<List<double[,]>> result = new List<List<double[,]>>();
+            List<double[,]> result = new List<double[,]>();
             //for (int i = 0; i < ConvolutionKernelCount; i++)
             //{
-            //    if (CnnPoolingList != null)
-            //    {
-            //        result.Add(CnnKernelList[i].BackPropagation(CnnPoolingList[i].BackPropagation(output[i], learningRate), learningRate));
-            //    }
-            //    else
-            //    {
-            //        result.Add(CnnKernelList[i].BackPropagation(output[i], learningRate));
-            //    }
+            //    result.Add(CnnPoolingList[i].BackPropagation(output[i], learningRate));
             //}
 
             //保证顺序
@@ -150,11 +115,10 @@ namespace CnnDemo.CNN
             {
                 try
                 {
-                    var tmpResult = CnnKernelList[i].BackPropagation(output[i], learningRate);
+                    var tmpResult = CnnPoolingList[i].BackPropagation(output[i], learningRate);
                     System.Threading.Monitor.Enter(lockObj);
                     result[i] = tmpResult;
                     System.Threading.Monitor.Exit(lockObj);
-                    LogHelper.Info(CnnKernelList[i].ToString());
                 }
                 catch (Exception ex)
                 {

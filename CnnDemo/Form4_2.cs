@@ -33,42 +33,66 @@ namespace CnnDemo
         {
             //图片1
             cnn1 = new Cnn();
-            cnn1.AddCnnConvolutionLayer(6, 250, 250, 3, 3, 2, 2, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn1.AddCnnConvolutionLayer(20, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn1.AddCnnConvolutionLayer(40, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn1.AddCnnConvolutionLayer(60, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn1.AddCnnConvolutionLayer(80, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn1.AddCnnConvolutionLayer(100, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            //cnn1.AddCnnConvolutionLayer(120, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-            //    2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn1.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnn1.AddCnnConvolutionLayer(6, 250, 250, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false);
+            cnn1.AddCnnConvolutionLayer(20, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(40, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn1.AddCnnConvolutionLayer(60, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(80, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn1.AddCnnConvolutionLayer(100, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(120, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn1.AddCnnConvolutionLayer(140, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(160, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn1.AddCnnConvolutionLayer(180, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(200, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn1.AddCnnConvolutionLayer(220, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn1.AddCnnConvolutionLayer(220, 2, 2, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn1.AddCnnFullLayer(50, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             //图片2
             cnn2 = new Cnn();
-            cnn2.AddCnnConvolutionLayer(6, 250, 250, 3, 3, 2, 2, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn2.AddCnnConvolutionLayer(20, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn2.AddCnnConvolutionLayer(40, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn2.AddCnnConvolutionLayer(60, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn2.AddCnnConvolutionLayer(80, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn2.AddCnnConvolutionLayer(100, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            //cnn2.AddCnnConvolutionLayer(120, 3, 3, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-            //    2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnn2.AddCnnFullLayer(50, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnn2.AddCnnConvolutionLayer(6, 250, 250, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false);
+            cnn2.AddCnnConvolutionLayer(20, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(40, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn2.AddCnnConvolutionLayer(60, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(80, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn2.AddCnnConvolutionLayer(100, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(120, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn2.AddCnnConvolutionLayer(140, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(160, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn2.AddCnnConvolutionLayer(180, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(200, 3, 1, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn2.AddCnnConvolutionLayer(220, 1, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnn2.AddCnnConvolutionLayer(220, 2, 2, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn2.AddCnnFullLayer(50, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             //比较输出
             cnnOutput = new Cnn();
-            cnnOutput.AddCnnFullLayer(100, 20, CnnNode.ActivationFunctionTypes.Tanh, false);
-            cnnOutput.AddCnnFullLayer(1, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnnOutput.AddCnnFullLayer(100, 1, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            //cnnOutput.AddCnnFullLayer(1, CnnNode.ActivationFunctionTypes.Tanh, false);
         }
 
         private void button1_Click(object sender, EventArgs e)

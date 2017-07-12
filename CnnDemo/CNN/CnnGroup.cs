@@ -36,8 +36,8 @@ namespace CnnDemo.CNN
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
             int offsetWidth, int offsetHeight, int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
-            CnnNode.ActivationFunctionTypes activationFunctionType,
-            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPooling.PoolingTypes poolingType,
+            CnnNeuron.ActivationFunctionTypes activationFunctionType,
+            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPoolingNeuron.PoolingTypes poolingType,
             bool standardization)
         {
             foreach (Cnn cnn in cnnList)
@@ -57,8 +57,8 @@ namespace CnnDemo.CNN
         public void AddCnnConvolutionLayer(int convolutionKernelCount,
             int receptiveFieldWidth, int receptiveFieldHeight,
             int offsetWidth, int offsetHeight, int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
-            CnnNode.ActivationFunctionTypes activationFunctionType,
-            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPooling.PoolingTypes poolingType,
+            CnnNeuron.ActivationFunctionTypes activationFunctionType,
+            int poolingReceptiveFieldWidth, int poolingReceptiveFieldHeight, CnnPoolingNeuron.PoolingTypes poolingType,
             bool standardization, bool isFullLayerLinks)
         {
             foreach (Cnn cnn in cnnList)
@@ -75,7 +75,7 @@ namespace CnnDemo.CNN
         /// 增加全连接层，在卷积层后，要先创建完卷积层
         /// </summary>
         /// <param name="cnnFullLayer"></param>
-        public void AddCnnFullLayer(int outputCount, CnnNode.ActivationFunctionTypes activationFunctionType, bool standardization)
+        public void AddCnnFullLayer(int outputCount, CnnNeuron.ActivationFunctionTypes activationFunctionType, bool standardization)
         {
             foreach (Cnn cnn in cnnList)
             {
@@ -86,7 +86,7 @@ namespace CnnDemo.CNN
         /// 增加全连接层,仅用于BP网络
         /// </summary>
         /// <param name="cnnFullLayer"></param>
-        public void AddCnnFullLayer(int inputCount, int outputCount, CnnNode.ActivationFunctionTypes activationFunctionType, bool standardization)
+        public void AddCnnFullLayer(int inputCount, int outputCount, CnnNeuron.ActivationFunctionTypes activationFunctionType, bool standardization)
         {
             foreach (Cnn cnn in cnnList)
             {

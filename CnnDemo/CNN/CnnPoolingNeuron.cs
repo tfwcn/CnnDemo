@@ -9,7 +9,7 @@ namespace CnnDemo.CNN
     /// 卷积核(池化)
     /// </summary>
     [Serializable]
-    public class CnnPooling : CnnNode
+    public class CnnPoolingNeuron : CnnNeuron
     {
         /// <summary>
         /// 池化类型
@@ -111,7 +111,7 @@ namespace CnnDemo.CNN
         /// <param name="receptiveFieldWidth"></param>
         /// <param name="receptiveFieldHeight"></param>
         /// <param name="poolingType">池化类型，1:平均池化(Mean Pooling),2:最大值池化(Max Pooling)</param>
-        public CnnPooling(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
+        public CnnPoolingNeuron(int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight,
             ActivationFunctionTypes activationFunctionType, PoolingTypes poolingType, int inputCount, int outputCount)
         {
             this.receptiveFieldWidth = receptiveFieldWidth;
@@ -243,7 +243,8 @@ namespace CnnDemo.CNN
             {
                 case ActivationFunctionTypes.ReLU:
                     //PReLU
-                    result = random.NextDouble() * 0.0001;
+                    //result = random.NextDouble() * 0.0001;
+                    result = 1 + (random.NextDouble() - 0.5);
                     break;
                 default:
                     //result = (random.NextDouble() * 2 - 1) * Math.Sqrt((float)6.0 / (float)(receptiveFieldWidth * receptiveFieldHeight * (InputCount + OutputCount)));

@@ -31,11 +31,11 @@ namespace CnnDemo
         {
             //缩放层
             cnnResize = new Cnn();
-            cnnResize.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 2, 2, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnnResize.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false, false);
-            cnnResize.AddCnnFullLayer(6, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnnResize.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 2, 2, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false);
+            cnnResize.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false, false);
+            cnnResize.AddCnnFullLayer(6, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             //识别层
             cnn = new Cnn();
             #region LeNet-5 结构
@@ -50,14 +50,14 @@ namespace CnnDemo
             cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
             //*/
             #endregion
-            cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
-            cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                0, 0, CnnPooling.PoolingTypes.None, false, false);
-            cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
-            cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
+            cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false);
+            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MeanPooling, false, false);
+            cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                0, 0, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            cnn.AddCnnFullLayer(84, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            cnn.AddCnnFullLayer(10, CnnNeuron.ActivationFunctionTypes.Tanh, false);
         }
 
         private void button1_Click(object sender, EventArgs e)

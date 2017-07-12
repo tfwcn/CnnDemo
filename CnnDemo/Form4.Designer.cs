@@ -125,7 +125,7 @@
             // 
             // numLearningRate
             // 
-            this.numLearningRate.DecimalPlaces = 5;
+            this.numLearningRate.DecimalPlaces = 8;
             this.numLearningRate.Increment = new decimal(new int[] {
             1,
             0,
