@@ -228,7 +228,8 @@ namespace CnnDemo.CNN
         /// </summary>
         private void InitShareWeight()
         {
-            Random random = new Random();
+            //Random random = new Random();
+            Random random = CnnHelper.RandomObj;
             //ShareWeight = 1;
             ShareWeight = GetRandom(random);
             //OutputOffset = GetRandom(random);

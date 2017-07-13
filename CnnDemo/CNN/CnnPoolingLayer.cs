@@ -10,7 +10,7 @@ namespace CnnDemo.CNN
     /// 池化层
     /// </summary>
     [Serializable]
-    public class CnnPoolingLayer
+    public class CnnPoolingLayer : CnnLayer
     {
         public object lockObj = new object();
         /// <summary>
@@ -18,44 +18,30 @@ namespace CnnDemo.CNN
         /// </summary>
         private List<CnnPoolingNeuron> CnnPoolingList { get; set; }
         /// <summary>
-        /// 卷积核数量
-        /// </summary>
-        public int ConvolutionKernelCount { get; set; }
-        /// <summary>
         /// 输出宽度
         /// </summary>
-        public int OutputWidth
-        {
-            get
-            {
-                return CnnPoolingList[0].ConvolutionKernelWidth;
-            }
-        }
+        public int OutputWidth { get; private set; }
         /// <summary>
         /// 输出高度
         /// </summary>
-        public int OutputHeight
-        {
-            get
-            {
-                return CnnPoolingList[0].ConvolutionKernelHeight;
-            }
-        }
+        public int OutputHeight { get; private set; }
         /// <summary>
         /// 创建池化层
         /// </summary>
         /// <param name="receptiveFieldWidth"></param>
         /// <param name="receptiveFieldHeight"></param>
         /// <param name="activationFunctionType"></param>
-        public void CreateCnnPooling(int convolutionKernelCount, int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, CnnNeuron.ActivationFunctionTypes activationFunctionType, CnnPoolingNeuron.PoolingTypes poolingType)
+        public CnnPoolingLayer(int NeuronCount, int inputWidth, int inputHeight, int receptiveFieldWidth, int receptiveFieldHeight, CnnNeuron.ActivationFunctionTypes activationFunctionType, CnnPoolingNeuron.PoolingTypes poolingType)
+            : base(CnnLayerTypeEnum.Pooling, NeuronCount)
         {
-            this.ConvolutionKernelCount = convolutionKernelCount;
             CnnPoolingList = new List<CnnPoolingNeuron>();
-            for (int i = 0; i < ConvolutionKernelCount; i++)
+            for (int i = 0; i < NeuronCount; i++)
             {
                 CnnPoolingList.Add(new CnnPoolingNeuron(inputWidth, inputHeight,
-                    receptiveFieldWidth, receptiveFieldHeight, activationFunctionType, poolingType, 1, convolutionKernelCount));
+                    receptiveFieldWidth, receptiveFieldHeight, activationFunctionType, poolingType, 1, NeuronCount));
             }
+            this.OutputWidth = CnnPoolingList[0].ConvolutionKernelWidth;
+            this.OutputHeight = CnnPoolingList[0].ConvolutionKernelHeight;
         }
         /// <summary>
         /// 前向传播,计算结果
@@ -69,12 +55,12 @@ namespace CnnDemo.CNN
             //}
 
             //保证顺序
-            for (int i = 0; i < ConvolutionKernelCount; i++)
+            for (int i = 0; i < NeuronCount; i++)
             {
                 result.Add(null);
             }
             //多线程
-            System.Threading.Tasks.Parallel.For(0, ConvolutionKernelCount, i =>
+            System.Threading.Tasks.Parallel.For(0, NeuronCount, i =>
             {
                 try
                 {
@@ -106,12 +92,12 @@ namespace CnnDemo.CNN
             //}
 
             //保证顺序
-            for (int i = 0; i < ConvolutionKernelCount; i++)
+            for (int i = 0; i < NeuronCount; i++)
             {
                 result.Add(null);
             }
             //多线程
-            System.Threading.Tasks.Parallel.For(0, ConvolutionKernelCount, i =>
+            System.Threading.Tasks.Parallel.For(0, NeuronCount, i =>
             {
                 try
                 {

@@ -24,6 +24,10 @@ namespace CnnDemo.CNN
         /// </summary>
         public int InputCount { get; set; }
         /// <summary>
+        /// 输出数量(神经元数量)
+        /// </summary>
+        public int OutputCount { get; private set; }
+        /// <summary>
         /// 原输入值
         /// </summary>
         [NonSerialized]
@@ -63,17 +67,49 @@ namespace CnnDemo.CNN
         /// <param name="InputCount"></param>
         /// <param name="OutputCount"></param>
         /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
-        public CnnFullNeuron(int InputCount, ActivationFunctionTypes activationFunctionType, bool standardization)
+        public CnnFullNeuron(int InputCount, int OutputCount, ActivationFunctionTypes activationFunctionType)
         {
             this.InputCount = InputCount;
+            this.OutputCount = OutputCount;
             this.ActivationFunctionType = activationFunctionType;
-            this.Standardization = standardization;
             InputWeight = new double[InputCount];
             OutputOffset = 0;
             meanDeltaWeight = new double[InputCount];
             meanDeltaOffset = 0;
             meanListDeltaWeight = new List<double[]>();
             meanListDeltaOffset = new List<double>();
+            InitInputWeight();
+        }
+        /// <summary>
+        /// 初始化权重
+        /// </summary>
+        private void InitInputWeight()
+        {
+            //Random random = new Random();
+            Random random = CnnHelper.RandomObj;
+            for (int i = 0; i < InputCount; i++)
+            {
+                InputWeight[i] = GetRandom(random);
+            }
+        }
+        /// <summary>
+        /// 获取随机值
+        /// </summary>
+        private double GetRandom(Random random)
+        {
+            double result = 0;
+            switch (ActivationFunctionType)
+            {
+                case CnnDemo.CNN.CnnNeuron.ActivationFunctionTypes.ReLU:
+                    //PReLU
+                    //result = random.NextDouble() * 0.0001;
+                    result = (random.NextDouble() - 0.5) * Math.Sqrt(6.0 / (InputCount + OutputCount));
+                    break;
+                default:
+                    result = (random.NextDouble() - 0.5) * Math.Sqrt(6.0 / (InputCount + OutputCount));
+                    break;
+            }
+            return result;
         }
         /// <summary>
         /// 前向传播,计算结果

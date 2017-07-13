@@ -9,26 +9,16 @@ namespace CnnDemo.CNN
     /// 全链接层
     /// </summary>
     [Serializable]
-    public class CnnFullLayer : CnnNeuron
+    public class CnnFullLayer : CnnLayer
     {
         /// <summary>
-        /// 池化神经元
+        /// 全链接神经元
         /// </summary>
-        private List<CnnPoolingNeuron> CnnPoolingList { get; set; }
+        private List<CnnFullNeuron> CnnFullList { get; set; }
         /// <summary>
         /// 输入数量
         /// </summary>
-        public int InputCount
-        {
-            get
-            {
-                return CnnPoolingList[0].InputCount;
-            }
-        }
-        /// <summary>
-        /// 输出数量(神经元数量)
-        /// </summary>
-        public int OutputCount { get; set; }
+        public int InputCount { get; private set; }
         /// <summary>
         /// 输出平均值
         /// </summary>
@@ -41,64 +31,21 @@ namespace CnnDemo.CNN
         /// 归一化
         /// </summary>
         public bool Standardization { get; set; }
-        #region 调试参数
-        /// <summary>
-        /// 输入残差
-        /// </summary>
-        private double[] debugResult;
-        /// <summary>
-        /// 权重残差
-        /// </summary>
-        private double[,] debugDeltaWeight;
-        /// <summary>
-        /// 偏置残差
-        /// </summary>
-        private double[] debugDeltaOffset;
-        #endregion
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="InputCount"></param>
         /// <param name="OutputCount"></param>
         /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
-        public CnnFullLayer(int InputCount, int OutputCount, ActivationFunctionTypes activationFunctionType, bool standardization)
+        public CnnFullLayer(int InputCount, int NeuronCount, CnnDemo.CNN.CnnNeuron.ActivationFunctionTypes activationFunctionType, bool standardization)
+            : base(CnnLayerTypeEnum.Full, NeuronCount)
         {
             this.InputCount = InputCount;
-            this.OutputCount = OutputCount;
-            this.ActivationFunctionType = activationFunctionType;
             this.Standardization = standardization;
-            InputWeight = new double[OutputCount, InputCount];
-            OutputOffset = new double[OutputCount];
-            meanDeltaWeight = new double[OutputCount, InputCount];
-            meanDeltaOffset = new double[OutputCount];
-            meanListDeltaWeight = new List<double[,]>();
-            meanListDeltaOffset = new List<double[]>();
-            InitInputWeight();
-        }
-        public void CreateCnnFull(int convolutionKernelCount, int inputWidth, int inputHeight,
-            int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth, int offsetHeight,
-             int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
-            CnnNeuron.ActivationFunctionTypes activationFunctionType, int LastLayerCount, bool standardization, bool[,] layerLinks)
-        {
-            this.ConvolutionKernelCount = convolutionKernelCount;
-            CnnKernelList = new List<CnnConvolutionNeuron>();
-            for (int i = 0; i < ConvolutionKernelCount; i++)
+            this.CnnFullList = new List<CnnFullNeuron>();
+            for (int i = 0; i < NeuronCount; i++)
             {
-                int inputCount = 0;//单个卷积神经元输入数量
-                for (int j = 0; j < LastLayerCount; j++)
-                {
-                    if (layerLinks == null)
-                    {
-                        inputCount = 1;
-                        break;
-                    }
-                    if (layerLinks[i, j])
-                        inputCount++;
-                }
-                CnnKernelList.Add(new CnnConvolutionNeuron(inputWidth, inputHeight,
-                    receptiveFieldWidth, receptiveFieldHeight,
-                    offsetWidth, offsetHeight, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
-                    activationFunctionType, inputCount, ConvolutionKernelCount, standardization));
+                CnnFullList.Add(new CnnFullNeuron(InputCount, NeuronCount, activationFunctionType));
             }
         }
         /// <summary>
@@ -106,90 +53,23 @@ namespace CnnDemo.CNN
         /// </summary>
         public double[] CalculatedResult(double[] inputValue)
         {
-            InputValue = inputValue;
-            double[] result = new double[OutputCount];
-            for (int i = 0; i < OutputCount; i++)
+            double[] result = new double[NeuronCount];
+            int i = 0;
+            foreach (var cnnFull in CnnFullList)
             {
-                result[i] = CalculatedPointResult(inputValue, i);
-                //result[i] = CalculatedPointResult(value, i) + OutputOffset[i];
-                //调用激活函数计算结果
-                if (!Standardization)
-                {
-                    result[i] = ActivationFunction(result[i] + OutputOffset[i]);
-                }
+                result[i] = cnnFull.CalculatedResult(inputValue);
+                i++;
             }
             if (Standardization)
             {
                 mean = CnnHelper.GetMean(result);
                 variance = CnnHelper.GetVariance(result, mean);
                 //归一化每个结果
-                for (int i = 0; i < OutputCount; i++)
+                for (i = 0; i < NeuronCount; i++)
                 {
                     //调用激活函数计算结果
-                    double z = (result[i] - mean) / Math.Sqrt(variance);
-                    result[i] = ActivationFunction(z + OutputOffset[i]);
+                    result[i] = (result[i] - mean) / Math.Sqrt(variance);
                 }
-            }
-            //正则化
-            if (CnnHelper.RandomObj.NextDouble() < dropoutChance)
-            {
-                for (int i = 0; i < OutputCount; i++)
-                {
-                    result[i] = 0;
-                }
-                dropoutState = true;
-            }
-            OutputValue = result;
-            return result;
-        }
-        /// <summary>
-        /// 计算单个神经元结果
-        /// </summary>
-        /// <returns></returns>
-        private double CalculatedPointResult(double[] value, int index)
-        {
-            double result = 0;
-            //累计区域内的值
-            for (int i = 0; i < InputCount; i++)
-            {
-                result += value[i] * InputWeight[index, i];
-            }
-            return result;
-        }
-        /// <summary>
-        /// 初始化权重
-        /// </summary>
-        private void InitInputWeight()
-        {
-            Random random = new Random();
-            for (int i = 0; i < InputWeight.GetLength(0); i++)
-            {
-                for (int j = 0; j < InputWeight.GetLength(1); j++)
-                {
-                    InputWeight[i, j] = GetRandom(random);
-                }
-            }
-            for (int i = 0; i < OutputOffset.Length; i++)
-            {
-                OutputOffset[i] = GetRandom(random);
-            }
-        }
-        /// <summary>
-        /// 获取随机值
-        /// </summary>
-        private double GetRandom(Random random)
-        {
-            double result = 0;
-            switch (ActivationFunctionType)
-            {
-                case ActivationFunctionTypes.ReLU:
-                    //PReLU
-                    //result = random.NextDouble() * 0.0001;
-                    result = (random.NextDouble() - 0.5) * Math.Sqrt(6.0 / (InputCount + OutputCount));
-                    break;
-                default:
-                    result = (random.NextDouble() - 0.5) * Math.Sqrt(6.0 / (InputCount + OutputCount));
-                    break;
             }
             return result;
         }
@@ -202,150 +82,35 @@ namespace CnnDemo.CNN
         public double[] BackPropagation(double[] residual, double learningRate)
         {
             double[] result = new double[InputCount];
-            //下一层残差
-            double[] resultDelta = new double[InputCount];
-            //权重残差
-            double[,] deltaWeight = new double[OutputCount, InputCount];
-            //偏置残差
-            double[] deltaOffset = new double[OutputCount];
-            //正则化
-            if (dropoutState)
-            {
-                dropoutState = false;
-                return result;
-            }
             //计算上一层的残差
-            for (int i = 0; i < OutputCount; i++)
+            for (int i = 0; i < NeuronCount; i++)
             {
-                //当前层残差=导数(激活函数前的输出值)*(输出值-正确值)
-                double outputValueDerivative = ActivationFunctionDerivative(OutputValue[i]) * residual[i];
+                double[] cnnFullResidual = CnnFullList[i].BackPropagation(residual[i], learningRate);
                 for (int j = 0; j < InputCount; j++)
                 {
-                    //sum(残差)=更新前的权重*残差
-                    resultDelta[j] += InputWeight[i, j] * outputValueDerivative;
-                    if (Double.IsNaN(resultDelta[j]) || Double.IsInfinity(resultDelta[j]))
-                        throw new Exception("NaN");
-                    //计算权重残差,sum(残差)=残差*输入值
-                    deltaWeight[i, j] += outputValueDerivative * InputValue[j];
-                    if (Double.IsNaN(deltaWeight[i, j]) || Double.IsInfinity(deltaWeight[i, j]))
-                        throw new Exception("NaN");
-                }
-                deltaOffset[i] = outputValueDerivative;
-                if (Double.IsNaN(deltaOffset[i]) || Double.IsInfinity(deltaOffset[i]))
-                    throw new Exception("NaN");
-            }
-            //计算平均梯度
-            //*
-            meanListDeltaWeight.Add(deltaWeight);
-            for (int i = 0; i < OutputCount; i++)
-            {
-                for (int j = 0; j < InputCount; j++)
-                {
-                    if (meanListDeltaWeight.Count > MiniBatchSize)
-                    {
-                        meanDeltaWeight[i, j] -= meanListDeltaWeight[0][i, j] / MiniBatchSize;
-                        meanDeltaWeight[i, j] += deltaWeight[i, j] / MiniBatchSize;
-                        meanListDeltaWeight.RemoveAt(0);
-                    }
-                    else
-                    {
-                        meanDeltaWeight[i, j] = 0;
-                        foreach (var tmpShareWeight in meanListDeltaWeight)
-                        {
-                            meanDeltaWeight[i, j] += tmpShareWeight[i, j] / meanListDeltaWeight.Count;
-                        }
-                    }
+                    result[j] += cnnFullResidual[j];
                 }
             }
-            meanListDeltaOffset.Add(deltaOffset);
-            for (int i = 0; i < OutputCount; i++)
-            {
-                if (meanListDeltaOffset.Count > MiniBatchSize)
-                {
-                    meanDeltaOffset[i] -= meanListDeltaOffset[i][0] / MiniBatchSize;
-                    meanDeltaOffset[i] += deltaOffset[i] / MiniBatchSize;
-                    meanListDeltaOffset.RemoveAt(0);
-                }
-                else
-                {
-                    meanDeltaOffset[i] = 0;
-                    foreach (var tmpShareOffset in meanListDeltaOffset)
-                    {
-                        meanDeltaOffset[i] += tmpShareOffset[i] / meanListDeltaOffset.Count;
-                    }
-                }
-            }
-            //*/
-            //更新权重和偏置
-            //UpdateWeight(deltaWeight, learningRate);
-            //UpdateOffset(deltaOffset, learningRate);
-            UpdateWeight(meanDeltaWeight, learningRate);
-            UpdateOffset(meanDeltaOffset, learningRate);
             //计算正确输入值
             for (int i = 0; i < InputCount; i++)
             {
-                result[i] = resultDelta[i];//正确
                 //反归一化每个结果
                 if (Standardization)
                     result[i] = result[i] * Math.Sqrt(variance) + mean;
                 if (Double.IsNaN(result[i]) || Double.IsInfinity(result[i]))
                     throw new Exception("NaN");
             }
-            //调试参数
-            debugResult = resultDelta;
-            debugDeltaWeight = deltaWeight;
-            debugDeltaOffset = deltaOffset;
             return result;
-        }
-        /// <summary>
-        /// 更新权重
-        /// </summary>
-        /// <param name="weight">权重</param>
-        /// <param name="delta">残差</param>
-        /// <param name="learningRate">学习率</param>
-        private void UpdateWeight(double[,] delta, double learningRate)
-        {
-            //Console.WriteLine(String.Format("FullUpdateWeight {0}->{1}", InputCount, OutputCount));
-            for (int i = 0; i < OutputCount; i++)
-            {
-                for (int j = 0; j < InputCount; j++)
-                {
-                    InputWeight[i, j] += learningRate * delta[i, j];
-                    if (Double.IsNaN(InputWeight[i, j]) || Double.IsInfinity(InputWeight[i, j]))
-                        throw new Exception("NaN");
-                    //Console.Write(weight[j, i] + " ");
-                }
-                //Console.WriteLine("");
-            }
-            //Console.WriteLine("");
-        }
-        /// <summary>
-        /// 更新偏置
-        /// </summary>
-        /// <param name="weight">偏置</param>
-        /// <param name="delta">残差</param>
-        /// <param name="learningRate">学习率</param>
-        private void UpdateOffset(double[] delta, double learningRate)
-        {
-            //Console.WriteLine(String.Format("FullUpdateOffset {0}->{1}", InputCount, OutputCount));
-            for (int i = 0; i < OutputCount; i++)
-            {
-                OutputOffset[i] += learningRate * delta[i];
-                if (Double.IsNaN(OutputOffset[i]) || Double.IsInfinity(OutputOffset[i]))
-                    throw new Exception("NaN");
-                //Console.Write(offset[i] + " ");
-            }
-            //Console.WriteLine("");
         }
         /// <summary>
         /// 神经元描述
         /// </summary>
-        public override string ToString()
-        {
-            return String.Format("输入:{0} 输出:{1} 输入残差:{2} 权重残差:{3} 偏置残差:{4}",
-                InputCount, OutputCount,
-                CnnHelper.GetMeanAbs(debugResult),
-                CnnHelper.GetMeanAbs(debugDeltaWeight), CnnHelper.GetMeanAbs(debugDeltaOffset));
-        }
+        //public override string ToString()
+        //{
+        //    return String.Format("输入:{0} 输出:{1} 输入残差:{2} 权重残差:{3} 偏置残差:{4}",
+        //        InputCount, OutputCount,
+        //        CnnHelper.GetMeanAbs(debugResult),
+        //        CnnHelper.GetMeanAbs(debugDeltaWeight), CnnHelper.GetMeanAbs(debugDeltaOffset));
+        //}
     }
 }

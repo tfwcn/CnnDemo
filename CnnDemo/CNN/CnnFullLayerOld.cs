@@ -93,7 +93,7 @@ namespace CnnDemo.CNN
         /// <param name="InputCount"></param>
         /// <param name="OutputCount"></param>
         /// <param name="activationFunctionType">激活函数类型，1:tanh,2:PReLU,3:Sigmoid</param>
-        public CnnFullLayer(int InputCount, int OutputCount, ActivationFunctionTypes activationFunctionType, bool standardization)
+        public CnnFullLayerOld(int InputCount, int OutputCount, ActivationFunctionTypes activationFunctionType, bool standardization)
         {
             this.InputCount = InputCount;
             this.OutputCount = OutputCount;

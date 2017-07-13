@@ -80,6 +80,7 @@
     <Compile Include="CNN\CnnHelperOld.cs" />
     <Compile Include="CNN\CnnConvolutionNeuron.cs" />
     <Compile Include="CNN\CnnConvolutionLayer.cs" />
+    <Compile Include="CNN\CnnLayer.cs" />
     <Compile Include="CNN\CnnNeuron.cs" />
     <Compile Include="BP\DataNode.cs" />
     <Compile Include="BP\NetworkNode.cs" />

@@ -546,7 +546,7 @@ namespace CnnDemo
             String trainfile = @".\data\train.txt";
             String testfile = @".\data\test.txt";
             String outputfile = "outputfile.txt";
-            float eta = 0.05f;
+            float eta = 0.005f;
             int nIter = 1000;
             List<CnnDemo.BP.DataNode> trainList = GetDataList(trainfile);
             List<CnnDemo.BP.DataNode> testList = GetDataList(testfile);
@@ -555,7 +555,6 @@ namespace CnnDemo
             Cnn tmpCnn = new Cnn();
             tmpCnn.AddCnnFullLayer(4, 14, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             tmpCnn.AddCnnFullLayer(20, CnnNeuron.ActivationFunctionTypes.Tanh, false);
-            tmpCnn.AddCnnFullLayer(10, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             tmpCnn.AddCnnFullLayer(10, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             tmpCnn.AddCnnFullLayer(3, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             for (int i = 0; i < nIter; i++)

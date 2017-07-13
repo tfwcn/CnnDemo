@@ -10,7 +10,7 @@ namespace CnnDemo.CNN
     /// 卷积层
     /// </summary>
     [Serializable]
-    public class CnnConvolutionLayer
+    public class CnnConvolutionLayer : CnnLayer
     {
         public object lockObj = new object();
         /// <summary>
@@ -18,29 +18,17 @@ namespace CnnDemo.CNN
         /// </summary>
         private List<CnnConvolutionNeuron> CnnKernelList { get; set; }
         /// <summary>
-        /// 卷积核数量
-        /// </summary>
-        public int ConvolutionKernelCount { get; set; }
-        /// <summary>
         /// 输出宽度
         /// </summary>
-        public int OutputWidth
-        {
-            get
-            {
-                return CnnKernelList[0].ConvolutionKernelWidth;
-            }
-        }
+        public int OutputWidth { get; private set; }
         /// <summary>
         /// 输出高度
         /// </summary>
-        public int OutputHeight
-        {
-            get
-            {
-                return CnnKernelList[0].ConvolutionKernelHeight;
-            }
-        }
+        public int OutputHeight { get; private set; }
+        /// <summary>
+        /// 与上一层的链接方式
+        /// </summary>
+        public bool[,] LayerLinks { get; private set; }
         /// <summary>
         /// 创建卷积层
         /// </summary>
@@ -52,14 +40,14 @@ namespace CnnDemo.CNN
         /// <param name="offsetWidth"></param>
         /// <param name="offsetHeight"></param>
         /// <param name="activationFunctionType"></param>
-        public void CreateCnnKernel(int convolutionKernelCount, int inputWidth, int inputHeight,
+        public CnnConvolutionLayer(int NeuronCount, int inputWidth, int inputHeight,
             int receptiveFieldWidth, int receptiveFieldHeight, int offsetWidth, int offsetHeight,
              int receptiveFieldOffsetWidth, int receptiveFieldOffsetHeight,
             CnnNeuron.ActivationFunctionTypes activationFunctionType, int LastLayerCount, bool standardization, bool[,] layerLinks)
+            : base(CnnLayerTypeEnum.Convolution, NeuronCount)
         {
-            this.ConvolutionKernelCount = convolutionKernelCount;
             CnnKernelList = new List<CnnConvolutionNeuron>();
-            for (int i = 0; i < ConvolutionKernelCount; i++)
+            for (int i = 0; i < NeuronCount; i++)
             {
                 int inputCount = 0;//单个卷积神经元输入数量
                 for (int j = 0; j < LastLayerCount; j++)
@@ -75,8 +63,11 @@ namespace CnnDemo.CNN
                 CnnKernelList.Add(new CnnConvolutionNeuron(inputWidth, inputHeight,
                     receptiveFieldWidth, receptiveFieldHeight,
                     offsetWidth, offsetHeight, receptiveFieldOffsetWidth, receptiveFieldOffsetHeight,
-                    activationFunctionType, inputCount, ConvolutionKernelCount, standardization));
+                    activationFunctionType, inputCount, NeuronCount, standardization));
             }
+            this.OutputWidth = CnnKernelList[0].ConvolutionKernelWidth;
+            this.OutputHeight = CnnKernelList[0].ConvolutionKernelHeight;
+            this.LayerLinks = layerLinks;
         }
         /// <summary>
         /// 前向传播,计算结果
@@ -97,12 +88,12 @@ namespace CnnDemo.CNN
             //}
 
             //保证顺序
-            for (int i = 0; i < ConvolutionKernelCount; i++)
+            for (int i = 0; i < NeuronCount; i++)
             {
                 result.Add(null);
             }
             //多线程
-            System.Threading.Tasks.Parallel.For(0, ConvolutionKernelCount, i =>
+            System.Threading.Tasks.Parallel.For(0, NeuronCount, i =>
             {
                 try
                 {
@@ -141,12 +132,12 @@ namespace CnnDemo.CNN
             //}
 
             //保证顺序
-            for (int i = 0; i < ConvolutionKernelCount; i++)
+            for (int i = 0; i < NeuronCount; i++)
             {
                 result.Add(null);
             }
             //多线程
-            System.Threading.Tasks.Parallel.For(0, ConvolutionKernelCount, i =>
+            System.Threading.Tasks.Parallel.For(0, NeuronCount, i =>
             {
                 try
                 {
@@ -154,7 +145,7 @@ namespace CnnDemo.CNN
                     System.Threading.Monitor.Enter(lockObj);
                     result[i] = tmpResult;
                     System.Threading.Monitor.Exit(lockObj);
-                    LogHelper.Info(CnnKernelList[i].ToString());
+                    //LogHelper.Info(CnnKernelList[i].ToString());
                 }
                 catch (Exception ex)
                 {
