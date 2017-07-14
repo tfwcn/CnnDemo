@@ -454,6 +454,23 @@ namespace CnnDemo.CNN
             }
             return result;
         }
+        /// <summary>
+        /// 矩阵相加
+        /// </summary>
+        /// <returns></returns>
+        public static double[] MatrixAdd(double[] value1, double[] value2)
+        {
+            int valueLength1 = value1.GetLength(0);
+            int valueLength2 = value2.GetLength(0);
+            if (valueLength1 != valueLength2)
+                throw new Exception("第一矩阵行列数要与第二矩阵行列数相等");
+            double[] result = new double[valueLength1];
+            for (int i = 0; i < valueLength1; i++)
+            {
+                result[i] += value1[i] + value2[i];
+            }
+            return result;
+        }
         #endregion
         /// <summary>
         /// 保存网络

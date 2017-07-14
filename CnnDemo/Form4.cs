@@ -31,16 +31,20 @@ namespace CnnDemo
             cnn = new Cnn();
             #region LeNet-5 结构
             //*
-            cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false);
-            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPoolingNeuron.PoolingTypes.MeanPooling, false, false);
-            cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
-                0, 0, CnnPoolingNeuron.PoolingTypes.None, false, false);
-            cnn.AddCnnFullLayer(84, CnnNeuron.ActivationFunctionTypes.Tanh, false);
-            cnn.AddCnnFullLayer(10, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            //cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+            //    2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false);
+            //cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+            //    2, 2, CnnPoolingNeuron.PoolingTypes.MeanPooling, false, false);
+            //cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+            //    0, 0, CnnPoolingNeuron.PoolingTypes.None, false, false);
+            //cnn.AddCnnFullLayer(84, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            //cnn.AddCnnFullLayer(10, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             //*/
             #endregion
+            cnn.AddCnnConvolutionLayer(20, 28, 28, 5, 5, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
+                2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false);
+            cnn.AddCnnFullLayer(100, CnnNeuron.ActivationFunctionTypes.Tanh, false);
+            cnn.AddCnnFullLayer(10, CnnNeuron.ActivationFunctionTypes.Tanh, false);
             /*
             cnn.AddCnnConvolutionLayer(6, 32, 32, 3, 3, 1, 1, 1, 1, CnnNeuron.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPoolingNeuron.PoolingTypes.MaxPooling, false);
@@ -117,7 +121,7 @@ namespace CnnDemo
                                             }
                                         }
                                         int left = CnnHelper.RandomObj.Next(4), top = CnnHelper.RandomObj.Next(4);
-                                        input = CnnHelper.MatrixExpand(input, left, top, 4 - left, 4 - top, 0);
+                                        //input = CnnHelper.MatrixExpand(input, left, top, 4 - left, 4 - top, 0);
                                         double[] forwardOutputFull = null;
                                         cnn.Train(input, labels, learningRate, ref forwardOutputFull);
                                         CnnHelper.ShowChange(forwardOutputFull, labels, 60000);

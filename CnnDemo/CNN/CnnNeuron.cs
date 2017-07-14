@@ -194,5 +194,38 @@ namespace CnnDemo.CNN
                 throw new Exception("NaN!");
             return result;
         }
+        /// <summary>
+        /// 激活函数（Softmax）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        //private double ActivationFunctionSoftmax(double value, double[] values)
+        //{
+        //    double result = 0;
+        //    //调用激活函数计算结果
+        //    double sumVlaues = 0;
+        //    for (int i = 0; i < values.GetLength(0); i++)
+        //        sumVlaues += Math.Pow(Math.E, values[i]);
+        //    result = Math.Pow(Math.E, value) / sumVlaues;
+        //    if (double.IsNaN(result) || Double.IsInfinity(result))
+        //        throw new Exception("NaN!");
+        //    return result;
+        //}
+        /// <summary>
+        /// 激活函数导数（Softmax）
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        //private double ActivationFunctionSoftmaxDerivative(double value)
+        //{
+        //    double result = 0;
+        //    //激活函数导数计算结果
+        //    //result = ActivationFunctionSigmoid(value);
+        //    result = value;
+        //    result = result * (1 - result);
+        //    if (double.IsNaN(result) || Double.IsInfinity(result))
+        //        throw new Exception("NaN!");
+        //    return result;
+        //}
     }
 }

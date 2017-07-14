@@ -5,3 +5,8 @@
 /TestResults
 /UnitTest/bin
 /UnitTest/obj
+/TensorFlowSharpDemo/bin
+/TensorFlowSharpDemo/obj
+/TensorFlowDemo/MNIST_data
+/.vs
+/packages

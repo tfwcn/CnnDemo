@@ -1,8 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.26430.15
-MinimumVisualStudioVersion = 10.0.40219.1
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CnnDemo", "CnnDemo\CnnDemo.csproj", "{D171C73F-1AF9-41AA-8C93-36C5C34FF3CE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnitTest", "UnitTest\UnitTest.csproj", "{2B87393F-FD8D-4F70-8B99-3A5EA1451DCA}"
@@ -14,11 +12,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		TraceAndTestImpact.testsettings = TraceAndTestImpact.testsettings
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TensorFlowSharpDemo", "TensorFlowSharpDemo\TensorFlowSharpDemo.csproj", "{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}"
-EndProject
-Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TensorFlowDemo", "TensorFlowDemo\TensorFlowDemo.pyproj", "{3531C8D3-E20C-4C9D-9FB5-7A5AD0192231}"
-EndProject
 Global
+	GlobalSection(TestCaseManagementSettings) = postSolution
+		CategoryFile = CnnDemo.vsmdi
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -54,35 +51,8 @@ Global
 		{2B87393F-FD8D-4F70-8B99-3A5EA1451DCA}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{2B87393F-FD8D-4F70-8B99-3A5EA1451DCA}.Release|Win32.ActiveCfg = Release|Any CPU
 		{2B87393F-FD8D-4F70-8B99-3A5EA1451DCA}.Release|x86.ActiveCfg = Release|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Debug|Win32.Build.0 = Debug|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Debug|x86.Build.0 = Debug|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Release|Win32.ActiveCfg = Release|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Release|Win32.Build.0 = Release|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Release|x86.ActiveCfg = Release|Any CPU
-		{8DEFF542-6A9F-4E2B-AFBD-F46F9AB43C6F}.Release|x86.Build.0 = Release|Any CPU
-		{3531C8D3-E20C-4C9D-9FB5-7A5AD0192231}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{3531C8D3-E20C-4C9D-9FB5-7A5AD0192231}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{3531C8D3-E20C-4C9D-9FB5-7A5AD0192231}.Debug|Win32.ActiveCfg = Debug|Any CPU
-		{3531C8D3-E20C-4C9D-9FB5-7A5AD0192231}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{3531C8D3-E20C-4C9D-9FB5-7A5AD0192231}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{3531C8D3-E20C-4C9D-9FB5-7A5AD0192231}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{3531C8D3-E20C-4C9D-9FB5-7A5AD0192231}.Release|Win32.ActiveCfg = Release|Any CPU
-		{3531C8D3-E20C-4C9D-9FB5-7A5AD0192231}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(TestCaseManagementSettings) = postSolution
-		CategoryFile = CnnDemo.vsmdi
 	EndGlobalSection
 EndGlobal
