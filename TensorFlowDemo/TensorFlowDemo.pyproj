@@ -11,6 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>TensorFlowDemo</Name>
     <RootNamespace>TensorFlowDemo</RootNamespace>
+    <InterpreterId>Global|PythonCore|3.5</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -21,9 +22,31 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="cifar10\cifar10.py" />
+    <Compile Include="cifar10\cifar10_eval.py" />
+    <Compile Include="cifar10\cifar10_input.py" />
+    <Compile Include="cifar10\cifar10_input_test.py" />
+    <Compile Include="cifar10\cifar10_multi_gpu_train.py" />
+    <Compile Include="cifar10\cifar10_train.py" />
+    <Compile Include="cifar10\__init__.py" />
+    <Compile Include="inception_resnet_v2.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="input_data.py" />
     <Compile Include="TensorFlowDemo1.py" />
     <Compile Include="TensorFlowDemo.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="cifar10\" />
+    <Folder Include="cifar10\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="cifar10\BUILD" />
+    <Content Include="cifar10\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.5" />
+    <InterpreterReference Include="Global|PythonCore|3.6" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
