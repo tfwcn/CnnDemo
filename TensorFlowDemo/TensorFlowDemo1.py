@@ -1,6 +1,6 @@
 import input_data
 import tensorflow as tf
-mnist = input_data.read_data_sets('MNIST_data', one_hot=True)#加载图片
+mnist = input_data.read_data_sets('data/MNIST_data', one_hot=True)#加载图片
 sess = tf.InteractiveSession()#启动Session，与底层通信
 x = tf.placeholder("float", shape=[None, 784])#定义变量，输入值
 y_ = tf.placeholder("float", shape=[None, 10])#定义变量，输出值

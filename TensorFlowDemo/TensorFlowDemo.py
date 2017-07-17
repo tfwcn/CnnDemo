@@ -23,7 +23,7 @@ def max_pool_2x2(x):
 
 def run(istrain):
     """训练"""
-    mnist = input_data.read_data_sets('MNIST_data', one_hot=True)#加载图片
+    mnist = input_data.read_data_sets('data/MNIST_data', one_hot=True)#加载图片
     x = tf.placeholder("float", shape=[None, 784])#定义变量，输入值
     y_ = tf.placeholder("float", shape=[None, 10])#定义变量，输出值
     #第一层
@@ -76,18 +76,18 @@ def run(istrain):
 
         # Create a saver.
         saver = tf.train.Saver(tf.all_variables())
-        checkpoint_path = os.path.join('/tmp/cifar10_train', 'model.ckpt')
+        checkpoint_path = os.path.join('data/cifar10_train', 'model.ckpt')
         saver.save(sess, checkpoint_path)
     else:
         saver = tf.train.Saver()
-        ckpt = tf.train.get_checkpoint_state('/tmp/cifar10_train')
+        ckpt = tf.train.get_checkpoint_state('data/cifar10_train')
         if ckpt and ckpt.model_checkpoint_path:
           # Restores from checkpoint
           saver.restore(sess, ckpt.model_checkpoint_path)
         else:
           print('No checkpoint file found')
           return
-        print("test accuracy %g" % sess.run(feed_dict={
+        print("test accuracy %g" % sess.run(accuracy,feed_dict={
             x: mnist.test.images, y_: mnist.test.labels, keep_prob: 1.0}))#识别
     return
         

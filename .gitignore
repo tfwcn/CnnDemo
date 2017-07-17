@@ -11,3 +11,4 @@
 /.vs
 /packages
 /TensorFlowDemo/cifar10
+/TensorFlowDemo/data
