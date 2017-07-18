@@ -68,7 +68,7 @@ def extract_labels(filename, one_hot=False):
     num_items = _read32(bytestream)
     buf = bytestream.read(num_items)
     labels = numpy.frombuffer(buf, dtype=numpy.uint8)
-    if one_hot:
+    if one_hot:#转换成一维数组
       return dense_to_one_hot(labels)
     return labels
 class DataSet(object):

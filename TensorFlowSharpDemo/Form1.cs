@@ -23,6 +23,7 @@ namespace TensorFlowSharpDemo
         {
             try
             {
+                /*
                 using (var session = new TFSession())
                 {
                     graph = session.Graph;
@@ -43,18 +44,22 @@ namespace TensorFlowSharpDemo
                     //Console.WriteLine("a*b={0}", multiplyResultValue);
                     label1.Text = String.Format("a*b={0}", multiplyResultValue);
                 }
+                //*/
                 using (var session = new TFSession())
                 {
                     graph = session.Graph;
                     var x = graph.Placeholder(TFDataType.Float, new TFShape(-1, 784));//定义变量，输入值
                     var y_ = graph.Placeholder(TFDataType.Float, new TFShape(-1, 10));//定义变量，输出值
-                    var W = graph.Variable(graph.Const(new TFTensor(new float[784, 10])));//权重
+                    var W = graph.Variable(graph.ParameterizedTruncatedNormal(
+                        graph.Const(new TFTensor(new float[784, 10])),
+                        graph.Const(0, TFDataType.Float), graph.Const(0.1, TFDataType.Float), graph.Const(-1, TFDataType.Float), graph.Const(1, TFDataType.Float)));//权重
                     var b = graph.Variable(graph.Const(new TFTensor(new float[10])));//偏置
-                                                                                     //session.GetRunner().Run(graph.GetGlobalVariablesInitializer());//初始化全部变量
+
                     var y = graph.Softmax(graph.Add(graph.MatMul(x, W), b));//前向传播公式
                     var cross_entropy = graph.Mul(graph.ReduceSum(graph.Mul(y_, graph.Log(y))), graph.Const(-1));//损失函数，交叉熵
-                    //var train_step = graph.ResourceApplyGradientDescent(.GradientDescentOptimizer(0.01).minimize(cross_entropy);//#训练步骤，梯度下降法，步长0.01，,最小偏差值为交叉熵
-
+                    //var train_step = graph.ResourceApplyGradientDescent(graph.Const(0.01),,);//#训练步骤，梯度下降法，步长0.01，,最小偏差值为交叉熵
+                    var r= session.GetRunner().Run(W);
+                    label1.Text = r.GetValue().ToString();
                 }
                 /*
 sess = tf.InteractiveSession()#启动Session，与底层通信

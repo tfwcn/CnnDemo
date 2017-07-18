@@ -77,7 +77,7 @@ IMAGE_SIZE = (12, 8)
 with detection_graph.as_default():
   with tf.Session(graph=detection_graph) as sess:
     for image_path in TEST_IMAGE_PATHS:
-      image = Image.open(image_path)
+      image = Image.open(image_path)#打开图片
       # the array based representation of the image will be used later in order to prepare the
       # result image with boxes and labels on it.稍后将使用图像的基于阵列的表示形式，以便在其上准备带有框和标签的结果图像。
       image_np = load_image_into_numpy_array(image)

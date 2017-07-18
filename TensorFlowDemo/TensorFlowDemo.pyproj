@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3531c8d3-e20c-4c9d-9fb5-7a5ad0192231</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>test.py</StartupFile>
+    <StartupFile>TensorFlowDemo.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,6 +22,13 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="cifar10\cifar10.py" />
+    <Compile Include="cifar10\cifar10_eval.py" />
+    <Compile Include="cifar10\cifar10_input.py" />
+    <Compile Include="cifar10\cifar10_input_test.py" />
+    <Compile Include="cifar10\cifar10_multi_gpu_train.py" />
+    <Compile Include="cifar10\cifar10_train.py" />
+    <Compile Include="cifar10\__init__.py" />
     <Compile Include="inception_resnet_v2.py">
       <SubType>Code</SubType>
     </Compile>
@@ -34,10 +41,15 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="cifar10\" />
+    <Folder Include="cifar10\" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.5" />
     <InterpreterReference Include="Global|PythonCore|3.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="cifar10\BUILD" />
+    <Content Include="cifar10\README.md" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
