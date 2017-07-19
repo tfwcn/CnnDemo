@@ -33,9 +33,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="input_data.py" />
+    <Compile Include="TensorFlowDemoOld.py" />
     <Compile Include="TensorFlowDemo1.py" />
     <Compile Include="TensorFlowDemo.py" />
-    <Compile Include="test.py">
+    <Compile Include="ObjectDetectionDemo.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
