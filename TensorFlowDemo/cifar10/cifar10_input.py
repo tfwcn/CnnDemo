@@ -77,23 +77,23 @@ def read_cifar10(filename_queue):
   # header or footer in the CIFAR-10 format, so we leave header_bytes
   # and footer_bytes at their default of 0.
   reader = tf.FixedLengthRecordReader(record_bytes=record_bytes)
-  result.key, value = reader.read(filename_queue)
+  result.key, value = reader.read(filename_queue)#读取所有文件，运行时才会读文件
 
   # Convert from a string to a vector of uint8 that is record_bytes long.
-  record_bytes = tf.decode_raw(value, tf.uint8)
+  record_bytes = tf.decode_raw(value, tf.uint8)#字符串转字节数组
 
   # The first bytes represent the label, which we convert from uint8->int32.
   result.label = tf.cast(
-      tf.strided_slice(record_bytes, [0], [label_bytes]), tf.int32)
+      tf.strided_slice(record_bytes, [0], [label_bytes]), tf.int32)#截取标签部分字节，转int32类型
 
   # The remaining bytes after the label represent the image, which we reshape
   # from [depth * height * width] to [depth, height, width].
   depth_major = tf.reshape(
       tf.strided_slice(record_bytes, [label_bytes],
-                       [label_bytes + image_bytes]),
+                       [label_bytes + image_bytes]),#截取图片部分字节，转3维数组
       [result.depth, result.height, result.width])
   # Convert from [depth, height, width] to [height, width, depth].
-  result.uint8image = tf.transpose(depth_major, [1, 2, 0])
+  result.uint8image = tf.transpose(depth_major, [1, 2, 0])#变换3维数组
 
   return result
 
@@ -116,8 +116,8 @@ def _generate_image_and_label_batch(image, label, min_queue_examples,
   """
   # Create a queue that shuffles the examples, and then
   # read 'batch_size' images + labels from the example queue.
-  num_preprocess_threads = 16
-  if shuffle:
+  num_preprocess_threads = 16#读取线程数
+  if shuffle:#随机
     images, label_batch = tf.train.shuffle_batch(
         [image, label],
         batch_size=batch_size,
@@ -139,7 +139,7 @@ def _generate_image_and_label_batch(image, label, min_queue_examples,
 
 def distorted_inputs(data_dir, batch_size):
   """Construct distorted input for CIFAR training using the Reader ops.
-
+  扭曲图片
   Args:
     data_dir: Path to the CIFAR-10 data directory.
     batch_size: Number of images per batch.
@@ -149,7 +149,7 @@ def distorted_inputs(data_dir, batch_size):
     labels: Labels. 1D tensor of [batch_size] size.
   """
   filenames = [os.path.join(data_dir, 'data_batch_%d.bin' % i)
-               for i in xrange(1, 6)]
+               for i in xrange(1, 6)]#1-6个文件路径
   for f in filenames:
     if not tf.gfile.Exists(f):
       raise ValueError('Failed to find file: ' + f)
@@ -168,28 +168,28 @@ def distorted_inputs(data_dir, batch_size):
   # distortions applied to the image.
 
   # Randomly crop a [height, width] section of the image.
-  distorted_image = tf.random_crop(reshaped_image, [height, width, 3])
+  distorted_image = tf.random_crop(reshaped_image, [height, width, 3])#随机截取图片28*28
 
   # Randomly flip the image horizontally.
-  distorted_image = tf.image.random_flip_left_right(distorted_image)
+  distorted_image = tf.image.random_flip_left_right(distorted_image)#随机左右翻转图片
 
   # Because these operations are not commutative, consider randomizing
   # the order their operation.
   # NOTE: since per_image_standardization zeros the mean and makes
   # the stddev unit, this likely has no effect see tensorflow#1458.
   distorted_image = tf.image.random_brightness(distorted_image,
-                                               max_delta=63)
+                                               max_delta=63)#随机亮度
   distorted_image = tf.image.random_contrast(distorted_image,
-                                             lower=0.2, upper=1.8)
+                                             lower=0.2, upper=1.8)#随机对比度
 
   # Subtract off the mean and divide by the variance of the pixels.
-  float_image = tf.image.per_image_standardization(distorted_image)
+  float_image = tf.image.per_image_standardization(distorted_image)#归一化
 
   # Set the shapes of tensors.
-  float_image.set_shape([height, width, 3])
+  float_image.set_shape([height, width, 3])#设置维度
   read_input.label.set_shape([1])
 
-  # Ensure that the random shuffling has good mixing properties.
+  # Ensure that the random shuffling has good mixing properties.#填充图片数量，用于随机读取
   min_fraction_of_examples_in_queue = 0.4
   min_queue_examples = int(NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN *
                            min_fraction_of_examples_in_queue)
@@ -204,7 +204,7 @@ def distorted_inputs(data_dir, batch_size):
 
 def inputs(eval_data, data_dir, batch_size):
   """Construct input for CIFAR evaluation using the Reader ops.
-
+  不扭曲图片
   Args:
     eval_data: bool, indicating if one should use the train or eval data set.
     data_dir: Path to the CIFAR-10 data directory.

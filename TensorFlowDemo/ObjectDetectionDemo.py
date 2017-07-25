@@ -22,8 +22,8 @@ from utils import label_map_util
 from utils import visualization_utils as vis_util
 
 # What model to download.
-MODEL_NAME = 'ssd_inception_v2_coco_11_06_2017'
-#MODEL_NAME = 'data/faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017'
+#MODEL_NAME = 'ssd_inception_v2_coco_11_06_2017'
+MODEL_NAME = 'faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017'
 MODEL_FILE = "data/" + MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 

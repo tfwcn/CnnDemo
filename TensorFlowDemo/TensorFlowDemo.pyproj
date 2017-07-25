@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>3531c8d3-e20c-4c9d-9fb5-7a5ad0192231</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>TensorFlowDemo.py</StartupFile>
+    <StartupFile>SexClassifyDemo.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -12,6 +12,7 @@
     <Name>TensorFlowDemo</Name>
     <RootNamespace>TensorFlowDemo</RootNamespace>
     <InterpreterId>Global|PythonCore|3.5</InterpreterId>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,6 +34,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="input_data.py" />
+    <Compile Include="SexClassifyDemo.py" />
     <Compile Include="TensorFlowDemoOld.py" />
     <Compile Include="TensorFlowDemo1.py" />
     <Compile Include="TensorFlowDemo.py" />
