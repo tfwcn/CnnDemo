@@ -11,3 +11,24 @@
 1. 《Notes on Convolutional Neural Networks》
     * 原文：http://cogprints.org/5869/1/cnn_tutorial.pdf
     * 中文：http://www.cnblogs.com/shouhuxianjian/p/4529202.html
+
+### 环境依赖：
+1. python 3.5
+	``` bash
+	# For CPU
+	pip install tensorflow
+	# For GPU
+	pip install tensorflow-gpu
+	```
+	``` bash
+	pip install pillow
+	pip install lxml
+	pip install jupyter
+	pip install matplotlib
+	```
+
+	Python35\Lib\site-packages 添加库引用文件 tensorflow.pth，内容：
+	``` python
+	[git源码]\tensorflow
+	[git源码]\tensorflowModels
+	```
