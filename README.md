@@ -32,3 +32,15 @@
 	[git源码]\tensorflow
 	[git源码]\tensorflowModels
 	```
+
+2. protoc
+	下载地址：https://github.com/google/protobuf/releases
+	protoc.exe 复制到 C:\Windows
+	``` bash
+	# From tensorflow/models/
+	protoc object_detection/protos/*.proto --python_out=.
+	```
+	
+3. GPU环境
+	* CUDA 8
+	* CUDNN 6 for CUDA 8

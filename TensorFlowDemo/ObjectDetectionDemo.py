@@ -24,7 +24,7 @@ from utils import visualization_utils as vis_util
 # What model to download.
 #MODEL_NAME = 'ssd_inception_v2_coco_11_06_2017'
 MODEL_NAME = 'faster_rcnn_inception_resnet_v2_atrous_coco_11_06_2017'
-MODEL_FILE = "data/" + MODEL_NAME + '.tar.gz'
+MODEL_FILE = MODEL_NAME + '.tar.gz'
 DOWNLOAD_BASE = 'http://download.tensorflow.org/models/object_detection/'
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
@@ -37,12 +37,13 @@ NUM_CLASSES = 90
 
 #Download Model
 #opener = urllib.request.URLopener()
-#opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, MODEL_FILE)
-#tar_file = tarfile.open(MODEL_FILE)
+#opener.retrieve(DOWNLOAD_BASE + MODEL_FILE, "data/" + MODEL_FILE)
+#tar_file = tarfile.open("data/" + MODEL_FILE)
 #for file in tar_file.getmembers():
 #    file_name = os.path.basename(file.name)
 #    if 'frozen_inference_graph.pb' in file_name:
-#        tar_file.extract(file, os.getcwd())
+#        #tar_file.extract(file, os.getcwd())
+#        tar_file.extract(file, "data/")
 
 #Load a (frozen) Tensorflow model into memory. 读取预先训练的模型
 detection_graph = tf.Graph()
@@ -70,7 +71,7 @@ def load_image_into_numpy_array(image):
 # If you want to test the code with your images, just add path to the images to the TEST_IMAGE_PATHS.
 # 文件名列表
 PATH_TO_TEST_IMAGES_DIR = 'data/test_images'
-TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 6) ]
+TEST_IMAGE_PATHS = [ os.path.join(PATH_TO_TEST_IMAGES_DIR, 'image{}.jpg'.format(i)) for i in range(1, 2) ]
 
 # Size, in inches, of the output images.
 IMAGE_SIZE = (12, 8)

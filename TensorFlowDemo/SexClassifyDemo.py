@@ -1,13 +1,16 @@
-import input_data
+#import input_data
 import tensorflow as tf
 import os
 import scipy.io as sio
+import scipy.misc as misc
+import numpy
+import math
 
 slim = tf.contrib.slim
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('data_dir', 'D:/Downloads/imdb_crop/imdb_crop',
+tf.app.flags.DEFINE_string('data_dir', 'e:/imdb_crop',
                            """Path to the MNIST data directory.""")
 
 #mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)#加载图片
@@ -31,36 +34,69 @@ def max_pool_2x2(x,name):
     return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
                         strides=[1, 2, 2, 1], padding='SAME',name=name)
 
+def dense_to_one_hot(labels_dense, num_classes=2):
+  """Convert class labels from scalars to one-hot vectors."""
+  num_labels = len(labels_dense) #数组长度
+  index_offset = numpy.arange(num_labels) * num_classes #根据数组生成序号
+  labels_one_hot = numpy.zeros([num_labels, num_classes]) #初始化二维数组
+  for i in range(num_labels):#赋值
+    if math.isnan(labels_dense[i]):
+        continue
+    labels_one_hot.flat[int(index_offset[i] + labels_dense[i])] = 1 #一维化赋值
+  return labels_one_hot.tolist()
+
 def readFiles():
     #读取地址和性别
     dataset=sio.loadmat(FLAGS.data_dir+"/imdb.mat")
-    filepath=dataset["imdb"]
-    gender=dataset["imdb"]
+    filepath=dataset["imdb"][0,0]["full_path"][0]
+    gender=dataset["imdb"][0,0]["gender"][0]
     #整理
-    TEST_IMAGE_PATHS = [ os.path.join(FLAGS.data_dir, '{:0>2}'.format(i)) for i in range(0, 99) ]
-    filename_queue = tf.train.string_input_producer(TEST_IMAGE_PATHS,shuffle=True)
-    
-    reader = tf.WholeFileReader()
-    key, value = reader.read(filename_queue)
-    label = tf.substr(key,0,1)
-    image = tf.image.decode_jpeg(tf.image.resize_images(value,(160,160)), channels=3)
+    TEST_IMAGE_PATHS = [ os.path.join(FLAGS.data_dir, filepath[i][0]) for i in range(0, len(gender)) ]
+    TEST_GENDER = [ gender[i] for i in range(0, len(gender)) ]
+    TEST_GENDER = dense_to_one_hot(TEST_GENDER,2) #转化成1维数组
+    # slice_input_producer会产生一个文件名队列
+    #filename_queue = tf.train.string_input_producer(TEST_IMAGE_PATHS) #文件列表
+    filename_queue, label_queue = tf.train.slice_input_producer([TEST_IMAGE_PATHS,TEST_GENDER],shuffle=True,num_epochs=3) #文件列表
+    #读取文件
+    #reader = tf.WholeFileReader()
+    #key, value = reader.read(filename_queue)
+    value = tf.read_file(filename_queue)
+    label = label_queue
+    image = value
+    image = tf.image.decode_jpeg(image, channels=3)#读取图片，含彩色与灰度。彩色一定要decode_jpeg方法
+    #image = tf.image.grayscale_to_rgb(image)#转彩色
+    image = tf.image.resize_images(image,[160,160]) #缩放图片
+    #随机
+    num_preprocess_threads = 4 #读取线程数
+    batch_size = 50 #每次训练数据量
+    min_queue_examples = 10000 #最小数据量
+    image, label = tf.train.shuffle_batch(
+        [image, label],
+        batch_size=batch_size,
+        num_threads=num_preprocess_threads,
+        capacity=min_queue_examples + 3 * batch_size,
+        min_after_dequeue=min_queue_examples)
+    print(label._shape)
+    print(image._shape)
     return label,image
 
-def init():
+def init(label,image):
     """初始化神经网络"""
-    tf.reset_default_graph()#重置图
-    x = tf.placeholder("float", shape=[None,160,160,3],name="x")#定义变量，输入值
-    y_ = tf.placeholder("float", shape=[None, 2],name="y_")#定义变量，输出值
-    #第一层
+    #tf.reset_default_graph()#重置图
+    #x = tf.placeholder("float", shape=[None,160,160,3],name="x")#定义变量，输入值
+    #y_ = tf.placeholder("float", shape=[None, 2],name="y_")#定义变量，输出值
+    x = image
+    y_ = label
+    #第一层160*160*36
     #x_image = tf.reshape(x,
     #[-1,160,160,3],name="x_image")#转成四维向量，大小160*160，颜色通道3，对应输入数量
 
-    h_conv1 = slim.conv2d(x, 32, [5, 5], scope='Conv2d_1_5x5',
+    h_conv1 = slim.conv2d(x, 10, [5, 5], scope='Conv2d_1_5x5',
                             weights_initializer=tf.truncated_normal_initializer(0.0, 0.1))
     h_pool1 = slim.max_pool2d(h_conv1, [2, 2], scope='MaxPool_1_2x2', stride=2)
 
     #第二层80*80*64
-    h_conv2 = slim.conv2d(h_pool1, 64, [5, 5], scope='Conv2d_2_5x5',
+    h_conv2 = slim.conv2d(h_pool1, 20, [5, 5], scope='Conv2d_2_5x5',
                             weights_initializer=tf.truncated_normal_initializer(0.0, 0.1))
     h_pool2 = slim.max_pool2d(h_conv2, [2, 2], scope='MaxPool_2_2x2', stride=2)
     
@@ -68,26 +104,30 @@ def init():
     end_point = 'Mixed_4a'
     with tf.variable_scope(end_point):
         with tf.variable_scope('Branch_0'):
-            branch_0 = slim.conv2d(h_pool2, 128, [1, 1],
+            #128
+            branch_0 = slim.conv2d(h_pool2, 30, [1, 1],
                 weights_initializer=tf.truncated_normal_initializer(0.0, 0.09),
                 scope='Conv2d_0a_1x1')
-            branch_0 = slim.conv2d(branch_0, 160, [3, 3], stride=2,
+            #160
+            branch_0 = slim.conv2d(branch_0, 50, [3, 3], stride=2,
                                     scope='Conv2d_1a_3x3')
         with tf.variable_scope('Branch_1'):
-            branch_1 = slim.conv2d(h_pool2, 64, [1, 1],
+            #64
+            branch_1 = slim.conv2d(h_pool2, 25, [1, 1],
                 weights_initializer=tf.truncated_normal_initializer(0.0, 0.09),
                 scope='Conv2d_0a_1x1')
-            branch_1 = slim.conv2d(branch_1, 96, [3, 3], scope='Conv2d_0b_3x3')
-            branch_1 = slim.conv2d(branch_1, 96, [3, 3], stride=2, scope='Conv2d_1a_3x3')
+            #96
+            branch_1 = slim.conv2d(branch_1, 30, [3, 3], scope='Conv2d_0b_3x3')
+            branch_1 = slim.conv2d(branch_1, 30, [3, 3], stride=2, scope='Conv2d_1a_3x3')
         with tf.variable_scope('Branch_2'):
             branch_2 = slim.max_pool2d(h_pool2, [2, 2], stride=2, scope='MaxPool_1a_3x3')
         mixed_4a = tf.concat(axis=3, values=[branch_0, branch_1, branch_2])
 
-    #全连接层20*20*512
-    W_fc1 = weight_variable([20 * 20 * 320, 512],name="W_fc1")#定义权重，输出数量1024
+    #全连接层20*20*320
+    W_fc1 = weight_variable([20 * 20 * 100, 512],name="W_fc1")#定义权重，输出数量1024
     b_fc1 = bias_variable([512],name="b_fc1")#定义偏置，输出数量1024
 
-    h_pool2_flat = tf.reshape(mixed_4a, [-1, 20 * 20 * 320],name="h_pool2_flat")#池化结果7*7*64转一维数组
+    h_pool2_flat = tf.reshape(mixed_4a, [-1, 20 * 20 * 100],name="h_pool2_flat")#池化结果7*7*64转一维数组
     h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1,name="h_fc1")#用relu激活函数
 
     #dropout
@@ -101,6 +141,7 @@ def init():
     y_conv = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2,name="y_conv")#用softmax激活函数
 
     cross_entropy = tf.multiply(tf.reduce_sum(y_ * tf.log(y_conv)),-1,name="cross_entropy")#损失函数，交叉熵
+    #train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy,name="train_step")#ADAM优化器来做梯度最速下降，自动调整里面的变量
     train_step = tf.train.AdamOptimizer(1e-4).minimize(cross_entropy,name="train_step")#ADAM优化器来做梯度最速下降，自动调整里面的变量
     correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1),name="correct_prediction")#比较结果
     accuracy = tf.reduce_mean(tf.cast(correct_prediction, "float"),name="accuracy")#求平均
@@ -108,13 +149,14 @@ def init():
 
 def run(istrain):
     """训练"""
-    init()#初始化
+    tf.reset_default_graph()#重置图
     label,image = readFiles()#读取文件
+    init(label,image)#初始化
     sess = tf.InteractiveSession()#启动Session，与底层通信
     graph = sess.graph
     #加载变量和操作
-    x = graph.get_tensor_by_name("x:0")#定义变量，输入值
-    y_ = graph.get_tensor_by_name("y_:0")#定义变量，输出值
+    #x = graph.get_tensor_by_name("x:0")#定义变量，输入值
+    #y_ = graph.get_tensor_by_name("y_:0")#定义变量，输出值
     keep_prob = graph.get_tensor_by_name("keep_prob:0")#dropout概率
     cross_entropy = graph.get_tensor_by_name("cross_entropy:0")#损失函数，交叉熵
     train_step = graph.get_operation_by_name("train_step")#ADAM优化器来做梯度最速下降，自动调整里面的变量
@@ -123,33 +165,36 @@ def run(istrain):
     if istrain:
         #sess.run(tf.initialize_all_variables())#初始化变量
         tf.initialize_all_variables().run()#初始化变量
+        tf.initialize_local_variables().run()#初始化变量
         #加载已训练数据
-        #ckpt =
-        #tf.train.get_checkpoint_state(FLAGS.data_dir)
-        #if ckpt and ckpt.model_checkpoint_path:
-        #    # Restores from checkpoint
-        #    saver.restore(sess, ckpt.model_checkpoint_path)
+        ckpt = tf.train.get_checkpoint_state(FLAGS.data_dir)
+        if ckpt and ckpt.model_checkpoint_path:
+            # Restores from checkpoint
+            saver.restore(sess, ckpt.model_checkpoint_path)
+        #记录训练数据
         #tf.summary.histogram(cross_entropy.name + '/activations',
                                                    #cross_entropy)
-        tf.summary.scalar(cross_entropy.name + '/sparsity',cross_entropy)
-        merged_summary_op = tf.summary.merge_all()
-        summary_writer = tf.summary.FileWriter(FLAGS.data_dir, graph)
-        imgIndex = 0
-        for i in range(10000):
-            batch = [label[imgIndex:imgIndex + 50],image[imgIndex:imgIndex + 50]]
+        #tf.summary.scalar(cross_entropy.name + '/sparsity',cross_entropy)
+        #merged_summary_op = tf.summary.merge_all()
+        #summary_writer = tf.summary.FileWriter(FLAGS.data_dir, graph)
+        # 使用start_queue_runners之后，才会开始填充队列
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(sess=sess,coord=coord)
+        #训练
+        for i in range(100000):
+            #batch = photo,label_value = sess.run([image,label])
             if i % 100 == 0:
-                train_accuracy = accuracy.eval(feed_dict={
-                    x: batch[0], y_: batch[1], keep_prob: 1.0})#识别
+                train_accuracy = accuracy.eval(feed_dict={keep_prob: 1.0})#识别
                 print("step %d, training accuracy %g" % (i, train_accuracy))
-            summary_str = sess.run(merged_summary_op,feed_dict={
-                x: batch[0], y_: batch[1], keep_prob: 1.0})
-            summary_writer.add_summary(summary_str, i)
-            train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})#训练
-            if imgIndex + 50 >= len(label):
-                imgIndex = 0
-            else:
-                imgIndex+=1
-
+                checkpoint_path = os.path.join(FLAGS.data_dir, 'model.ckpt')
+                saver.save(sess, checkpoint_path)
+            #summary_str = sess.run(merged_summary_op,feed_dict={keep_prob: 1.0})
+            #summary_writer.add_summary(summary_str, i)
+            train_step.run(feed_dict={keep_prob: 1})#训练
+            print(i)
+        #停止填充队列
+        coord.request_stop()
+        coord.join(threads)
         # Create a saver.
         #saver = tf.train.Saver(tf.all_variables())
         checkpoint_path = os.path.join(FLAGS.data_dir, 'model.ckpt')

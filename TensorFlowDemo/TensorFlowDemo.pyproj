@@ -23,6 +23,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="2TFRecords\imdb_wifi2TFRecords.py" />
     <Compile Include="cifar10\cifar10.py" />
     <Compile Include="cifar10\cifar10_eval.py" />
     <Compile Include="cifar10\cifar10_input.py" />
@@ -34,6 +35,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="input_data.py" />
+    <Compile Include="SexClassifyDemo2.py" />
     <Compile Include="SexClassifyDemo.py" />
     <Compile Include="TensorFlowDemoOld.py" />
     <Compile Include="TensorFlowDemo1.py" />
@@ -45,6 +47,7 @@
   <ItemGroup>
     <Folder Include="cifar10\" />
     <Folder Include="cifar10\" />
+    <Folder Include="2TFRecords\" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.5" />
