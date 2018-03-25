@@ -13,6 +13,10 @@
     <RootNamespace>TensorFlowDemo</RootNamespace>
     <InterpreterId>Global|PythonCore|3.5</InterpreterId>
     <IsWindowsApplication>False</IsWindowsApplication>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <CommandLineArguments>
+    </CommandLineArguments>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,6 +39,21 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="input_data.py" />
+    <Compile Include="mysite\manage.py" />
+    <Compile Include="mysite\mysite\settings.py" />
+    <Compile Include="mysite\mysite\urls.py" />
+    <Compile Include="mysite\mysite\wsgi.py" />
+    <Compile Include="mysite\mysite\__init__.py" />
+    <Compile Include="mysite\polls\admin.py" />
+    <Compile Include="mysite\polls\apps.py" />
+    <Compile Include="mysite\polls\migrations\__init__.py" />
+    <Compile Include="mysite\polls\models.py" />
+    <Compile Include="mysite\polls\tests.py" />
+    <Compile Include="mysite\polls\urls.py" />
+    <Compile Include="mysite\polls\views.py" />
+    <Compile Include="mysite\polls\__init__.py" />
+    <Compile Include="mysite\__init__.py" />
+    <Compile Include="TestDemo.py" />
     <Compile Include="SexClassifyDemo2.py" />
     <Compile Include="SexClassifyDemo.py" />
     <Compile Include="TensorFlowDemoOld.py" />
@@ -43,19 +62,34 @@
     <Compile Include="ObjectDetectionDemo.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="cifar10\" />
     <Folder Include="cifar10\" />
     <Folder Include="2TFRecords\" />
+    <Folder Include="mysite\" />
+    <Folder Include="mysite\mysite\" />
+    <Folder Include="mysite\mysite\__pycache__\" />
+    <Folder Include="mysite\polls\" />
+    <Folder Include="mysite\polls\migrations\" />
+    <Folder Include="mysite\polls\__pycache__\" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.5" />
-    <InterpreterReference Include="Global|PythonCore|3.6" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="cifar10\BUILD" />
     <Content Include="cifar10\README.md" />
+    <Content Include="mysite\db.sqlite3" />
+    <Content Include="mysite\mysite\__pycache__\settings.cpython-35.pyc" />
+    <Content Include="mysite\mysite\__pycache__\urls.cpython-35.pyc" />
+    <Content Include="mysite\mysite\__pycache__\wsgi.cpython-35.pyc" />
+    <Content Include="mysite\mysite\__pycache__\__init__.cpython-35.pyc" />
+    <Content Include="mysite\polls\__pycache__\urls.cpython-35.pyc" />
+    <Content Include="mysite\polls\__pycache__\views.cpython-35.pyc" />
+    <Content Include="mysite\polls\__pycache__\__init__.cpython-35.pyc" />
+    <Content Include="run.bat" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
