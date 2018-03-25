@@ -10,7 +10,7 @@ slim = tf.contrib.slim
 
 FLAGS = tf.app.flags.FLAGS
 
-tf.app.flags.DEFINE_string('data_dir', 'e:/imdb_crop',
+tf.app.flags.DEFINE_string('data_dir', 'f:/imdb_crop',
                            """Path to the MNIST data directory.""")
 
 #mnist = input_data.read_data_sets(FLAGS.data_dir, one_hot=True)#加载图片
