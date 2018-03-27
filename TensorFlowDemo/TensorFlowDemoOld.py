@@ -39,14 +39,14 @@ def run(istrain):
     x_image = tf.reshape(x, [-1,28,28,1])#转成四维向量，大小28*28，颜色通道1，对应输入数量
 
     h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)#定义卷积
-    h_pool1 = max_pool_2x2(h_conv1)#定义池化
+    h_pool1 = max_pool_2x2(h_conv1)#定义池化 14*14*32
 
     #第二层
     W_conv2 = weight_variable([5, 5, 32, 64])
     b_conv2 = bias_variable([64])
 
     h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)#用relu激活函数
-    h_pool2 = max_pool_2x2(h_conv2)
+    h_pool2 = max_pool_2x2(h_conv2)#定义池化 7*7*64
 
     #全连接层
     W_fc1 = weight_variable([7 * 7 * 64, 1024])#定义权重，输出数量1024
