@@ -5,13 +5,11 @@ import os
 import sys
 sys.path.append('./models')
 from models.BaiduModel import BaiduModel
+from models.ModelHelper import ModelHelper
 
 if __name__ == "__main__":
-    char_list = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-                 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                 'u', 'v', 'w', 'x', 'y', 'z']
-    print(len(char_list))
+    char_list = "0123456789abcdefghijklmnopqrstuvwxyz"
+    modelHelper = ModelHelper()
     # 读取文件列表
     pathDir = os.listdir('./img')
     # 定义特征与标签
@@ -23,14 +21,20 @@ if __name__ == "__main__":
     data = pd.DataFrame({'文件路径': features, '标签': labels})
     # 随机排序
     data = data.reindex(np.random.permutation(data.index))
+
+    features = data['文件路径'].values
+    labels = data['标签'].values
+    # print(len(labels), len(char_list))
+    labels = modelHelper.hot_one(labels, char_list, 4)
+    # print(labels[0])
     # print(data['文件路径'][0:10])
     # print(data['标签'][0:10])
     # 取后500条记录昨测试集，shuffle=True随机文件列表
     train_features, train_labels = tf.train.slice_input_producer(
-        [data['文件路径'][0:-500].values, data['标签'][0:-500].values], shuffle=True)
+        [features[0:-500], labels[0:-500]], shuffle=True)
     train_features = tf.read_file(train_features)
     test_features, test_labels = tf.train.slice_input_producer(
-        [data['文件路径'][-500:].values, data['标签'][-500:].values], shuffle=True)
+        [features[-500:], labels[-500:]], shuffle=True)
     test_features = tf.read_file(test_features)
     # 读取图片
     train_features = tf.image.decode_jpeg(
@@ -40,7 +44,7 @@ if __name__ == "__main__":
 
     test_features = tf.image.decode_jpeg(
         test_features, channels=3)  # 读取图片，含彩色与灰度。彩色一定要decode_jpeg方法
-    test_features = tf.image.rgb_to_grayscale(train_features)  # 转灰度
+    test_features = tf.image.rgb_to_grayscale(test_features)  # 转灰度
     test_features = tf.image.resize_images(test_features, [160, 60])  # 缩放图片
 
     # 分批训练
@@ -63,6 +67,7 @@ if __name__ == "__main__":
     # 生成神经网络结构
     xs = tf.placeholder(tf.float32, [None, 160, 60, 1])
     ys = tf.placeholder(tf.float32, [None, 4*36])
+    keep_prob = tf.placeholder(tf.float32, name="keep_prob")  # dropout概率
     baiduModel = BaiduModel()
     y = baiduModel.create_model(xs, 0.5)
 
@@ -77,8 +82,16 @@ if __name__ == "__main__":
 
     # 开始训练
     with tf.Session() as sess:
-        sess.run(train_step, feed_dict={xs: train_features, ys: train_labels})
+        sess.run(tf.global_variables_initializer())  # 初始化变量
+        # 使用start_queue_runners之后，才会开始填充队列
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
         for step in range(1000):
+            sess.run(train_step, feed_dict={
+                     xs: train_features, ys: train_labels, keep_prob: 0.5})
             if step % 100 == 0:
-                print(step, sess.run(accuracy, feed_dict={
-                      xs: test_features, ys: test_labels}))
+                predict_num = sess.run(accuracy, feed_dict={
+                    xs: test_features, ys: test_labels, keep_prob: 0.5})
+                print(step, predict_num)
+                if predict_num == 1:
+                    pass
