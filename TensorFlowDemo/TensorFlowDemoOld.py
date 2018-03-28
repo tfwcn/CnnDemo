@@ -164,7 +164,7 @@ def loadTest():
 
 def main(argv=None):  #运行
     train()
-    # predict()
+    predict()
     #saveTest()
     #loadTest()
 

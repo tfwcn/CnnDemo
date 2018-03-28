@@ -23,9 +23,9 @@ class ModelHelper():
         initial = tf.constant(0.1, shape=shape)
         return tf.Variable(initial)
 
-    def hot_one(self, data_list, data_dir):
+    def hot_one(self, data_list, data_dir, repeat_num=1):
         out_data = []
         for list_index in range(0, len(data_list)):
-            out_data[list_index] = [(1 if data_list[list_index] == data_dir[dir_index] else 0)
-                                    for dir_index in range(0, len(data_dir))]
+            out_data += [[(1 if data_list[list_index][dir_index // len(data_dir)] == data_dir[dir_index % len(data_dir)] else 0)
+                          for dir_index in range(0, len(data_dir) * repeat_num)]]
         return out_data

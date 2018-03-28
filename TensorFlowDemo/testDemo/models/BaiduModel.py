@@ -19,7 +19,7 @@ class BaiduModel():
         # first layer
         w_conv1 = self.modelHelper.weight_variable([5, 5, 1, 32])
         b_conv1 = self.modelHelper.bias_variable([32])
-        h_conv1 = tf.nn.relu(tf.nn.bias_add(
+        h_conv1 = tf.nn.tanh(tf.nn.bias_add(
             self.modelHelper.conv2d(features, w_conv1), b_conv1))
         h_pool1 = self.modelHelper.max_pool_2x2(h_conv1)
         h_dropout1 = tf.nn.dropout(h_pool1, keep_prob)
@@ -29,7 +29,7 @@ class BaiduModel():
         # second layer
         w_conv2 = self.modelHelper.weight_variable([5, 5, 32, 64])
         b_conv2 = self.modelHelper.bias_variable([64])
-        h_conv2 = tf.nn.relu(tf.nn.bias_add(
+        h_conv2 = tf.nn.tanh(tf.nn.bias_add(
             self.modelHelper.conv2d(h_dropout1, w_conv2), b_conv2))
         h_pool2 = self.modelHelper.max_pool_2x2(h_conv2)
         h_dropout2 = tf.nn.dropout(h_pool2, keep_prob)
@@ -39,7 +39,7 @@ class BaiduModel():
         # third layer
         w_conv3 = self.modelHelper.weight_variable([5, 5, 64, 64])
         b_conv3 = self.modelHelper.bias_variable([64])
-        h_conv3 = tf.nn.relu(tf.nn.bias_add(
+        h_conv3 = tf.nn.tanh(tf.nn.bias_add(
             self.modelHelper.conv2d(h_dropout2, w_conv3), b_conv3))
         h_pool3 = self.modelHelper.max_pool_2x2(h_conv3)
         h_dropout3 = tf.nn.dropout(h_pool3, keep_prob)
@@ -54,7 +54,7 @@ class BaiduModel():
         b_fc1 = self.modelHelper.bias_variable([1024])
         h_dropout3_flat = tf.reshape(
             h_dropout3, [-1, 64*conv_width*conv_height])
-        h_fc1 = tf.nn.relu(tf.nn.bias_add(
+        h_fc1 = tf.nn.tanh(tf.nn.bias_add(
             tf.matmul(h_dropout3_flat, w_fc1), b_fc1))
         h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
 
