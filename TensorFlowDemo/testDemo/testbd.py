@@ -13,8 +13,8 @@ if __name__ == "__main__":
     # 读取文件列表
     pathDir = os.listdir('./img')
     # 定义特征与标签
-    features = [path for path in pathDir]
-    labels = [path[0:4] for path in features]
+    features = ['./img/'+path for path in pathDir]
+    labels = [path[0:4] for path in pathDir]
     features = pd.Series(features)
     labels = pd.Series(labels)
     # 把列添加到表格
@@ -29,13 +29,22 @@ if __name__ == "__main__":
     # print(labels[0])
     # print(data['文件路径'][0:10])
     # print(data['标签'][0:10])
+    train_features_data = features[0:-500]
+    train_labels_data = labels[0:-500]
+    # print(len(train_features_data), len(train_labels_data))
+    # print(type(train_features_data))
+    # print(type(train_labels_data))
+    # print(train_labels_data)
+    test_features_data = features[-500:]
+    test_labels_data = labels[-500:]
     # 取后500条记录昨测试集，shuffle=True随机文件列表
     train_features, train_labels = tf.train.slice_input_producer(
-        [features[0:-500], labels[0:-500]], shuffle=True)
+        [train_features_data, train_labels_data], shuffle=True)
     train_features = tf.read_file(train_features)
     test_features, test_labels = tf.train.slice_input_producer(
-        [features[-500:], labels[-500:]], shuffle=True)
+        [test_features_data, test_labels_data], shuffle=True)
     test_features = tf.read_file(test_features)
+    print(train_features.shape, train_labels.shape)
     # 读取图片
     train_features = tf.image.decode_jpeg(
         train_features, channels=3)  # 读取图片，含彩色与灰度。彩色一定要decode_jpeg方法
@@ -47,10 +56,11 @@ if __name__ == "__main__":
     test_features = tf.image.rgb_to_grayscale(test_features)  # 转灰度
     test_features = tf.image.resize_images(test_features, [160, 60])  # 缩放图片
 
+    print(train_features.shape, train_labels.shape)
     # 分批训练
     num_preprocess_threads = 4  # 读取线程数
     batch_size = 20  # 每次训练数据量
-    min_queue_examples = 1000  # 最小数据量
+    min_queue_examples = 100  # 最小数据量
     train_features, train_labels = tf.train.shuffle_batch(
         [train_features, train_labels],
         batch_size=batch_size,
@@ -64,12 +74,14 @@ if __name__ == "__main__":
         capacity=min_queue_examples + 3 * batch_size,
         min_after_dequeue=min_queue_examples)
 
+    print(train_features.shape, train_labels.shape)
+
     # 生成神经网络结构
     xs = tf.placeholder(tf.float32, [None, 160, 60, 1])
     ys = tf.placeholder(tf.float32, [None, 4*36])
     keep_prob = tf.placeholder(tf.float32, name="keep_prob")  # dropout概率
     baiduModel = BaiduModel()
-    y = baiduModel.create_model(xs, 0.5)
+    y = baiduModel.create_model(xs, keep_prob)
 
     cross_entropy = tf.multiply(tf.reduce_sum(
         ys * tf.log(y)), -1, name="cross_entropy")  # 损失函数，交叉熵
@@ -86,12 +98,21 @@ if __name__ == "__main__":
         # 使用start_queue_runners之后，才会开始填充队列
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+        # threads = tf.train.start_queue_runners(sess=sess)
         for step in range(1000):
+            train_features_batch_data, train_labels_batch_data = sess.run(
+                [train_features, train_labels])
+            # print(train_features_batch_data.shape,
+            #       train_labels_batch_data.shape)
             sess.run(train_step, feed_dict={
-                     xs: train_features, ys: train_labels, keep_prob: 0.5})
+                xs: train_features_batch_data, ys: train_labels_batch_data, keep_prob: 0.5})
+            # print(step, sess.run(cross_entropy, feed_dict={
+            #     xs: train_features_batch_data, ys: train_labels_batch_data, keep_prob: 1}))
             if step % 100 == 0:
+                test_features_batch_data, test_labels_batch_data = sess.run(
+                    [test_features, test_labels])
                 predict_num = sess.run(accuracy, feed_dict={
-                    xs: test_features, ys: test_labels, keep_prob: 0.5})
+                    xs: test_features_batch_data, ys: test_labels_batch_data, keep_prob: 1})
                 print(step, predict_num)
                 if predict_num == 1:
                     pass
