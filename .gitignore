@@ -12,3 +12,6 @@
 /packages
 /TensorFlowDemo/data
 /TensorFlowDemo/testDemo/img
+bin
+obj
+data

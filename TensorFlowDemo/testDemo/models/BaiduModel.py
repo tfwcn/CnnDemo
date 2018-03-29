@@ -62,6 +62,6 @@ class BaiduModel():
         w_fc2 = self.modelHelper.weight_variable(
             [1024, self.charNum*self.classes])
         b_fc2 = self.modelHelper.bias_variable([self.charNum*self.classes])
-        y_conv = tf.nn.softmax(tf.add(tf.matmul(h_fc1_drop, w_fc2), b_fc2))
+        y_conv = tf.add(tf.matmul(h_fc1_drop, w_fc2), b_fc2)
 
         return y_conv
