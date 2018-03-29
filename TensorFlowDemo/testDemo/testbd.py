@@ -7,6 +7,9 @@ sys.path.append('./models')
 from models.BaiduModel import BaiduModel
 from models.ModelHelper import ModelHelper
 
+FLAGS = tf.app.flags.FLAGS
+tf.app.flags.DEFINE_string('data_dir', './data',
+                           """Path to the MNIST data directory.""")
 
 def run():
     char_list = "0123456789abcdefghijklmnopqrstuvwxyz"
@@ -30,22 +33,13 @@ def run():
     # print(labels[0])
     # print(data['文件路径'][0:10])
     # print(data['标签'][0:10])
-    train_features_data = features[0:-500]
-    train_labels_data = labels[0:-500]
-    # print(len(train_features_data), len(train_labels_data))
-    # print(type(train_features_data))
-    # print(type(train_labels_data))
-    # print(train_labels_data)
-    test_features_data = features[-500:]
-    test_labels_data = labels[-500:]
     # 取后500条记录昨测试集，shuffle=True随机文件列表
     train_features, train_labels = tf.train.slice_input_producer(
-        [train_features_data, train_labels_data], shuffle=True)
+        [features[0:-500], labels[0:-500]], shuffle=True)
     train_features = tf.read_file(train_features)
     test_features, test_labels = tf.train.slice_input_producer(
-        [test_features_data, test_labels_data], shuffle=True)
+        [features[-500:], labels[-500:]], shuffle=True)
     test_features = tf.read_file(test_features)
-    print(train_features.shape, train_labels.shape)
     # 读取图片
     train_features = tf.image.decode_jpeg(
         train_features, channels=3)  # 读取图片，含彩色与灰度。彩色一定要decode_jpeg方法
@@ -59,11 +53,10 @@ def run():
     test_features = tf.image.resize_images(test_features, [160, 60])  # 缩放图片
     test_features = tf.div(test_features, 255)
 
-    print(train_features.shape, train_labels.shape)
     # 分批训练
     num_preprocess_threads = 4  # 读取线程数
-    batch_size = 20  # 每次训练数据量
-    min_queue_examples = 100  # 最小数据量
+    batch_size = 10  # 每次训练数据量
+    min_queue_examples = 1000  # 最小数据量
     train_features, train_labels = tf.train.shuffle_batch(
         [train_features, train_labels],
         batch_size=batch_size,
@@ -76,8 +69,6 @@ def run():
         num_threads=num_preprocess_threads,
         capacity=min_queue_examples + 3 * batch_size,
         min_after_dequeue=min_queue_examples)
-
-    print(train_features.shape, train_labels.shape)
 
     # 生成神经网络结构
     xs = tf.placeholder(tf.float32, [None, 160, 60, 1])
@@ -99,6 +90,12 @@ def run():
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.60)
     with tf.Session(config=tf.ConfigProto(log_device_placement=False, gpu_options=gpu_options)) as sess:
         sess.run(tf.global_variables_initializer())  # 初始化变量
+        #加载已训练数据
+        saver = tf.train.Saver()
+        ckpt = tf.train.get_checkpoint_state(FLAGS.data_dir)
+        if ckpt and ckpt.model_checkpoint_path:
+            # Restores from checkpoint
+            saver.restore(sess, ckpt.model_checkpoint_path)
         # 使用start_queue_runners之后，才会开始填充队列
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
@@ -119,6 +116,8 @@ def run():
                 predict_num = sess.run(accuracy, feed_dict={
                     xs: test_features_batch_data, ys: test_labels_batch_data, keep_prob: 1})
                 print(step, predict_num)
+                checkpoint_path = os.path.join(FLAGS.data_dir, 'model.ckpt')
+                saver.save(sess, checkpoint_path)
                 if predict_num == 1:
                     return
 
