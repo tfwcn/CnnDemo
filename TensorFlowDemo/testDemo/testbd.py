@@ -7,7 +7,8 @@ sys.path.append('./models')
 from models.BaiduModel import BaiduModel
 from models.ModelHelper import ModelHelper
 
-if __name__ == "__main__":
+
+def run():
     char_list = "0123456789abcdefghijklmnopqrstuvwxyz"
     modelHelper = ModelHelper()
     # 读取文件列表
@@ -50,11 +51,13 @@ if __name__ == "__main__":
         train_features, channels=3)  # 读取图片，含彩色与灰度。彩色一定要decode_jpeg方法
     train_features = tf.image.rgb_to_grayscale(train_features)  # 转灰度
     train_features = tf.image.resize_images(train_features, [160, 60])  # 缩放图片
+    train_features = tf.div(train_features, 255)
 
     test_features = tf.image.decode_jpeg(
         test_features, channels=3)  # 读取图片，含彩色与灰度。彩色一定要decode_jpeg方法
     test_features = tf.image.rgb_to_grayscale(test_features)  # 转灰度
     test_features = tf.image.resize_images(test_features, [160, 60])  # 缩放图片
+    test_features = tf.div(test_features, 255)
 
     print(train_features.shape, train_labels.shape)
     # 分批训练
@@ -94,26 +97,31 @@ if __name__ == "__main__":
 
     # 开始训练
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.60)
-    with tf.Session(config=tf.ConfigProto(log_device_placement=False,gpu_options=gpu_options)) as sess:
+    with tf.Session(config=tf.ConfigProto(log_device_placement=False, gpu_options=gpu_options)) as sess:
         sess.run(tf.global_variables_initializer())  # 初始化变量
         # 使用start_queue_runners之后，才会开始填充队列
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
         # threads = tf.train.start_queue_runners(sess=sess)
-        for step in range(1000):
+        for step in range(100000):
             train_features_batch_data, train_labels_batch_data = sess.run(
                 [train_features, train_labels])
             # print(train_features_batch_data.shape,
             #       train_labels_batch_data.shape)
+            # print(train_labels_batch_data)
             sess.run(train_step, feed_dict={
-                xs: train_features_batch_data, ys: train_labels_batch_data, keep_prob: 0.5})
-            # print(step, sess.run(cross_entropy, feed_dict={
-            #     xs: train_features_batch_data, ys: train_labels_batch_data, keep_prob: 1}))
-            if step % 100 == 0:
+                xs: train_features_batch_data, ys: train_labels_batch_data, keep_prob: 0.75})
+            if step % 10 == 0:
+                print(step, sess.run(cross_entropy, feed_dict={
+                    xs: train_features_batch_data, ys: train_labels_batch_data, keep_prob: 1}))
                 test_features_batch_data, test_labels_batch_data = sess.run(
                     [test_features, test_labels])
                 predict_num = sess.run(accuracy, feed_dict={
                     xs: test_features_batch_data, ys: test_labels_batch_data, keep_prob: 1})
                 print(step, predict_num)
                 if predict_num == 1:
-                    pass
+                    return
+
+
+if __name__ == "__main__":
+    run()
