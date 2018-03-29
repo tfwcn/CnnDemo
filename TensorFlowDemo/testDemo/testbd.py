@@ -81,7 +81,8 @@ if __name__ == "__main__":
         tf.cast(correct_prediction, "float"), name="accuracy")  # 求平均
 
     # 开始训练
-    with tf.Session() as sess:
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.60)
+    with tf.Session(config=tf.ConfigProto(log_device_placement=False,gpu_options=gpu_options)) as sess:
         sess.run(tf.global_variables_initializer())  # 初始化变量
         # 使用start_queue_runners之后，才会开始填充队列
         coord = tf.train.Coordinator()
