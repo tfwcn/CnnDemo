@@ -11,6 +11,7 @@ FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('data_dir', './data',
                            """Path to the MNIST data directory.""")
 
+
 def run():
     char_list = "0123456789abcdefghijklmnopqrstuvwxyz"
     modelHelper = ModelHelper()
@@ -75,13 +76,17 @@ def run():
     ys = tf.placeholder(tf.float32, [None, 4*36])
     keep_prob = tf.placeholder(tf.float32, name="keep_prob")  # dropout概率
     baiduModel = BaiduModel()
-    y = baiduModel.create_model(xs, keep_prob)
+    y = baiduModel.create_model2(xs, keep_prob)
 
-    cross_entropy = tf.multiply(tf.reduce_sum(
-        ys * tf.log(y)), -1, name="cross_entropy")  # 损失函数，交叉熵
+    # cross_entropy = tf.multiply(tf.reduce_sum(
+    #     ys * tf.log(y)), -1, name="cross_entropy")  # 损失函数，交叉熵
+    cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
+        labels=ys, logits=y)
+    print(cross_entropy.shape)
     train_step = tf.train.AdamOptimizer(
         1e-4).minimize(cross_entropy, name="train_step")  # ADAM优化器来做梯度最速下降，自动调整里面的变量
-    correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(
+    correct_prediction = tf.equal(tf.argmax(y, 1), tf.
+    argmax(
         ys, 1), name="correct_prediction")  # 比较结果
     accuracy = tf.reduce_mean(
         tf.cast(correct_prediction, "float"), name="accuracy")  # 求平均
@@ -90,7 +95,7 @@ def run():
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.60)
     with tf.Session(config=tf.ConfigProto(log_device_placement=False, gpu_options=gpu_options)) as sess:
         sess.run(tf.global_variables_initializer())  # 初始化变量
-        #加载已训练数据
+        # 加载已训练数据
         saver = tf.train.Saver()
         ckpt = tf.train.get_checkpoint_state(FLAGS.data_dir)
         if ckpt and ckpt.model_checkpoint_path:
@@ -99,13 +104,12 @@ def run():
         # 使用start_queue_runners之后，才会开始填充队列
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-        # threads = tf.train.start_queue_runners(sess=sess)
         for step in range(100000):
             train_features_batch_data, train_labels_batch_data = sess.run(
                 [train_features, train_labels])
             # print(train_features_batch_data.shape,
             #       train_labels_batch_data.shape)
-            # print(train_labels_batch_data)
+            # print(train_features_batch_data)
             sess.run(train_step, feed_dict={
                 xs: train_features_batch_data, ys: train_labels_batch_data, keep_prob: 0.75})
             if step % 10 == 0:
