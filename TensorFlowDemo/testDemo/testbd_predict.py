@@ -91,14 +91,14 @@ class BdPredictHelper():
 if __name__ == "__main__":
     bdPredictHelper = BdPredictHelper()
     bdPredictHelper.init()
-    pathDir = os.listdir('./img')
+    pathDir = os.listdir('./data/img')
     import shutil
     for allDir in pathDir:
         label = allDir[0:4]
         print(allDir)
-        result = bdPredictHelper.predict(open("./img/"+allDir, 'rb').read())
+        result = bdPredictHelper.predict(open("./data/img/"+allDir, 'rb').read())
         if label == result:
-            shutil.copyfile("./img/"+allDir, "./img_true/"+allDir)  # 复制文件
+            shutil.copyfile("./data/img/"+allDir, "./data/img_true/"+allDir)  # 复制文件
         else:
-            shutil.copyfile("./img/"+allDir, "./img_false/"+allDir)  # 复制文件
+            shutil.copyfile("./data/img/"+allDir, "./data/img_false/"+allDir)  # 复制文件
     print(result)
