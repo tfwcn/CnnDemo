@@ -16,9 +16,9 @@ def run():
     char_list = "0123456789abcdefghijklmnopqrstuvwxyz"
     modelHelper = ModelHelper()
     # 读取文件列表
-    pathDir = os.listdir('./img')
+    pathDir = os.listdir('./data/img')
     # 定义特征与标签
-    features = ['./img/'+path for path in pathDir]
+    features = ['./data/img/'+path for path in pathDir]
     labels = [path[0:4] for path in pathDir]
     features = pd.Series(features)
     labels = pd.Series(labels)

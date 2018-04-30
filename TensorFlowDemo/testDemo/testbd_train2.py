@@ -16,8 +16,8 @@ def run():
     char_list = "0123456789abcdefghijklmnopqrstuvwxyz"
     modelHelper = ModelHelper()
     # 读取文件列表
-    train_path_dir = os.listdir('./img')
-    test_path_dir = os.listdir('./img2')
+    train_path_dir = os.listdir('./data/img')
+    test_path_dir = os.listdir('./data/img2')
     # 定义特征与标签
     train_features = ['./img/'+path for path in train_path_dir]
     train_labels = [path[0:4] for path in train_path_dir]
