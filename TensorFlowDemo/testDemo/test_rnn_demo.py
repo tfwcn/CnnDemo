@@ -60,9 +60,9 @@ synapse_1 = 2*np.random.random((hidden_dim, output_dim)) - 1
 synapse_h = 2*np.random.random((hidden_dim, hidden_dim)) - 1
 
 # 这里存储权值更新。在我们积累了一些权值更新以后，我们再去更新权值。这里先放一放，稍后我们再详细讨论。
-# synapse_0_update = np.zeros_like(synapse_0)
-# synapse_1_update = np.zeros_like(synapse_1)
-# synapse_h_update = np.zeros_like(synapse_h)
+synapse_0_update = np.zeros_like(synapse_0)
+synapse_1_update = np.zeros_like(synapse_1)
+synapse_h_update = np.zeros_like(synapse_h)
 
 # training logic
 for j in range(10000):
@@ -171,31 +171,34 @@ for j in range(10000):
         # error at hidden layer
         # 这一行计算了当前隐含层的误差。
         # 通过当前之后一个时间点的误差和当前输出层的误差计算。
+        # future_layer_1_delta：(1,16)，synapse_h:(16,16)
+        # layer_2_delta：(1,1),synapse_1:(16,1)->(1,16),layer_1:(1,16)
         layer_1_delta = (future_layer_1_delta.dot(synapse_h.T) + \
             layer_2_delta.dot(synapse_1.T)) * sigmoid_output_to_derivative(layer_1)
         # let's update all our weights so we can try again
-        # 我们已经有了反向传播中当前时刻的导数值，那么就可以生成权值更新的量了（但是还没真正的更新权值）。
+        # 我们已经有了反向传播中当前时刻的导数值，那么就可以生成权值更新的量了
+        # （但是还没真正的更新权值）。
         # 我们会在完成所有的反向传播以后再去真正的更新我们的权值矩阵，这是为什么呢？
         # 因为我们要用权值矩阵去做反向传播。
         # 如此以来，在完成所有反向传播以前，我们不能改变权值矩阵中的值。
-        # synapse_1_update += np.atleast_2d(layer_1).T.dot(layer_2_delta)
-        # synapse_h_update += np.atleast_2d(prev_layer_1).T.dot(layer_1_delta)
-        # synapse_0_update += X.T.dot(layer_1_delta)
-        synapse_1 += np.atleast_2d(layer_1).T.dot(layer_2_delta) * alpha
-        synapse_h += np.atleast_2d(prev_layer_1).T.dot(layer_1_delta) * alpha
-        synapse_0 += X.T.dot(layer_1_delta) * alpha
+        synapse_1_update += np.atleast_2d(layer_1).T.dot(layer_2_delta)
+        synapse_h_update += np.atleast_2d(prev_layer_1).T.dot(layer_1_delta)
+        synapse_0_update += X.T.dot(layer_1_delta)
+        # synapse_1 += np.atleast_2d(layer_1).T.dot(layer_2_delta) * alpha
+        # synapse_h += np.atleast_2d(prev_layer_1).T.dot(layer_1_delta) * alpha
+        # synapse_0 += X.T.dot(layer_1_delta) * alpha
 
         # 记录当前误差，继续向前传播
         future_layer_1_delta = layer_1_delta
 
     # 现在我们就已经完成了反向传播，得到了权值要更新的量，所以就赶快更新权值吧（别忘了重置update变量）！
-    # synapse_0 += synapse_0_update * alpha
-    # synapse_1 += synapse_1_update * alpha
-    # synapse_h += synapse_h_update * alpha
+    synapse_0 += synapse_0_update * alpha
+    synapse_1 += synapse_1_update * alpha
+    synapse_h += synapse_h_update * alpha
 
-    # synapse_0_update *= 0
-    # synapse_1_update *= 0
-    # synapse_h_update *= 0
+    synapse_0_update *= 0
+    synapse_1_update *= 0
+    synapse_h_update *= 0
 
     # print out progress
     # 这里仅仅是一些输出日志，便于我们观察中间的计算过程与效果。
