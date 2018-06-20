@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Conv2D, MaxPool2D, Dropout, Flatten, BatchNormalization
 from keras import backend, optimizers, losses, metrics
+from keras.preprocessing.image import ImageDataGenerator
 import tensorflow as tf
 import os
 import numpy
@@ -55,15 +56,15 @@ def readFiles(file_dir):
     # image = tf.image.grayscale_to_rgb(image)#转彩色
     image = tf.image.resize_images(image, [160, 160])  # 缩放图片
     # 随机
-    num_preprocess_threads = 4  # 读取线程数
-    batch_size = 50  # 每次训练数据量
-    min_queue_examples = 5000  # 最小数据量
-    image, label = tf.train.shuffle_batch(
-        [image, label],
-        batch_size=batch_size,
-        num_threads=num_preprocess_threads,
-        capacity=min_queue_examples + 3 * batch_size,
-        min_after_dequeue=min_queue_examples)
+    # num_preprocess_threads = 4  # 读取线程数
+    # batch_size = 50  # 每次训练数据量
+    # min_queue_examples = 5000  # 最小数据量
+    # image, label = tf.train.shuffle_batch(
+    #     [image, label],
+    #     batch_size=batch_size,
+    #     num_threads=num_preprocess_threads,
+    #     capacity=min_queue_examples + 3 * batch_size,
+    #     min_after_dequeue=min_queue_examples)
     # print(label._shape)
     # print(image._shape)
     image = tf.divide(image, 255.0)
@@ -83,13 +84,15 @@ def readFiles2():
     image = tf.divide(image, 255.0)
     return filename, image
 
-def generate_arrays_from_file(image, label):  
+
+def generate_arrays_from_file(image, label):
     with tf.Session() as sess:
         coord = tf.train.Coordinator()
         threads = tf.train.start_queue_runners(sess=sess, coord=coord)
-        while 1:  
+        while 1:
             image_value, label_value = sess.run([image, label])
-            yield (image_value, label_value)  
+            yield (image_value, label_value)
+
 
 def train():
     """训练"""
@@ -128,16 +131,45 @@ def train():
     # 编译模型
     model.compile(optimizers.Adadelta(),
                   losses.categorical_crossentropy, metrics.binary_accuracy)
-    # 训练
-    # model.fit(image_value, label_value, batch_size=50, epochs=1000,
-    #         verbose=1, validation_data=(image2_value, label2_value))
-    model.fit_generator(generate_arrays_from_file(image, label),samples_per_epoch=10000, nb_epoch=10)
+
+    datagen = ImageDataGenerator(
+    featurewise_center=True,
+    featurewise_std_normalization=True,
+    rotation_range=20,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    horizontal_flip=True)
+
+    model.fit_generator(datagen.flow(image, label, batch_size=32),
+            steps_per_epoch=1000, epochs=200)
     # 识别
-    # score = model.evaluate(image2_value, label2_value, verbose=1)
-    score = model.evaluate_generator(generate_arrays_from_file(image2, label2))
+    score = model.evaluate_generator(datagen.flow(image, label, batch_size=32))
 
     print("损失值：", score[0])
     print("准确率：", score[1])
+    # 训练
+    # with tf.Session() as sess:
+    #     coord = tf.train.Coordinator()
+    #     threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+    #     while 1:
+            # image_value, label_value = sess.run([image, label])
+            # image2_value, label2_value = sess.run([image2, label2])
+            # model.train_on_batch(numpy.array(image_value), numpy.array(label_value))
+            # model.fit(image, label, batch_size=50, epochs=100,
+            #         verbose=1, validation_data=(image, label))
+            # model.fit_generator(datagen.flow(x_train, y_train, batch_size=32),
+            #         steps_per_epoch=len(x_train), epochs=epochs)
+            # model.fit_generator(generate_arrays_from_file(image, label),samples_per_epoch=10000, nb_epoch=10)
+            # 识别
+            # score = model.evaluate(image, label, verbose=1)
+            # score = model.evaluate_generator(generate_arrays_from_file(image2, label2))
+            # score = model.test_on_batch(numpy.array(image2_value), numpy.array(label2_value))
+
+            # print("损失值：", score[0])
+            # print("准确率：", score[1])
+        # 停止填充队列
+        # coord.request_stop()
+        # coord.join(threads)
     return
 
 
