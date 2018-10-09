@@ -1,14 +1,12 @@
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Conv2D, MaxPool2D, Dropout, Flatten, BatchNormalization
 from keras import backend, optimizers, losses, metrics
-from keras.preprocessing.image import ImageDataGenerator
+from keras.preprocessing.image import ImageDataGenerator, load_img, img_to_array
 from keras.models import save_model, load_model
 import os
 import numpy
 import math
-import h5py
 import pandas as pd
-from scipy import misc
 
 # face_path = "/media/ppht/000872BB00040832"
 face_path = "E:"
@@ -51,31 +49,38 @@ def readFilesBatch(file_dir):
     return features, labels
 
 
-# def readFilesOne():
-#     """读取单个文件，识别用"""
-#     filename = tf.placeholder(tf.string)  # 定义变量，输入值
-#     # 读取文件
-#     image = tf.read_file(filename)
-#     # 读取图片，含彩色与灰度。彩色一定要decode_jpeg方法
-#     image = tf.image.decode_jpeg(image, channels=3)
-#     # image = tf.image.grayscale_to_rgb(image)#转彩色
-#     image = tf.image.resize_images(image, [160, 160])  # 缩放图片
-#     image = tf.reshape(image, [-1, 160, 160, 3])
-#     image = tf.divide(image, 255.0)
-#     return filename, image
+def readFilesOne(filename):
+    """读取单个文件，识别用"""
+    features = load_img(filename, target_size=(160, 160))
+    features = img_to_array(features, data_format="channels_last")
+    features = features.astype('float32')
+    features /= 255.0
+    features = numpy.reshape(features, (-1, 160, 160, 3))
+    return features
+
 
 def generate_arrays_from_file(features, labels, batch_size):
     cnt = 0
     X = []
     Y = []
+    datagen = ImageDataGenerator(
+        # featurewise_center=True,
+        # featurewise_std_normalization=True,
+        rotation_range=180,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        horizontal_flip=True,
+        vertical_flip=True)
     while 1:
         for line in range(len(features)):
             # create Numpy arrays of input data
             # and labels, from each line in the file
             # print("features:", features[line])
-            img = misc.imread(features[line], mode="RGB")
-            x = misc.imresize(img, (160, 160))
-            x = x / 255.0
+            x = load_img(features[line], target_size=(160, 160))
+            x = img_to_array(x, data_format="channels_last")
+            x = x.astype('float32')
+            x /= 255.0
+            # print("x:", x)
             y = labels[line]
             # print("x:", line, features[line])
             # print("y:", line, labels[line])
@@ -87,35 +92,39 @@ def generate_arrays_from_file(features, labels, batch_size):
                 # print("batch")
                 # print("x:", numpy.array(X).shape)
                 # print("y:", numpy.array(Y).shape)
-                yield (numpy.array(X), numpy.array(Y))
+                # yield (numpy.array(X), numpy.array(Y))
+                X = numpy.array(X)
+                Y = numpy.array(Y)
+                gen = datagen.flow(X, Y, batch_size=batch_size)
+                yield next(gen)
                 X = []
                 Y = []
 
 
 def createModel():
-    keep_prob = 0.6  # dropout概率
+    keep_prob = 0.5  # dropout概率
     model = Sequential()
     model.add(Conv2D(30, (7, 7), strides=(
         4, 4), input_shape=(160, 160, 3), name="cnn1"))
     model.add(Activation(backend.relu))
     # model.add(MaxPool2D((3, 3), strides=(2, 2)))
     model.add(Conv2D(30, (3, 3), strides=(2, 2), name="cnn2"))
-    model.add(BatchNormalization())
     model.add(Dropout(keep_prob))
+    model.add(BatchNormalization())
 
     model.add(Conv2D(80, (5, 5), name="cnn3"))
     model.add(Activation(backend.relu))
     # model.add(MaxPool2D((3, 3), strides=(2, 2)))
     model.add(Conv2D(80, (3, 3), strides=(2, 2), name="cnn4"))
-    model.add(BatchNormalization())
     model.add(Dropout(keep_prob))
+    model.add(BatchNormalization())
 
     model.add(Conv2D(120, (5, 5), name="cnn5"))
     model.add(Activation(backend.relu))
     # model.add(MaxPool2D((3, 3), strides=(2, 2)))
     model.add(Conv2D(120, (3, 3), strides=(2, 2), name="cnn6"))
-    model.add(BatchNormalization())
     model.add(Dropout(keep_prob))
+    model.add(BatchNormalization())
 
     model.add(Flatten())
     model.add(Dense(100, name="dnn1"))
@@ -138,10 +147,12 @@ def train():
     # 开始建立CNN模型
     ###############
     # 加载模型
-    model = createModel()
-    if os.path.isfile("my_model.h5"):
-        model = load_model("my_model.h5")
+    model = Sequential()
+    if os.path.isfile("data/my_model.h5"):
+        model = load_model("data/my_model.h5")
         print("加载模型文件")
+    else:
+        model = createModel()
 
     # 读取文件
     file_dir = [face_path + "/face/face0/女_2929/",
@@ -154,31 +165,25 @@ def train():
 
     print("训练")
     # 训练
-    model.fit_generator(generate_arrays_from_file(features, labels, 50), steps_per_epoch=100, validation_steps=1, epochs=10,
+    model.fit_generator(generate_arrays_from_file(features, labels, 50), steps_per_epoch=100, validation_steps=1, epochs=30,
                         validation_data=generate_arrays_from_file(features2, labels2, 500))
-                        
+
     print("识别")
     score = model.evaluate_generator(
         generate_arrays_from_file(features2, labels2, 500), steps=1)
     print("损失值：", score[0])
     print("准确率：", score[1])
 
-    predict_image_val = misc.imread(
-        face_path + "/face/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg", mode="RGB")
-    predict_image_val = misc.imresize(predict_image_val, (160, 160))
-    predict_image_val = predict_image_val / 255.0
-    predict_image_val = numpy.reshape(predict_image_val, (-1, 160, 160, 3))
+    predict_image_val = readFilesOne(
+        face_path + "/face/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg")
     score = model.predict(predict_image_val, steps=1)
     print("识别", score)
 
-    predict_image_val = misc.imread(
-        face_path + "/face/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg", mode="RGB")
-    predict_image_val = misc.imresize(predict_image_val, (160, 160))
-    predict_image_val = predict_image_val / 255.0
-    predict_image_val = numpy.reshape(predict_image_val, (-1, 160, 160, 3))
+    predict_image_val = readFilesOne(
+        face_path + "/face/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg")
     score = model.predict(predict_image_val, steps=1)
     print("识别", score)
-    save_model(model, "my_model.h5")
+    save_model(model, "data/my_model.h5")
     return
 
 
@@ -189,8 +194,8 @@ def predict():
     ###############
     # 加载模型
     print("加载模型")
-    model = createModel()
-    model = load_model("my_model.h5")
+    model = Sequential()
+    model = load_model("data/my_model.h5")
 
     # 读取文件
     file_dir2 = [face_path + "/face/images_test_500/man/",
@@ -202,19 +207,13 @@ def predict():
     print("损失值：", score[0])
     print("准确率：", score[1])
 
-    predict_image_val = misc.imread(
-        face_path + "/face/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg", mode="RGB")
-    predict_image_val = misc.imresize(predict_image_val, (160, 160))
-    predict_image_val = predict_image_val / 255.0
-    predict_image_val = numpy.reshape(predict_image_val, (-1, 160, 160, 3))
+    predict_image_val = readFilesOne(
+        face_path + "/face/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg")
     score = model.predict(predict_image_val, steps=1)
     print("识别", score)
 
-    predict_image_val = misc.imread(
-        face_path + "/face/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg", mode="RGB")
-    predict_image_val = misc.imresize(predict_image_val, (160, 160))
-    predict_image_val = predict_image_val / 255.0
-    predict_image_val = numpy.reshape(predict_image_val, (-1, 160, 160, 3))
+    predict_image_val = readFilesOne(
+        face_path + "/face/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg")
     score = model.predict(predict_image_val, steps=1)
     print("识别", score)
     return
