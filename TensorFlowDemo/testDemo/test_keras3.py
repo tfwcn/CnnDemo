@@ -4,8 +4,8 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# face_path = "D:/document/Share"
-face_path = "E:"
+face_path = "D:/document/Share"
+# face_path = "E:"
 
 
 def readFilesBatch(file_dir):
@@ -66,17 +66,18 @@ def createModel():
     input_value = K.Input((60, 60, 3), name="input")
     print("input_value:", input_value.shape)
     # 反向卷积，大小扩大一倍
+    output_value = K.layers.Conv2D(64, (1, 1), activation="relu", padding="same",
+                                            name="conv1")(input_value)
+    output_value = K.layers.Conv2D(64, (3, 3), activation="relu", padding="same",
+                                            name="conv2")(output_value)
+    output_value = K.layers.Conv2D(64, (1, 1), activation="relu", padding="same",
+                                            name="conv3")(output_value)
     output_value = K.layers.Conv2DTranspose(256, (2, 2), strides=2, activation="relu",
-                                            name="mrcnn_mask_deconv")(input_value)
+                                            name="mrcnn_mask_deconv")(output_value)
     # (1,1)卷积提取特征，sigmoid激活函数，值范围转到0-1
     output_value = K.layers.Conv2D(3, (1, 1), strides=1, activation="sigmoid",
                                    name="mrcnn_mask")(output_value)
     model = K.Model(inputs=input_value, outputs=output_value, name="test")
-
-    # 编译模型
-    model.compile(K.optimizers.Adadelta(),
-                  K.losses.categorical_crossentropy, [K.metrics.binary_accuracy])
-
     return model
 
 
@@ -87,6 +88,11 @@ def train():
     ###############
     # 加载模型
     model = createModel()
+
+    # 编译模型, compile主要完成损失函数和优化器的一些配置，是为训练服务的。
+    model.compile(K.optimizers.Adadelta(),
+                  K.losses.categorical_crossentropy, [K.metrics.binary_accuracy])
+
     if os.path.isfile("my_model.h5"):
         model = K.models.load_model("my_model.h5")
         print("加载模型文件")
