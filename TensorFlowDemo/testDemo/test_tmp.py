@@ -1,41 +1,37 @@
-import keras as k
+import keras as K
 import tensorflow as tf
 import numpy as np
+import cv2 as cv2
+import matplotlib.pyplot as plt
 
 
-a = [1, 2, 3]
-b = [4, 5, 6, 6.5]
-c = [7, 8, 9]
-# np.meshgrid 按x,y维度，分别扩充scales,ratios，结果维度(5,3)
-a1, b1 = np.meshgrid(np.array(a), np.array(b))
-print("a1", a1.shape)
-print("a1", a1)
-print("b1", b1.shape)
-print("b1", b1)
-# a1先由二维转一维
-c1, a2 = np.meshgrid(np.array(c), np.array(a1))
-# print("c1", c1.shape)
-# print("c1", c1)
-print("a2", a2.shape)
-print("a2", a2)
-# b1先由二维转一维
-c2, b2 = np.meshgrid(np.array(c), np.array(b1))
-# print("c2", c2.shape)
-# print("c2", c2)
-print("b2", b2.shape)
-print("b2", b2)
-box_centers = np.stack([b2, a2], axis=2)#np.stack后面加一个维度，数量为2，b2与a2对应维度组合
-box_sizes = np.stack([c2, c1], axis=2)
-print("box_centers", box_centers.shape)
-print("box_centers", box_centers)
-# print("box_sizes", box_sizes.shape)
-# print("box_sizes", box_sizes)
-# box_centers = box_centers.reshape([-1, 2])
-# box_sizes = box_centers.reshape([-1, 2])
-# print("box_centers", box_centers.shape)
-# print("box_centers", box_centers)
-# print("box_sizes", box_sizes.shape)
-# print("box_sizes", box_sizes)
-boxes = np.concatenate([box_centers - 0.5 * box_sizes,box_centers + 0.5 * box_sizes], axis=1)
-print("box_sizes", box_sizes.shape)
-print("box_sizes", box_sizes)
+
+img = K.preprocessing.image.load_img('D:/document/Share/labels/0-9/test/2.png', target_size=(60, 60))
+img = K.preprocessing.image.img_to_array(img, data_format="channels_last")
+img = img.astype('float32')
+img /= 255.0
+# img = cv2.cvtColor(img,cv2.COLOR_RGB2BGR)
+hsv = cv2.cvtColor(img,cv2.COLOR_RGB2HSV)
+# 通道拆分
+(h, s, v) = cv2.split(hsv)
+h = np.random.uniform(0,360,size=(hsv.shape[:2])).astype(np.float32)
+print("h",type(h[0][0]))
+print("s",type(s[0][0]))
+print("v",type(v[0][0]))
+# 合并通道
+hsv = cv2.merge([h,s,v])
+print("hsv",hsv.shape)
+img2 = cv2.cvtColor(hsv,cv2.COLOR_HSV2RGB)
+# print("img2:",img2)
+# print("h:",h)
+# print("s:",s)
+# print("v:",v)
+plt.imshow(img)  # 显示图片
+plt.axis('off')  # 不显示坐标轴
+plt.show()
+plt.imshow(hsv)  # 显示图片
+plt.axis('off')  # 不显示坐标轴
+plt.show()
+plt.imshow(img2)  # 显示图片
+plt.axis('off')  # 不显示坐标轴
+plt.show()

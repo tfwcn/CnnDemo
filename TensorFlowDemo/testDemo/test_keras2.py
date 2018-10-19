@@ -9,7 +9,7 @@ import math
 import pandas as pd
 
 # face_path = "/media/ppht/000872BB00040832"
-face_path = "E:"
+face_path = "D:/document/Share"
 
 
 def dense_to_one_hot(labels_dense, num_classes=2):
