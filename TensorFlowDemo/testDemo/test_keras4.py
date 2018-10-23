@@ -31,14 +31,16 @@ def randomHSV(rgb):
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
     # 通道拆分
     (h, s, v) = cv2.split(hsv)
-    h_value = np.random.uniform(0, 360)
-    # print("h_value",type(h_value))
-    h = np.random.uniform(-10,10,size=h.shape).astype(np.float32) + h_value
-    h = np.maximum(h,0)
-    h = np.minimum(h,360)
-    # print("h",type(h[0][0]))
-    # print("s",type(s[0][0]))
-    # print("v",type(v[0][0]))
+    # 0.8概率随机颜色
+    if np.random.random() < 0.8:
+        h_value = np.random.uniform(0, 360)
+        # print("h_value",type(h_value))
+        h = (np.random.uniform(-10, 10, size=h.shape).astype(np.float32) + h_value)
+        h = np.maximum(h, 0)
+        h = np.minimum(h, 360)
+        # print("h",type(h[0][0]))
+        # print("s",type(s[0][0]))
+        # print("v",type(v[0][0]))
     # 合并通道
     hsv = cv2.merge([h, s, v])
     # print("hsv",hsv.shape)
@@ -72,7 +74,7 @@ def readFilesBatch(file_dir):
     return features, labels
 
 
-def generate_arrays_from_file(features, labels, batch_size):
+def generate_arrays_from_file(features, labels, batch_size, istrain=True):
     cnt = 0
     X = []
     Y = []
@@ -82,7 +84,7 @@ def generate_arrays_from_file(features, labels, batch_size):
         rotation_range=15,
         width_shift_range=0.05,
         height_shift_range=0.05,
-        zoom_range=[0.8, 1.2],
+        zoom_range=[0.7, 1],
         channel_shift_range=0.2,
         shear_range=0.3,
         # validation_split=0.1
@@ -113,9 +115,11 @@ def generate_arrays_from_file(features, labels, batch_size):
                 # print("y:", np.array(Y).shape)
                 X = np.array(X)
                 Y = np.array(Y)
-                gen = datagen.flow(X, Y, batch_size=batch_size)
-                yield next(gen)
-                # yield X, Y
+                if istrain:
+                    gen = datagen.flow(X, Y, batch_size=batch_size)
+                    yield next(gen)
+                else:
+                    yield X, Y
                 X = []
                 Y = []
 
@@ -151,9 +155,9 @@ def createModel():
     x = K.layers.BatchNormalization()(x)
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool2")(x)
     x2 = K.layers.Conv2D(128, (5, 5),
-                        activation=K.backend.relu,
-                        # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
-                        name="conv2_2", padding="same")(x)
+                         activation=K.backend.relu,
+                         # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
+                         name="conv2_2", padding="same")(x)
     x2 = K.layers.BatchNormalization()(x2)
     # x = K.layers.Dropout(keep_prob, name="dropout2")(x)
 
@@ -191,18 +195,26 @@ def createModel():
 
     return model
 
+
 class MyCallback(K.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         # print("MyCallback",self)
         # print("MyCallback",epoch)
-        print("MyCallback",logs)
-        if logs["val_binary_accuracy"]>=0.992:
+        print("MyCallback", logs)
+        # print("MyCallback self.model",self.model)
+        if logs["val_binary_accuracy"] >= 1:
             self.stopped_epoch = epoch
             self.model.stop_training = True
 
     def on_batch_end(self, batch, logs=None):
+        # print("MyCallback on_batch_end",logs)
+        # # 准确率低于0.95，有0.8概率重新训练
+        # if logs["binary_accuracy"]<0.95 and np.random.random()<0.8:
+        #     logs["batch"]-=1
+        #     batch-=1
+        #     print("MyCallback on_batch_end2",logs)
         pass
-        
+
 
 def train():
     """训练"""
@@ -235,13 +247,14 @@ def train():
     # early_stopping = K.callbacks.EarlyStopping(monitor='is_ok', patience=0,min_delta=0, verbose=0, mode='max')
     callback1 = MyCallback()
     # 动态降低学习速率
-    callback2 = K.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=10, verbose=0, mode='min', min_delta=0.001, cooldown=0, min_lr=0)
-    model.fit_generator(generate_arrays_from_file(features, labels, 50), steps_per_epoch=100, validation_steps=1, epochs=100,
-                        validation_data=generate_arrays_from_file(features2, labels2, 50), callbacks=[callback1, callback2])
+    callback2 = K.callbacks.ReduceLROnPlateau(
+        monitor='loss', factor=0.5, patience=10, verbose=0, mode='min', min_delta=0.001, cooldown=0, min_lr=0)
+    model.fit_generator(generate_arrays_from_file(features, labels, 50), steps_per_epoch=100, validation_steps=1, epochs=200,
+                        validation_data=generate_arrays_from_file(features2, labels2, len(labels2), False), callbacks=[callback1, callback2])
 
     print("识别")
     score = model.evaluate_generator(
-        generate_arrays_from_file(features2, labels2, 50), steps=1)
+        generate_arrays_from_file(features2, labels2, len(labels2), False), steps=1)
     print("损失值：", score[0])
     print("准确率：", score[1])
 
@@ -251,6 +264,7 @@ def train():
     for path in pathDir:
         predict_image_val = readFilesOne(file_dir2[0]+path)
         score = model.predict(predict_image_val, steps=1)
+        print("识别路径", path)
         print("识别", np.argmax(score, axis=1))
         plt.imshow(predict_image_val[0])  # 显示图片
         plt.axis('off')  # 不显示坐标轴
@@ -282,7 +296,7 @@ def predict():
 
     # print("识别", labels2)
     score = model.evaluate_generator(
-        generate_arrays_from_file(features2, labels2, 50), steps=1, max_q_size=1)
+        generate_arrays_from_file(features2, labels2, len(labels2), False), steps=1, max_q_size=1)
     print("损失值：", score[0])
     print("准确率：", score[1])
 
@@ -290,6 +304,7 @@ def predict():
     for path in pathDir:
         predict_image_val = readFilesOne(file_dir2[0]+path)
         score = model.predict(predict_image_val, steps=1)
+        print("识别路径", path)
         print("识别", np.argmax(score, axis=1))
         plt.imshow(predict_image_val[0])  # 显示图片
         plt.axis('off')  # 不显示坐标轴
@@ -298,15 +313,15 @@ def predict():
 
 
 def main(argv=None):  # 运行
-    if args.train=="1":
+    if args.train == "1":
         train()
     else:
         predict()
     # 读取文件
     # file_dir = ["D:/document/Share/labels/0-9/train/"]
     # features, labels = readFilesBatch(file_dir)
-    # x, y=generate_arrays_from_file(features, labels, 10)
-    # print("x2:",x.shape)
+    # x, y = generate_arrays_from_file(features, labels, 20)
+    # print("x2:", x.shape)
     # for i in x:
     #     plt.imshow(i)  # 显示图片
     #     plt.axis('off')  # 不显示坐标轴
