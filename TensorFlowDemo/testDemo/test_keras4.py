@@ -41,6 +41,8 @@ def randomHSV(rgb):
         # print("h",type(h[0][0]))
         # print("s",type(s[0][0]))
         # print("v",type(v[0][0]))
+    if np.random.random() < 0.5:
+        v=1-v
     # 合并通道
     hsv = cv2.merge([h, s, v])
     # print("hsv",hsv.shape)
@@ -56,7 +58,8 @@ def readFilesBatch(file_dir):
         pathDir = os.listdir(file_dir[i])
         # 定义特征与标签
         TEST_IMAGE_PATHS += [file_dir[i]+path for path in pathDir]
-        TEST_GENDER += [int(path[0]) for path in pathDir]
+        TEST_GENDER += [int(path[0]) if path[0] !=
+                        "x" else 10 for path in pathDir]
 
     features = pd.Series(TEST_IMAGE_PATHS)
     labels = pd.Series(TEST_GENDER)
@@ -70,7 +73,7 @@ def readFilesBatch(file_dir):
     features = data['文件路径'].values
     labels = data['标签'].values
     # print(len(labels), len(char_list))
-    labels = dense_to_one_hot(labels, 10)  # 转化成1维数组
+    labels = dense_to_one_hot(labels, 11)  # 转化成1维数组
     return features, labels
 
 
@@ -86,8 +89,21 @@ def generate_arrays_from_file(features, labels, batch_size, istrain=True):
         height_shift_range=0.05,
         zoom_range=[0.7, 1],
         channel_shift_range=0.2,
-        shear_range=0.3,
+        # shear_range=0.3,
         # validation_split=0.1
+    )
+    # 干扰图
+    datagen2 = K.preprocessing.image.ImageDataGenerator(
+        # featurewise_center=True,
+        # featurewise_std_normalization=True,
+        rotation_range=360,
+        width_shift_range=0.7,
+        height_shift_range=0.7,
+        zoom_range=[0.7, 3],
+        channel_shift_range=0.4,
+        shear_range=0.6,
+        horizontal_flip=True,
+        vertical_flip=True
     )
     while 1:
         for line in range(len(features)):
@@ -105,6 +121,12 @@ def generate_arrays_from_file(features, labels, batch_size, istrain=True):
             y = labels[line]
             # print("x:", line, features[line])
             # print("y:", line, labels[line])
+            # 随机干扰图
+            if y[10] == 1:
+                gen = datagen2.flow(x.reshape((-1, 60, 60, 3)),
+                                    np.array(y).reshape((-1, 11)), batch_size=1)
+                x, _ = next(gen)
+                x = x.reshape((60, 60, 3))
             X.append(x)
             Y.append(y)
             cnt += 1
@@ -142,7 +164,6 @@ def createModel():
     # 卷积
     x = K.layers.Conv2D(32, (7, 7), strides=(4, 4),
                         activation=K.backend.relu,
-                        # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
                         name="conv1", padding="same")(input_value)
     x = K.layers.BatchNormalization()(x)
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool1")(x)
@@ -150,29 +171,38 @@ def createModel():
 
     x = K.layers.Conv2D(64, (5, 5),
                         activation=K.backend.relu,
-                        # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
                         name="conv2", padding="same")(x)
     x = K.layers.BatchNormalization()(x)
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool2")(x)
-    x2 = K.layers.Conv2D(128, (5, 5),
+    x2 = K.layers.Conv2D(64, (1, 1),
                          activation=K.backend.relu,
-                         # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
                          name="conv2_2", padding="same")(x)
     x2 = K.layers.BatchNormalization()(x2)
+    x2 = K.layers.Conv2D(64, (3, 3),
+                         activation=K.backend.relu,
+                         name="conv2_3", padding="same")(x2)
+    x2 = K.layers.BatchNormalization()(x2)
+    x2 = K.layers.Conv2D(64, (1, 1),
+                         activation=K.backend.relu,
+                         name="conv2_4", padding="same")(x2)
+    x2 = K.layers.BatchNormalization()(x2)
     # x = K.layers.Dropout(keep_prob, name="dropout2")(x)
+    x3 = x
 
-    x = K.layers.Conv2D(128, (3, 3),
+    x = K.layers.Conv2D(64, (3, 3),
                         activation=K.backend.relu,
-                        # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
                         name="conv3", padding="same")(x)
     x = K.layers.BatchNormalization()(x)
-    x = K.layers.Conv2D(128, (2, 2),
+    x = K.layers.Conv2D(64, (2, 2),
                         activation=K.backend.relu,
-                        # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
                         name="conv3_2", padding="same")(x)
     x = K.layers.BatchNormalization()(x)
-    x = K.layers.Add()([x, x2])
+    x = K.layers.Add()([x, x2, x3])
     x = K.layers.Activation(K.backend.relu)(x)
+    x = K.layers.BatchNormalization()(x)
+    x = K.layers.Conv2D(128, (3, 3),
+                        activation=K.backend.relu,
+                        name="conv4", padding="same")(x)
     x = K.layers.BatchNormalization()(x)
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool3")(x)
     # x = K.layers.Dropout(keep_prob, name="dropout3")(x)
@@ -187,7 +217,7 @@ def createModel():
     x = K.layers.BatchNormalization()(x)
     # x = K.layers.Dropout(keep_prob, name="dropout4")(x)
 
-    output_value = K.layers.Dense(10, activation=K.backend.softmax,
+    output_value = K.layers.Dense(11, activation=K.backend.softmax,
                                   # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
                                   name="dn2")(x)
 
@@ -230,7 +260,7 @@ def train():
         model = createModel()
 
     # 编译模型
-    model.compile(K.optimizers.Adadelta(lr=1e-3),
+    model.compile(K.optimizers.Adam(lr=1e-3),
                   K.losses.categorical_crossentropy, [K.metrics.binary_accuracy])
 
     # 读取文件
@@ -249,7 +279,7 @@ def train():
     # 动态降低学习速率
     callback2 = K.callbacks.ReduceLROnPlateau(
         monitor='loss', factor=0.5, patience=10, verbose=0, mode='min', min_delta=0.001, cooldown=0, min_lr=0)
-    model.fit_generator(generate_arrays_from_file(features, labels, 50), steps_per_epoch=100, validation_steps=1, epochs=200,
+    model.fit_generator(generate_arrays_from_file(features, labels, 50), steps_per_epoch=100, validation_steps=1, epochs=500,
                         validation_data=generate_arrays_from_file(features2, labels2, len(labels2), False), callbacks=[callback1, callback2])
 
     print("识别")
@@ -266,9 +296,9 @@ def train():
         score = model.predict(predict_image_val, steps=1)
         print("识别路径", path)
         print("识别", np.argmax(score, axis=1))
-        plt.imshow(predict_image_val[0])  # 显示图片
-        plt.axis('off')  # 不显示坐标轴
-        plt.show()
+        # plt.imshow(predict_image_val[0])  # 显示图片
+        # plt.axis('off')  # 不显示坐标轴
+        # plt.show()
     return
 
 
@@ -306,9 +336,9 @@ def predict():
         score = model.predict(predict_image_val, steps=1)
         print("识别路径", path)
         print("识别", np.argmax(score, axis=1))
-        plt.imshow(predict_image_val[0])  # 显示图片
-        plt.axis('off')  # 不显示坐标轴
-        plt.show()
+        # plt.imshow(predict_image_val[0])  # 显示图片
+        # plt.axis('off')  # 不显示坐标轴
+        # plt.show()
     return
 
 
