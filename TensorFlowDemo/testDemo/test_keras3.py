@@ -3,9 +3,14 @@ import numpy as np
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import argparse
 
-face_path = "D:/document/Share"
-# face_path = "E:"
+parser = argparse.ArgumentParser()
+parser.add_argument('face_path')
+parser.add_argument('-t', '--train', default="1")
+args = parser.parse_args()
+
+face_path = args.face_path
 
 
 def readFilesBatch(file_dir):
@@ -66,12 +71,30 @@ def createModel():
     input_value = K.Input((60, 60, 3), name="input")
     print("input_value:", input_value.shape)
     # 反向卷积，大小扩大一倍
-    output_value = K.layers.Conv2D(64, (1, 1), activation="relu", padding="same",
-                                            name="conv1")(input_value)
-    output_value = K.layers.Conv2D(64, (3, 3), activation="relu", padding="same",
-                                            name="conv2")(output_value)
-    output_value = K.layers.Conv2D(64, (1, 1), activation="relu", padding="same",
-                                            name="conv3")(output_value)
+    x1 = K.layers.Conv2D(64, (1, 1), activation="relu", padding="same",
+                                            name="x1_conv1")(input_value)
+    x1 = K.layers.BatchNormalization()(x1)
+    x1 = K.layers.Conv2D(64, (3, 3), activation="relu", padding="same",
+                                            name="x1_conv2")(x1)
+    x1 = K.layers.BatchNormalization()(x1)
+    x1 = K.layers.Conv2D(64, (1, 1), activation="relu", padding="same",
+                                            name="x1_conv3")(x1)
+    x1 = K.layers.BatchNormalization()(x1)
+
+    # 并列x2
+    x2 = K.layers.Conv2D(64, (5, 5), activation="relu", padding="same",
+                                            name="x2_conv1")(input_value)
+    x2 = K.layers.BatchNormalization()(x2)
+
+    # 并列x3
+    x3 = K.layers.Conv2D(64, (2, 2), activation="relu", padding="same",
+                                            name="x3_conv1")(input_value)
+    x3 = K.layers.BatchNormalization()(x3)
+    x3 = K.layers.Conv2D(64, (3, 3), activation="relu", padding="same",
+                                            name="x3_conv2")(x3)
+    x3 = K.layers.BatchNormalization()(x3)
+
+    output_value = K.layers.Add()([x1, x2, x3])
     output_value = K.layers.Conv2DTranspose(256, (2, 2), strides=2, activation="relu",
                                             name="mrcnn_mask_deconv")(output_value)
     # (1,1)卷积提取特征，sigmoid激活函数，值范围转到0-1
@@ -90,11 +113,11 @@ def train():
     model = createModel()
 
     # 编译模型, compile主要完成损失函数和优化器的一些配置，是为训练服务的。
-    model.compile(K.optimizers.Adadelta(),
+    model.compile(K.optimizers.Adam(),
                   K.losses.categorical_crossentropy, [K.metrics.binary_accuracy])
 
-    if os.path.isfile("my_model.h5"):
-        model = K.models.load_model("my_model.h5")
+    if os.path.isfile("data/my_model3.h5"):
+        model = K.models.load_model("data/my_model3.h5")
         print("加载模型文件")
 
     # 读取文件
@@ -148,7 +171,7 @@ def train():
     plt.imshow(score)  # 显示图片
     plt.axis('off')  # 不显示坐标轴
     plt.show()
-    K.models.save_model(model, "my_model.h5")
+    K.models.save_model(model, "data/my_model3.h5")
     return
 
 
@@ -160,7 +183,7 @@ def predict():
     # 加载模型
     print("加载模型")
     model = createModel()
-    model = K.models.load_model("my_model.h5")
+    model = K.models.load_model("data/my_model3.h5")
 
     # 读取文件
     file_dir2 = [face_path + "/face/images_test_500/man/",
@@ -207,8 +230,10 @@ def predict():
 
 
 def main(argv=None):  # 运行
-    train()
-    # predict()
+    if args.train == "1":
+        train()
+    else:
+        predict()
     # f = h5py.File('my_model.h5', 'r+')
     # for key in f.keys():
     #     print(key)
