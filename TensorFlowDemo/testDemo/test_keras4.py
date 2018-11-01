@@ -32,7 +32,7 @@ def randomHSV(rgb):
     # 通道拆分
     (h, s, v) = cv2.split(hsv)
     # 0.8概率随机颜色
-    if np.random.random() < 0.8:
+    if np.random.random() < 0.7:
         h_value = np.random.uniform(0, 360)
         # print("h_value",type(h_value))
         h = (np.random.uniform(-10, 10, size=h.shape).astype(np.float32) + h_value)
@@ -158,7 +158,6 @@ def readFilesOne(filename):
 
 
 def createModel():
-    keep_prob = 0.9  # dropout概率
     input_value = K.Input((60, 60, 3), name="input")
     print("input_value:", input_value.shape)
     # 卷积
@@ -167,13 +166,13 @@ def createModel():
                         name="conv1", padding="same")(input_value)
     x = K.layers.BatchNormalization()(x)
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool1")(x)
-    # x = K.layers.Dropout(keep_prob, name="dropout1")(x)
 
     x = K.layers.Conv2D(64, (5, 5),
                         activation=K.backend.relu,
                         name="conv2", padding="same")(x)
     x = K.layers.BatchNormalization()(x)
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool2")(x)
+
     x2 = K.layers.Conv2D(64, (1, 1),
                          activation=K.backend.relu,
                          name="conv2_2", padding="same")(x)
@@ -186,7 +185,7 @@ def createModel():
                          activation=K.backend.relu,
                          name="conv2_4", padding="same")(x2)
     x2 = K.layers.BatchNormalization()(x2)
-    # x = K.layers.Dropout(keep_prob, name="dropout2")(x)
+
     x3 = x
 
     x = K.layers.Conv2D(64, (3, 3),
@@ -205,18 +204,24 @@ def createModel():
                         name="conv4", padding="same")(x)
     x = K.layers.BatchNormalization()(x)
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool3")(x)
-    # x = K.layers.Dropout(keep_prob, name="dropout3")(x)
 
-    # 转一维
-    x = K.layers.Flatten(name="Flatten")(x)
-    x = K.layers.Dense(100,
-                       # activation=K.backend.relu,
-                       # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
-                       name="dn1")(x)
-    x = K.layers.Activation(K.backend.relu)(x)
+    # FCN转一维
+    x = K.layers.Conv2D(100, x.shape,
+                        activation=K.backend.relu,
+                        name="conv5", padding="valid")(x)
     x = K.layers.BatchNormalization()(x)
-    # x = K.layers.Dropout(keep_prob, name="dropout4")(x)
+    # # 转一维
+    # x = K.layers.Flatten(name="Flatten")(x)
+    # x = K.layers.Dense(100,
+    #                    # activation=K.backend.relu,
+    #                    # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
+    #                    name="dn1")(x)
+    # x = K.layers.Activation(K.backend.relu)(x)
+    # x = K.layers.BatchNormalization()(x)
 
+    x = K.layers.Conv2D(100, x.shape,
+                        activation=K.backend.softmax,
+                        name="conv5", padding="valid")(x)
     output_value = K.layers.Dense(11, activation=K.backend.softmax,
                                   # kernel_initializer=K.initializers.RandomNormal(mean=0.0, stddev=0.05),
                                   name="dn2")(x)
@@ -232,7 +237,7 @@ class MyCallback(K.callbacks.Callback):
         # print("MyCallback",epoch)
         print("MyCallback", logs)
         # print("MyCallback self.model",self.model)
-        if logs["val_binary_accuracy"] >= 1:
+        if logs["val_binary_accuracy"] >= 0.997:
             self.stopped_epoch = epoch
             self.model.stop_training = True
 
@@ -260,7 +265,7 @@ def train():
         model = createModel()
 
     # 编译模型
-    model.compile(K.optimizers.Adam(lr=1e-3),
+    model.compile(K.optimizers.SGD(lr=1e-3,momentum=0.5,decay=0.001),
                   K.losses.categorical_crossentropy, [K.metrics.binary_accuracy])
 
     # 读取文件
@@ -278,8 +283,8 @@ def train():
     callback1 = MyCallback()
     # 动态降低学习速率
     callback2 = K.callbacks.ReduceLROnPlateau(
-        monitor='loss', factor=0.5, patience=10, verbose=0, mode='min', min_delta=0.001, cooldown=0, min_lr=0)
-    model.fit_generator(generate_arrays_from_file(features, labels, 50), steps_per_epoch=100, validation_steps=1, epochs=500,
+        monitor='loss', factor=0.8, patience=10, verbose=0, mode='min', min_delta=0.001, cooldown=0, min_lr=0)
+    model.fit_generator(generate_arrays_from_file(features, labels, 50), steps_per_epoch=100, validation_steps=1, epochs=100,
                         validation_data=generate_arrays_from_file(features2, labels2, len(labels2), False), callbacks=[callback1, callback2])
 
     print("识别")
