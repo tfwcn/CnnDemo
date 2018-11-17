@@ -45,10 +45,16 @@ def randomHSV():
 
 
 def testCode():
-    with tf.Session() as sess:
-        print(tf.greater(4,3).eval())
-        print(tf.greater(3,3).eval())
-        print(tf.greater(2,3).eval())
+    a=cv2.imread('1.png')
+    h,w = a.shape[:2]
+    pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ])
+
+    # =====================
+
+    # with tf.Session() as sess:
+    #     print(tf.greater(4,3).eval())
+    #     print(tf.greater(3,3).eval())
+    #     print(tf.greater(2,3).eval())
 
     # =====================
 
