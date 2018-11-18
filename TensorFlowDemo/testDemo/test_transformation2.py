@@ -1,3 +1,4 @@
+import tensorflow as tf
 import keras as K
 import numpy as np
 import os
@@ -17,11 +18,21 @@ face_path = args.labels_path
 def randomTransformation(rgb):
     h, w = rgb.shape[:2]
     pts = np.float32([[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]])
-    pts1 = np.float32([[0, 0], [0, h-1*0.5], [w-1*0.6, h-1*0.7], [w-1*0.8, 0]])
+    x1 = (np.random.random()-0.6)*w
+    y1 = (np.random.random()-0.6)*h
+    x2 = (np.random.random()-0.6)*w
+    y2 = (np.random.random()+0.6)*h
+    x3 = (np.random.random()+0.6)*w
+    y3 = (np.random.random()+0.6)*h
+    x4 = (np.random.random()+0.6)*w
+    y4 = (np.random.random()-0.6)*h
+    # print([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
+    pts1 = np.float32([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
     M = cv2.getPerspectiveTransform(pts, pts1)
     dst = cv2.warpPerspective(rgb, M, rgb.shape[:2])
-    # print("hsv",hsv.shape)
-    return rgb, M
+    M2 = cv2.getPerspectiveTransform(pts1, pts)
+    # print("M", M)
+    return dst, M2
 
 
 def readFilesBatch(file_dir):
@@ -54,12 +65,14 @@ def generate_arrays_from_file(features, batch_size, istrain=True):
             # and labels, from each line in the file
             # print("features:", features[line])
             x = K.preprocessing.image.load_img(
-                features[line], target_size=(60, 60))
+                features[line], target_size=(512, 512))
             x = K.preprocessing.image.img_to_array(
                 x, data_format="channels_last")
             x = x.astype('float32')
             x /= 255.0
             x, y = randomTransformation(x)
+            print("y:",y.shape)
+            y = np.reshape(y,(9))
             # print("x:",x.shape)
             # print("x:", line, features[line])
             # print("y:", line, labels[line])
@@ -80,29 +93,32 @@ def generate_arrays_from_file(features, batch_size, istrain=True):
 
 def readFilesOne(filename):
     """读取单个文件，识别用"""
-    features = K.preprocessing.image.load_img(filename, target_size=(60, 60))
+    features = K.preprocessing.image.load_img(filename, target_size=(512, 512))
     features = K.preprocessing.image.img_to_array(
         features, data_format="channels_last")
     features = features.astype('float32')
     features /= 255.0
-    features = np.reshape(features, (-1, 60, 60, 3))
+    features, y = randomTransformation(features)
+    features = np.reshape(features, (-1, 512, 512, 3))
     return features
 
 
 def createModel():
-    input_value = K.Input((60, 60, 3), name="input")
+    input_value = K.Input((512, 512, 3), name="input")
     print("input_value:", input_value.shape)
     # 卷积
     x = K.layers.Conv2D(32, (7, 7), strides=(4, 4),
                         activation=K.backend.relu,
                         name="conv1", padding="same")(input_value)
     x = K.layers.BatchNormalization()(x)
+    # 池化
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool1")(x)
 
     x = K.layers.Conv2D(64, (5, 5),
                         activation=K.backend.relu,
                         name="conv2", padding="same")(x)
     x = K.layers.BatchNormalization()(x)
+    # 池化
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool2")(x)
 
     x2 = K.layers.Conv2D(64, (1, 1),
@@ -135,18 +151,21 @@ def createModel():
                         activation=K.backend.relu,
                         name="conv4", padding="same")(x)
     x = K.layers.BatchNormalization()(x)
+    # 池化
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool3")(x)
 
     # FCN转一维
-    x = K.layers.Conv2D(100, x.shape,
+    x = K.layers.Conv2D(100, (15, 15),
                         activation=K.backend.relu,
                         name="conv5", padding="valid")(x)
     x = K.layers.BatchNormalization()(x)
 
-    x = K.layers.Conv2D(6, x.shape,
-                        activation=K.backend.softmax,
+    x = K.layers.Conv2D(9, (1, 1),
+                        # activation=K.backend.softmax,
                         name="conv6", padding="valid")(x)
-    output_value = K.layers.Reshape((3, 2))(x)
+    print("x.shape", x.shape)
+    # output_value = K.layers.Lambda(lambda x: tf.reshape(x, (-1, 3, 3)))(x)
+    output_value = x
     print("output_value.shape", output_value.shape)
 
     model = K.Model(inputs=input_value, outputs=output_value, name="test")
@@ -180,23 +199,21 @@ def train():
     # 开始建立CNN模型
     ###############
     # 加载模型
-    model = K.Model()
+    model = createModel()
     if os.path.isfile("data/my_model_transformation2.h5"):
-        model = K.models.load_model("data/my_model_transformation2.h5")
+        model.load_weights("data/my_model_transformation2.h5", by_name=True)
         print("加载模型文件")
-    else:
-        model = createModel()
 
     # 编译模型
-    model.compile(K.optimizers.SGD(lr=1e-3, momentum=0.5, decay=0.001),
+    model.compile(K.optimizers.Adadelta(lr=1e-4),
                   K.losses.categorical_crossentropy, [K.metrics.binary_accuracy])
 
     # 读取文件
-    file_dir = [face_path+"labels/0-9/train/"]
+    file_dir = [face_path]
     features = readFilesBatch(file_dir)
     # print("labels",labels)
 
-    file_dir2 = [face_path+"labels/0-9/test/"]
+    file_dir2 = [face_path]
     features2 = readFilesBatch(file_dir2)
 
     print("训练")
@@ -207,7 +224,7 @@ def train():
     # 动态降低学习速率
     callback2 = K.callbacks.ReduceLROnPlateau(
         monitor='loss', factor=0.8, patience=10, verbose=0, mode='min', min_delta=0.001, cooldown=0, min_lr=0)
-    model.fit_generator(generate_arrays_from_file(features, 50), steps_per_epoch=100, validation_steps=1, epochs=100,
+    model.fit_generator(generate_arrays_from_file(features, 50), steps_per_epoch=100, validation_steps=1, epochs=10,
                         validation_data=generate_arrays_from_file(features2, len(features2), False), callbacks=[callback1, callback2])
 
     print("识别")
@@ -216,17 +233,23 @@ def train():
     print("损失值：", score[0])
     print("准确率：", score[1])
 
-    K.models.save_model(model, "data/my_model_transformation2.h5")
+    model.save_weights("data/my_model_transformation2.h5")
 
     pathDir = os.listdir(file_dir2[0])
     for path in pathDir:
         predict_image_val = readFilesOne(file_dir2[0]+path)
         score = model.predict(predict_image_val, steps=1)
+        predict_image_val = predict_image_val.reshape((512,512,3))
         print("识别路径", path)
-        print("识别", np.argmax(score, axis=1))
-        # plt.imshow(predict_image_val[0])  # 显示图片
-        # plt.axis('off')  # 不显示坐标轴
-        # plt.show()
+        print("识别", score[0])
+        dst = cv2.warpPerspective(
+            predict_image_val, np.reshape(score[0],(3,3)), predict_image_val.shape[:2])
+        plt.imshow(predict_image_val)  # 显示图片
+        plt.axis('off')  # 不显示坐标轴
+        plt.show()
+        plt.imshow(dst)  # 显示图片
+        plt.axis('off')  # 不显示坐标轴
+        plt.show()
     return
 
 
@@ -236,12 +259,17 @@ def predict():
     # 开始建立CNN模型
     ###############
     # 加载模型
-    print("加载模型")
-    model = K.Model()
-    model = K.models.load_model("data/my_model_transformation2.h5")
+    model = createModel()
+    if os.path.isfile("data/my_model_transformation2.h5"):
+        model.load_weights("data/my_model_transformation2.h5", by_name=True)
+        print("加载模型文件")
+
+    # 编译模型
+    model.compile(K.optimizers.Adadelta(lr=1e-4),
+                  K.losses.categorical_crossentropy, [K.metrics.binary_accuracy])
 
     # 读取文件
-    file_dir2 = [face_path+"labels/0-9/test/"]
+    file_dir2 = [face_path]
     features2 = readFilesBatch(file_dir2)
 
     # pathDir = os.listdir(file_dir2[0])
@@ -254,7 +282,7 @@ def predict():
 
     # print("识别", labels2)
     score = model.evaluate_generator(
-        generate_arrays_from_file(features2, len(features2), False), steps=1, max_q_size=1)
+        generate_arrays_from_file(features2, len(features2), False), steps=1)
     print("损失值：", score[0])
     print("准确率：", score[1])
 
@@ -262,28 +290,34 @@ def predict():
     for path in pathDir:
         predict_image_val = readFilesOne(file_dir2[0]+path)
         score = model.predict(predict_image_val, steps=1)
+        predict_image_val = predict_image_val.reshape((512,512,3))
         print("识别路径", path)
-        print("识别", np.argmax(score, axis=1))
-        # plt.imshow(predict_image_val[0])  # 显示图片
-        # plt.axis('off')  # 不显示坐标轴
-        # plt.show()
+        print("识别", score[0])
+        dst = cv2.warpPerspective(
+            predict_image_val, np.reshape(score[0],(3,3)), predict_image_val.shape[:2])
+        plt.imshow(predict_image_val)  # 显示图片
+        plt.axis('off')  # 不显示坐标轴
+        plt.show()
+        plt.imshow(dst)  # 显示图片
+        plt.axis('off')  # 不显示坐标轴
+        plt.show()
     return
 
 
 def main(argv=None):  # 运行
-    # if args.train == "1":
-    #     train()
-    # else:
-    #     predict()
+    if args.train == "1":
+        train()
+    else:
+        predict()
     # 读取文件
-    file_dir = [face_path]
-    features = readFilesBatch(file_dir)
-    x, y = generate_arrays_from_file(features, 20)
-    print("x2:", x.shape)
-    for i in x:
-        plt.imshow(i)  # 显示图片
-        plt.axis('off')  # 不显示坐标轴
-        plt.show()
+    # file_dir = [face_path]
+    # features = readFilesBatch(file_dir)
+    # x, y = generate_arrays_from_file(features, 20)
+    # print("x2:", x.shape)
+    # for i in x:
+    #     plt.imshow(i)  # 显示图片
+    #     plt.axis('off')  # 不显示坐标轴
+    #     plt.show()
 
 
 if __name__ == '__main__':
