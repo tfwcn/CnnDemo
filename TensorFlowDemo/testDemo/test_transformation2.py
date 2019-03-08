@@ -18,21 +18,22 @@ face_path = args.labels_path
 def randomTransformation(rgb):
     h, w = rgb.shape[:2]
     pts = np.float32([[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]])
-    x1 = (np.random.random()-0.6)*w
-    y1 = (np.random.random()-0.6)*h
-    x2 = (np.random.random()-0.6)*w
-    y2 = (np.random.random()+0.6)*h
-    x3 = (np.random.random()+0.6)*w
-    y3 = (np.random.random()+0.6)*h
-    x4 = (np.random.random()+0.6)*w
-    y4 = (np.random.random()-0.6)*h
+    x1 = np.maximum((np.random.random()-0.6)*w, 0)
+    y1 = np.maximum((np.random.random()-0.6)*h, 0)
+    x2 = np.maximum((np.random.random()-0.6)*w, 0)
+    y2 = np.minimum((np.random.random()+0.6)*h, h)
+    x3 = np.minimum((np.random.random()+0.6)*w, w)
+    y3 = np.minimum((np.random.random()+0.6)*h, h)
+    x4 = np.minimum((np.random.random()+0.6)*w, w)
+    y4 = np.maximum((np.random.random()-0.6)*h, 0)
     # print([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
     pts1 = np.float32([[x1, y1], [x2, y2], [x3, y3], [x4, y4]])
     M = cv2.getPerspectiveTransform(pts, pts1)
     dst = cv2.warpPerspective(rgb, M, rgb.shape[:2])
     M2 = cv2.getPerspectiveTransform(pts1, pts)
+    pts1 /= 512.0
     # print("M", M)
-    return dst, M2
+    return dst, pts1
 
 
 def readFilesBatch(file_dir):
@@ -71,8 +72,8 @@ def generate_arrays_from_file(features, batch_size, istrain=True):
             x = x.astype('float32')
             x /= 255.0
             x, y = randomTransformation(x)
-            print("y:",y.shape)
-            y = np.reshape(y,(9))
+            # print("y:",y.shape)
+            # y = np.reshape(y, (9))
             # print("x:",x.shape)
             # print("x:", line, features[line])
             # print("y:", line, labels[line])
@@ -155,17 +156,21 @@ def createModel():
     x = K.layers.MaxPool2D((3, 3), strides=(2, 2), name="pool3")(x)
 
     # FCN转一维
-    x = K.layers.Conv2D(100, (15, 15),
+    x = K.layers.Conv2D(1000, (15, 15),
                         activation=K.backend.relu,
                         name="conv5", padding="valid")(x)
     x = K.layers.BatchNormalization()(x)
 
-    x = K.layers.Conv2D(9, (1, 1),
-                        # activation=K.backend.softmax,
+    x = K.layers.Conv2D(500, (1, 1),
+                        activation=K.backend.softmax,
                         name="conv6", padding="valid")(x)
+
+    x = K.layers.Conv2D(8, (1, 1),
+                        activation=None,
+                        name="conv7", padding="valid")(x)
     print("x.shape", x.shape)
-    # output_value = K.layers.Lambda(lambda x: tf.reshape(x, (-1, 3, 3)))(x)
-    output_value = x
+    output_value = K.layers.Lambda(lambda x2: tf.reshape(x2, (-1, 4, 2)))(x)
+    # output_value = x
     print("output_value.shape", output_value.shape)
 
     model = K.Model(inputs=input_value, outputs=output_value, name="test")
@@ -198,6 +203,7 @@ def train():
     ###############
     # 开始建立CNN模型
     ###############
+    print("训练")
     # 加载模型
     model = createModel()
     if os.path.isfile("data/my_model_transformation2.h5"):
@@ -216,7 +222,6 @@ def train():
     file_dir2 = [face_path]
     features2 = readFilesBatch(file_dir2)
 
-    print("训练")
     # 训练
     # 准确率达到1时，提前停止训练
     # early_stopping = K.callbacks.EarlyStopping(monitor='is_ok', patience=0,min_delta=0, verbose=0, mode='max')
@@ -239,11 +244,18 @@ def train():
     for path in pathDir:
         predict_image_val = readFilesOne(file_dir2[0]+path)
         score = model.predict(predict_image_val, steps=1)
-        predict_image_val = predict_image_val.reshape((512,512,3))
+        predict_image_val = predict_image_val.reshape((512, 512, 3))
         print("识别路径", path)
         print("识别", score[0])
+        # dst = cv2.warpPerspective(
+        #     predict_image_val, np.reshape(score[0], (3, 3)), predict_image_val.shape[:2])
+        # 透视矩阵变换
+        h, w = predict_image_val.shape[:2]
+        pts = np.float32([[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]])
+        pts1 = score[0] * 512.0
+        M = cv2.getPerspectiveTransform(pts1, pts)
         dst = cv2.warpPerspective(
-            predict_image_val, np.reshape(score[0],(3,3)), predict_image_val.shape[:2])
+            predict_image_val, M, predict_image_val.shape[:2])
         plt.imshow(predict_image_val)  # 显示图片
         plt.axis('off')  # 不显示坐标轴
         plt.show()
@@ -290,11 +302,15 @@ def predict():
     for path in pathDir:
         predict_image_val = readFilesOne(file_dir2[0]+path)
         score = model.predict(predict_image_val, steps=1)
-        predict_image_val = predict_image_val.reshape((512,512,3))
+        predict_image_val = predict_image_val.reshape((512, 512, 3))
         print("识别路径", path)
         print("识别", score[0])
+        h, w = predict_image_val.shape[:2]
+        pts = np.float32([[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]])
+        pts1 = score[0] * 512.0
+        M = cv2.getPerspectiveTransform(pts1, pts)
         dst = cv2.warpPerspective(
-            predict_image_val, np.reshape(score[0],(3,3)), predict_image_val.shape[:2])
+            predict_image_val, M, predict_image_val.shape[:2])
         plt.imshow(predict_image_val)  # 显示图片
         plt.axis('off')  # 不显示坐标轴
         plt.show()
@@ -312,8 +328,9 @@ def main(argv=None):  # 运行
     # 读取文件
     # file_dir = [face_path]
     # features = readFilesBatch(file_dir)
-    # x, y = generate_arrays_from_file(features, 20)
+    # x, y = next(generate_arrays_from_file(features, 20))
     # print("x2:", x.shape)
+    # print("y:", y)
     # for i in x:
     #     plt.imshow(i)  # 显示图片
     #     plt.axis('off')  # 不显示坐标轴

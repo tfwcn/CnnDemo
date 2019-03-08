@@ -95,10 +95,21 @@ def createModel():
     x3 = K.layers.BatchNormalization()(x3)
 
     output_value = K.layers.Add()([x1, x2, x3])
-    output_value = K.layers.Conv2DTranspose(256, (2, 2), strides=2, activation="relu",
+    # 反卷积
+    # output_value = K.layers.Conv2DTranspose(128, (2, 2), strides=2, activation="relu",
+    #                                         name="mrcnn_mask_deconv")(output_value)
+    output_value = K.layers.UpSampling2D((2, 2),
                                             name="mrcnn_mask_deconv")(output_value)
+    output_value = K.layers.BatchNormalization()(output_value)
+    output_value = K.layers.Conv2D(128, (3, 3), activation="relu", padding="same",
+                                            name="output_value_conv1")(output_value)
+    output_value = K.layers.BatchNormalization()(output_value)
+    output_value = K.layers.Conv2D(128, (1, 1), activation="relu", padding="same",
+                                            name="output_value_conv2")(output_value)
+    output_value = K.layers.BatchNormalization()(output_value)
     # (1,1)卷积提取特征，sigmoid激活函数，值范围转到0-1
-    output_value = K.layers.Conv2D(3, (1, 1), strides=1, activation="sigmoid",
+    # 回归模型不用激活函数
+    output_value = K.layers.Conv2D(3, (1, 1), strides=1, activation=None,
                                    name="mrcnn_mask")(output_value)
     model = K.Model(inputs=input_value, outputs=output_value, name="test")
     return model
@@ -114,19 +125,19 @@ def train():
 
     # 编译模型, compile主要完成损失函数和优化器的一些配置，是为训练服务的。
     model.compile(K.optimizers.Adam(),
-                  K.losses.categorical_crossentropy, [K.metrics.binary_accuracy])
+                  K.losses.mean_squared_error, [K.metrics.mean_squared_error])
 
     if os.path.isfile("data/my_model3.h5"):
         model = K.models.load_model("data/my_model3.h5")
         print("加载模型文件")
 
     # 读取文件
-    file_dir = [face_path + "/face/face0/女_2929/",
-                face_path + "/face/face0/男_2929/"]
+    file_dir = [face_path + "/face0/女_2929/",
+                face_path + "/face0/男_2929/"]
     features = readFilesBatch(file_dir)
 
-    file_dir2 = [face_path + "/face/images_test_500/man/",
-                 face_path + "/face/images_test_500/women/"]
+    file_dir2 = [face_path + "/face0/女_250/",
+                 face_path + "/face0/男_250/"]
     features2 = readFilesBatch(file_dir2)
 
     print("训练")
@@ -141,7 +152,7 @@ def train():
     print("准确率：", score[1])
 
     predict_image_val = K.preprocessing.image.load_img(
-        face_path + "/face/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg", target_size=(60, 60))
+        face_path + "/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg", target_size=(60, 60))
     predict_image_val = K.preprocessing.image.img_to_array(
         predict_image_val, data_format="channels_last")
     predict_image_val = predict_image_val.astype('float32')
@@ -151,13 +162,18 @@ def train():
     score *= 255
     score = np.reshape(score, (120, 120, 3))
     score = score.astype("int32")
+    score = np.maximum(score,0)
+    score = np.minimum(score,255)
     print("识别", score.shape)
+    plt.imshow(predict_image_val)  # 显示图片
+    plt.axis('off')  # 不显示坐标轴
+    plt.show()
     plt.imshow(score)  # 显示图片
     plt.axis('off')  # 不显示坐标轴
     plt.show()
 
     predict_image_val = K.preprocessing.image.load_img(
-        face_path + "/face/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg", target_size=(60, 60))
+        face_path + "/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg", target_size=(60, 60))
     predict_image_val = K.preprocessing.image.img_to_array(
         predict_image_val, data_format="channels_last")
     predict_image_val = predict_image_val.astype('float32')
@@ -168,6 +184,9 @@ def train():
     score = np.reshape(score, (120, 120, 3))
     score = score.astype("int32")
     print("识别", score.shape)
+    plt.imshow(predict_image_val)  # 显示图片
+    plt.axis('off')  # 不显示坐标轴
+    plt.show()
     plt.imshow(score)  # 显示图片
     plt.axis('off')  # 不显示坐标轴
     plt.show()
@@ -207,6 +226,9 @@ def predict():
     score = np.reshape(score, (120, 120, 3))
     score = score.astype("int32")
     print("识别", score.shape)
+    plt.imshow(predict_image_val)  # 显示图片
+    plt.axis('off')  # 不显示坐标轴
+    plt.show()
     plt.imshow(score)  # 显示图片
     plt.axis('off')  # 不显示坐标轴
     plt.show()
@@ -223,6 +245,9 @@ def predict():
     score = np.reshape(score, (120, 120, 3))
     score = score.astype("int32")
     print("识别", score.shape)
+    plt.imshow(predict_image_val)  # 显示图片
+    plt.axis('off')  # 不显示坐标轴
+    plt.show()
     plt.imshow(score)  # 显示图片
     plt.axis('off')  # 不显示坐标轴
     plt.show()

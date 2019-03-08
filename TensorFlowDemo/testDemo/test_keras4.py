@@ -73,7 +73,8 @@ def readFilesBatch(file_dir):
     features = data['文件路径'].values
     labels = data['标签'].values
     # print(len(labels), len(char_list))
-    labels = dense_to_one_hot(labels, 11)  # 转化成1维数组
+    # labels = dense_to_one_hot(labels, 11)  # 转化成1维数组
+    labels = K.utils.to_categorical(labels, 11)  # 转化成1维数组
     return features, labels
 
 

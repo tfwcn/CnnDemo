@@ -45,9 +45,50 @@ def randomHSV():
 
 
 def testCode():
-    a=cv2.imread('1.png')
-    h,w = a.shape[:2]
-    pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ])
+    with tf.Session() as sess:
+        # 常量
+        a=tf.constant(((2.0,8.0),(3.0,9.0)))
+        print(a.eval())
+        # 常量
+        b=tf.constant(((1.0,2.0),(3.0,4.0)))
+        print(b.eval())
+        # 常量
+        c=tf.constant(((9.0,1.0),(2.0,9.0)))
+        print(b.eval())
+        # # 相减
+        # s=tf.math.subtract(a,b)
+        # print(s.eval())
+        # # 求和
+        # loss=tf.reduce_mean(s)
+        # print(loss.eval())
+        # 锚点
+        anchor=a
+        # 正样本
+        positive=b
+        # 负样本
+        negative=c
+        # 计算锚点与正样本的距离
+        pos_dist = tf.reduce_sum(tf.square(tf.subtract(anchor, positive)), 1)
+        print("pos_dist",pos_dist.eval())
+        # 计算锚点与负样本的距离
+        neg_dist = tf.reduce_sum(tf.square(tf.subtract(anchor, negative)), 1)
+        print("neg_dist",neg_dist.eval())
+        # 正距离减负距离为损失值（训练时basic_loss会尽量逼近0，最终两个距离相等，还不符合要求,要加一个数，使结果偏向正）
+        basic_loss = tf.add(tf.subtract(pos_dist,neg_dist), 0.2)
+        print("basic_loss",basic_loss.eval())
+        # 取消小于0的loss,让结果向正方向收敛
+        # loss = tf.reduce_mean(tf.maximum(basic_loss,0), 0)
+        loss = tf.maximum(basic_loss,0)
+        print("loss",loss.eval())
+
+    # =====================
+
+    # a=cv2.imread('E:/Labels/yibiao/140a4f4536923f24d736e88b2fd2ed7f.jpg')
+    # h,w = a.shape[:2]
+    # pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ])
+    # pts1 = np.float32(pts / ((w-1,h-1),(w-1,h-1),(w-1,h-1),(w-1,h-1)))
+    # print("pts",pts)
+    # print("pts1",pts1)
 
     # =====================
 
