@@ -150,47 +150,6 @@ def train():
         generate_arrays_from_file(features2, 50), steps=10)
     print("损失值：", score[0])
     print("准确率：", score[1])
-
-    predict_image_val = K.preprocessing.image.load_img(
-        face_path + "/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg", target_size=(60, 60))
-    predict_image_val = K.preprocessing.image.img_to_array(
-        predict_image_val, data_format="channels_last")
-    predict_image_val = predict_image_val.astype('float32')
-    predict_image_val /= 255.0
-    predict_image_val = np.reshape(predict_image_val, (-1, 60, 60, 3))
-    score = model.predict(predict_image_val, steps=1)
-    score *= 255
-    score = np.reshape(score, (120, 120, 3))
-    score = score.astype("int32")
-    score = np.maximum(score,0)
-    score = np.minimum(score,255)
-    print("识别", score.shape)
-    plt.imshow(predict_image_val)  # 显示图片
-    plt.axis('off')  # 不显示坐标轴
-    plt.show()
-    plt.imshow(score)  # 显示图片
-    plt.axis('off')  # 不显示坐标轴
-    plt.show()
-
-    predict_image_val = K.preprocessing.image.load_img(
-        face_path + "/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg", target_size=(60, 60))
-    predict_image_val = K.preprocessing.image.img_to_array(
-        predict_image_val, data_format="channels_last")
-    predict_image_val = predict_image_val.astype('float32')
-    predict_image_val /= 255.0
-    predict_image_val = np.reshape(predict_image_val, (-1, 60, 60, 3))
-    score = model.predict(predict_image_val, steps=1)
-    score *= 255
-    score = np.reshape(score, (120, 120, 3))
-    score = score.astype("int32")
-    print("识别", score.shape)
-    plt.imshow(predict_image_val)  # 显示图片
-    plt.axis('off')  # 不显示坐标轴
-    plt.show()
-    plt.imshow(score)  # 显示图片
-    plt.axis('off')  # 不显示坐标轴
-    plt.show()
-    K.models.save_model(model, "data/my_model3.h5")
     return
 
 
@@ -205,52 +164,68 @@ def predict():
     model = K.models.load_model("data/my_model3.h5")
 
     # 读取文件
-    file_dir2 = [face_path + "/face/images_test_500/man/",
-                 face_path + "/face/images_test_500/women/"]
-    features2 = readFilesBatch(file_dir2)
     print("识别")
-    score = model.evaluate_generator(
-        generate_arrays_from_file(features2, 50), steps=10)
-    print("损失值：", score[0])
-    print("准确率：", score[1])
 
+    predict_image_val2 = K.preprocessing.image.load_img(
+        face_path + "/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg", target_size=(120, 120))
+    predict_image_val2 = K.preprocessing.image.img_to_array(
+        predict_image_val2, data_format="channels_last")
+    predict_image_val2 = predict_image_val2.astype('float32')
+    predict_image_val2 /= 255.0
     predict_image_val = K.preprocessing.image.load_img(
-        face_path + "/face/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg", target_size=(60, 60))
+        face_path + "/face0/359_a85b2b5f-3c83-412c-8224-771fead119b0.jpg", target_size=(60, 60))
     predict_image_val = K.preprocessing.image.img_to_array(
         predict_image_val, data_format="channels_last")
     predict_image_val = predict_image_val.astype('float32')
     predict_image_val /= 255.0
+    old_image = predict_image_val
     predict_image_val = np.reshape(predict_image_val, (-1, 60, 60, 3))
     score = model.predict(predict_image_val, steps=1)
     score *= 255
     score = np.reshape(score, (120, 120, 3))
     score = score.astype("int32")
+    score = np.maximum(score,0)
+    score = np.minimum(score,255)
     print("识别", score.shape)
-    plt.imshow(predict_image_val)  # 显示图片
+    plt.imshow(old_image)  # 显示图片
+    plt.axis('off')  # 不显示坐标轴
+    plt.show()
+    plt.imshow(predict_image_val2)  # 显示图片
     plt.axis('off')  # 不显示坐标轴
     plt.show()
     plt.imshow(score)  # 显示图片
     plt.axis('off')  # 不显示坐标轴
     plt.show()
 
+    predict_image_val2 = K.preprocessing.image.load_img(
+        face_path + "/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg", target_size=(120, 120))
+    predict_image_val2 = K.preprocessing.image.img_to_array(
+        predict_image_val2, data_format="channels_last")
+    predict_image_val2 = predict_image_val2.astype('float32')
+    predict_image_val2 /= 255.0
     predict_image_val = K.preprocessing.image.load_img(
-        face_path + "/face/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg", target_size=(60, 60))
+        face_path + "/face0/359_6146e5d3-21c0-4f85-bfdb-24e161226ddc.jpg", target_size=(60, 60))
     predict_image_val = K.preprocessing.image.img_to_array(
         predict_image_val, data_format="channels_last")
     predict_image_val = predict_image_val.astype('float32')
     predict_image_val /= 255.0
+    old_image = predict_image_val
     predict_image_val = np.reshape(predict_image_val, (-1, 60, 60, 3))
     score = model.predict(predict_image_val, steps=1)
     score *= 255
     score = np.reshape(score, (120, 120, 3))
     score = score.astype("int32")
     print("识别", score.shape)
-    plt.imshow(predict_image_val)  # 显示图片
+    plt.imshow(old_image)  # 显示图片
+    plt.axis('off')  # 不显示坐标轴
+    plt.show()
+    plt.imshow(predict_image_val2)  # 显示图片
     plt.axis('off')  # 不显示坐标轴
     plt.show()
     plt.imshow(score)  # 显示图片
     plt.axis('off')  # 不显示坐标轴
     plt.show()
+    K.models.save_model(model, "data/my_model3.h5")
     return
 
 
