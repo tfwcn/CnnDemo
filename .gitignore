@@ -17,3 +17,5 @@ obj
 data
 img
 .vscode
+logs
+__pycache__

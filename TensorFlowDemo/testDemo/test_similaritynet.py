@@ -6,6 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import cv2 as cv2
 import argparse
+import random
 from models.SimilarityModel import SimilarityModel
 from models.ImageHelper import ImageHelper
 
@@ -26,26 +27,65 @@ similarityModel = SimilarityModel()
 
 
 def readFilesBatch(file_dir):
-    # 读取文件列表
-    TEST_IMAGE_PATHS = []
+    '''读取文件列表'''
+    image_paths = []
+    image_ids = []
+    now_id = 0
     for i in range(len(file_dir)):
+        # 读取所有文件夹
         pathDir = os.listdir(file_dir[i])
-        # 定义特征与标签
-        TEST_IMAGE_PATHS += [file_dir[i]+path for path in pathDir]
+        # print(pathDir)
+        for path in pathDir:
+            pathDir2 = os.listdir(os.path.join(file_dir[i], path))
+            for path2 in pathDir2:
+                # 定义特征与标签
+                image_paths += [os.path.join(file_dir[i], path, path2)]
+                image_ids += [now_id]
+            now_id += 1
 
-    features = pd.Series(TEST_IMAGE_PATHS)
-    # 把列添加到表格
-    data = pd.DataFrame({'文件路径': features})
+    features = pd.Series(image_paths)
+    labels = pd.Series(image_ids)
+    # 把列添加到表格,同人图片ID相同
+    data = pd.DataFrame({'image_paths': features, 'image_ids': labels})
     # 随机排序
     # data = data.reindex(np.random.permutation(data.index))
-    data = data.sample(frac=1)
+    # data = data.sample(frac=1)
     # print(data)
+    print('图片总数：', len(data))
+    return data
 
-    features = data['文件路径'].values
-    return features
+
+def hasImagesById(data, image_path, image_id):
+    '''通过图片id判断是否有其他相同图片'''
+    return len(data[(data['image_ids'] == image_id) & (data['image_paths'] != image_path)]) > 0
 
 
-def generate_arrays_from_file(features, batch_size, istrain=True):
+def getRandomImage(data):
+    '''获取随机图片，有多张相同图片'''
+    image = data.iloc[random.randint(0, len(data) - 1)]
+    # print(image['image_paths'], image['image_ids'])
+    while hasImagesById(data, image['image_paths'], image['image_ids']) == False:
+        image = data.iloc[random.randint(0, len(data) - 1)]
+        # print(image['image_paths'], image['image_ids'])
+    return image
+
+
+def findImagesById(data, image_path, image_id, is_same):
+    '''通过图片id找图片列表'''
+    if is_same:
+        return data[(data['image_ids'] == image_id) & (data['image_paths'] != image_path)]
+    else:
+        return data[data['image_ids'] != image_id]
+
+
+def findImageById(data, image_path, image_id, is_same):
+    '''通过图片id随机找图片（一张）'''
+    images = findImagesById(data, image_path, image_id, is_same)
+    image_one = images.iloc[random.randint(0, len(images) - 1)]
+    return image_one
+
+
+def generate_arrays_from_file(data, batch_size, istrain=True):
     cnt = 0
     X1 = []
     X2 = []
@@ -54,71 +94,71 @@ def generate_arrays_from_file(features, batch_size, istrain=True):
     Y2 = []
     Y3 = []
     while 1:
-        for line in range(len(features)):
-            # create Numpy arrays of input data
-            # and labels, from each line in the file
-            # print("features:", features[line])
-            if os.path.isfile(features[line][0]) == False:
-                continue
-            if os.path.isfile(features[line][1]) == False:
-                continue
-            if istrain and os.path.isfile(features[line][2]) == False:
-                continue
-            # x = K.preprocessing.image.load_img(
-            #     features[line], target_size=(image_size[0], image_size[1]))
-            x1 = K.preprocessing.image.load_img(
-                features[line][0])
-            x1 = K.preprocessing.image.img_to_array(
-                x1, data_format="channels_last")
-            x1 = x1.astype('float32')
-            x1 /= 255.0
-            x1 = imageHelper.resize_padding_zero(x1, 512, 512)
+        # create Numpy arrays of input data
+        # and labels, from each line in the file
+        # print("features:", features[line])
+        # 找一张有多张相同图片的图片
+        image1 = getRandomImage(data)
+        # 找一张相同的
+        image2 = findImageById(
+            data, image1['image_paths'], image1['image_ids'], True)
+        # print(image2['image_paths'], image2['image_ids'])
+        # 找一张不同的
+        image3 = findImageById(
+            data, image1['image_paths'], image1['image_ids'], False)
+        # print(image3['image_paths'], image3['image_ids'])
+        # x = K.preprocessing.image.load_img(
+        #     features[line], target_size=(image_size[0], image_size[1]))
+        x1 = K.preprocessing.image.load_img(image1['image_paths'])
+        x1 = K.preprocessing.image.img_to_array(
+            x1, data_format="channels_last")
+        x1 = x1.astype('float32')
+        x1 /= 255.0
+        x1 = imageHelper.resize_padding_zero(x1, 512, 512)
 
-            x2 = K.preprocessing.image.load_img(
-                features[line][1])
-            x2 = K.preprocessing.image.img_to_array(
-                x2, data_format="channels_last")
-            x2 = x2.astype('float32')
-            x2 /= 255.0
-            x2 = imageHelper.resize_padding_zero(x2, 512, 512)
+        x2 = K.preprocessing.image.load_img(image2['image_paths'])
+        x2 = K.preprocessing.image.img_to_array(
+            x2, data_format="channels_last")
+        x2 = x2.astype('float32')
+        x2 /= 255.0
+        x2 = imageHelper.resize_padding_zero(x2, 512, 512)
 
-            X1.append(x1)
-            X2.append(x2)
+        X1.append(x1)
+        X2.append(x2)
 
+        if istrain:
+            x3 = K.preprocessing.image.load_img(image3['image_paths'])
+            x3 = K.preprocessing.image.img_to_array(
+                x3, data_format="channels_last")
+            x3 = x3.astype('float32')
+            x3 /= 255.0
+            x3 = imageHelper.resize_padding_zero(x3, 512, 512)
+            X3.append(x3)
+
+        # Y是固定值0
+        Y1.append(0)
+        Y2.append(1)
+        Y3.append(0)
+        cnt += 1
+        if cnt == batch_size:
+            cnt = 0
+            X1 = np.array(X1)
+            X2 = np.array(X2)
+            X3 = np.array(X3)
+            Y1 = np.array(Y1)
+            Y2 = np.array(Y2)
+            Y3 = np.array(Y3)
+            # print('Y', Y.shape)
             if istrain:
-                x3 = K.preprocessing.image.load_img(
-                    features[line][2])
-                x3 = K.preprocessing.image.img_to_array(
-                    x3, data_format="channels_last")
-                x3 = x3.astype('float32')
-                x3 /= 255.0
-                x3 = imageHelper.resize_padding_zero(x3, 512, 512)
-                X3.append(x3)
-
-            # Y是固定值0
-            Y1.append(0)
-            Y2.append(1)
-            Y3.append(0)
-            cnt += 1
-            if cnt == batch_size:
-                cnt = 0
-                X1 = np.array(X1)
-                X2 = np.array(X2)
-                X3 = np.array(X3)
-                Y1 = np.array(Y1)
-                Y2 = np.array(Y2)
-                Y3 = np.array(Y3)
-                # print('Y', Y.shape)
-                if istrain:
-                    yield [X1, X2, X3], [Y1]
-                else:
-                    yield [X1, X2], [Y1]
-                X1 = []
-                X2 = []
-                X3 = []
-                Y1 = []
-                Y2 = []
-                Y3 = []
+                yield [X1, X2, X3], [Y1]
+            else:
+                yield [X1, X2], [Y1]
+            X1 = []
+            X2 = []
+            X3 = []
+            Y1 = []
+            Y2 = []
+            Y3 = []
 
 
 def readFilesOne(filename):
@@ -196,39 +236,44 @@ def train():
     # 编译模型
     similarityModel.compile()
 
-    # 测试模型
-    predict_image_val = readFilesOne(os.path.join(face_path, 'Ai_Sugiyama_0001.jpg'))
-    score = similarityModel.model1.predict([predict_image_val], steps=1)
-    print("识别A1", score)
-    predict_image_val = readFilesOne(os.path.join(face_path, 'Ai_Sugiyama_0002.jpg'))
-    score = similarityModel.model2.predict([predict_image_val], steps=1)
-    print("识别A2", score)
-    predict_image_val = readFilesOne(os.path.join(face_path, 'Akbar_Hashemi_Rafsanjani_0001.jpg'))
-    score = similarityModel.model3.predict([predict_image_val], steps=1)
-    print("识别A3", score)
-
     # 读取文件
     file_dir = [face_path]
-    # features = readFilesBatch(file_dir)
-    file_dir=face_path
-    features = [[os.path.join(file_dir, 'Ai_Sugiyama_0001.jpg'), os.path.join(file_dir, 'Ai_Sugiyama_0002.jpg'),
-                 os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0001.jpg')],
-                [os.path.join(file_dir, 'Ai_Sugiyama_0003.jpg'), os.path.join(file_dir, 'Ai_Sugiyama_0004.jpg'),
-                    os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0002.jpg')],
-                [os.path.join(file_dir, 'Ai_Sugiyama_0005.jpg'), os.path.join(file_dir, 'Ai_Sugiyama_0002.jpg'),
-                    os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0003.jpg')],
-                [os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0001.jpg'), os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0003.jpg'),
-                 os.path.join(file_dir, 'Ai_Sugiyama_0002.jpg')]]
+    data = readFilesBatch(file_dir)
+    # file_dir=face_path
+    # features = [[os.path.join(file_dir, 'Ai_Sugiyama_0001.jpg'), os.path.join(file_dir, 'Ai_Sugiyama_0002.jpg'),
+    #              os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0001.jpg')],
+    #             [os.path.join(file_dir, 'Ai_Sugiyama_0003.jpg'), os.path.join(file_dir, 'Ai_Sugiyama_0004.jpg'),
+    #                 os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0002.jpg')],
+    #             [os.path.join(file_dir, 'Ai_Sugiyama_0005.jpg'), os.path.join(file_dir, 'Ai_Sugiyama_0002.jpg'),
+    #                 os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0003.jpg')],
+    #             [os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0001.jpg'), os.path.join(file_dir, 'Akbar_Hashemi_Rafsanjani_0003.jpg'),
+    #              os.path.join(file_dir, 'Ai_Sugiyama_0002.jpg')]]
     # print("labels",labels)
 
-    file_dir2 = [face_path]
-    file_dir2=face_path
+    # file_dir2 = [face_path]
     # features2 = readFilesBatch(file_dir2)
-    features2 = [[os.path.join(file_dir2, 'Ai_Sugiyama_0001.jpg'), os.path.join(file_dir2, 'Ai_Sugiyama_0002.jpg')],
-                [os.path.join(file_dir2, 'Ai_Sugiyama_0003.jpg'), os.path.join(file_dir2, 'Akbar_Hashemi_Rafsanjani_0002.jpg')],
-                [os.path.join(file_dir2, 'Ai_Sugiyama_0005.jpg'), os.path.join(file_dir2, 'Ai_Sugiyama_0002.jpg')],
-                [os.path.join(file_dir2, 'Akbar_Hashemi_Rafsanjani_0001.jpg'), os.path.join(file_dir2, 'Ai_Sugiyama_0002.jpg')]]
+    # file_dir2 = face_path
+    # features2 = [[os.path.join(file_dir2, 'Ai_Sugiyama_0001.jpg'), os.path.join(file_dir2, 'Ai_Sugiyama_0002.jpg')],
+    #              [os.path.join(file_dir2, 'Ai_Sugiyama_0003.jpg'), os.path.join(
+    #                  file_dir2, 'Akbar_Hashemi_Rafsanjani_0002.jpg')],
+    #              [os.path.join(file_dir2, 'Ai_Sugiyama_0005.jpg'),
+    #               os.path.join(file_dir2, 'Ai_Sugiyama_0002.jpg')],
+    #              [os.path.join(file_dir2, 'Akbar_Hashemi_Rafsanjani_0001.jpg'), os.path.join(file_dir2, 'Ai_Sugiyama_0002.jpg')]]
     # print("features2",features2)
+
+    # 测试模型
+    image1 = getRandomImage(data)
+    predict_image_val = readFilesOne(image1['image_paths'])
+    score = similarityModel.model1.predict([predict_image_val], steps=1)
+    print("识别A1", image1['image_paths'], score)
+    image2 = getRandomImage(data)
+    predict_image_val = readFilesOne(image2['image_paths'])
+    score = similarityModel.model2.predict([predict_image_val], steps=1)
+    print("识别A2", image2['image_paths'], score)
+    image3 = getRandomImage(data)
+    predict_image_val = readFilesOne(image3['image_paths'])
+    score = similarityModel.model3.predict([predict_image_val], steps=1)
+    print("识别A3", image3['image_paths'], score)
 
     # 训练
     # 准确率达到1时，提前停止训练
@@ -239,20 +284,22 @@ def train():
         monitor='loss', factor=0.8, patience=10, verbose=0, mode='min', min_delta=0.001, cooldown=0, min_lr=0)
     # model.fit_generator(generate_arrays_from_file(features, 10), steps_per_epoch=100, validation_steps=1, epochs=int(args.epochs),
     #                     validation_data=generate_arrays_from_file(features2, len(features2), False), callbacks=[callback1])
-    tb_cb = K.callbacks.TensorBoard(log_dir='./logs/similarityModel', write_images=1)
-    model.fit_generator(generate_arrays_from_file(features, 3), steps_per_epoch=100, validation_steps=len(features), epochs=int(args.epochs),
-                        validation_data=generate_arrays_from_file(features, 1), callbacks=[tb_cb])
+    tb_cb = K.callbacks.TensorBoard(
+        log_dir='./logs/similarityModel', write_images=1)
+    # model.fit_generator(generate_arrays_from_file(data, 1), steps_per_epoch=100, validation_steps=len(data), epochs=int(args.epochs),
+    #                     validation_data=generate_arrays_from_file(data, 1))
+    model.fit_generator(generate_arrays_from_file(data, 1), steps_per_epoch=100, epochs=int(args.epochs), callbacks=[tb_cb])
 
     # 测试模型
-    predict_image_val = readFilesOne(os.path.join(face_path, 'Ai_Sugiyama_0001.jpg'))
+    predict_image_val = readFilesOne(image1['image_paths'])
     score = similarityModel.model1.predict([predict_image_val], steps=1)
-    print("识别1", score)
-    predict_image_val = readFilesOne(os.path.join(face_path, 'Ai_Sugiyama_0002.jpg'))
+    print("识别A1", image1['image_paths'], score)
+    predict_image_val = readFilesOne(image2['image_paths'])
     score = similarityModel.model2.predict([predict_image_val], steps=1)
-    print("识别2", score)
-    predict_image_val = readFilesOne(os.path.join(face_path, 'Akbar_Hashemi_Rafsanjani_0001.jpg'))
+    print("识别A2", image2['image_paths'], score)
+    predict_image_val = readFilesOne(image3['image_paths'])
     score = similarityModel.model3.predict([predict_image_val], steps=1)
-    print("识别3", score)
+    print("识别A3", image3['image_paths'], score)
 
     # print("识别")
     # score = similarityModel.model_predict.evaluate_generator(
@@ -261,14 +308,23 @@ def train():
 
     model.save_weights("data/my_model_similaritynet1.h5")
 
-    predict_image_val = readFilesOne(os.path.join(face_path, 'Ai_Sugiyama_0001.jpg'))
-    predict_image_val2 = readFilesOne(os.path.join(face_path, 'Ai_Sugiyama_0002.jpg'))
-    score = similarityModel.model_predict.predict([predict_image_val,predict_image_val2], steps=1)
-    print("比对识别1", score)
-    predict_image_val = readFilesOne(os.path.join(face_path, 'Ai_Sugiyama_0001.jpg'))
-    predict_image_val2 = readFilesOne(os.path.join(face_path, 'Akbar_Hashemi_Rafsanjani_0001.jpg'))
-    score = similarityModel.model_predict.predict([predict_image_val,predict_image_val2], steps=1)
-    print("比对识别2", score)
+    image1 = getRandomImage(data)
+    # 找一张相同的
+    image2 = findImageById(
+        data, image1['image_paths'], image1['image_ids'], True)
+    predict_image_val = readFilesOne(image1['image_paths'])
+    predict_image_val2 = readFilesOne(image2['image_paths'])
+    score = similarityModel.model_predict.predict(
+        [predict_image_val, predict_image_val2], steps=1)
+    print("比对识别1", image1['image_paths'], image2['image_paths'], score)
+    # 找一张不同的
+    image2 = findImageById(
+        data, image1['image_paths'], image1['image_ids'], False)
+    predict_image_val = readFilesOne(image1['image_paths'])
+    predict_image_val2 = readFilesOne(image2['image_paths'])
+    score = similarityModel.model_predict.predict(
+        [predict_image_val, predict_image_val2], steps=1)
+    print("比对识别2", image1['image_paths'], image2['image_paths'], score)
     return
 
 
@@ -277,55 +333,57 @@ def predict():
     ###############
     # 开始建立CNN模型
     ###############
+
+    # 设置显存占用自适应
+    tf_config = tf.ConfigProto()
+    tf_config.gpu_options.allow_growth = True
+    tf_session = tf.Session(config=tf_config)
+    K.backend.set_session(tf_session)
+
     # 加载模型
     model = createModel()
-    if os.path.isfile("data/my_model_transformation3.h5"):
-        model.load_weights("data/my_model_transformation3.h5", by_name=True)
+    if os.path.isfile("data/my_model_similaritynet1.h5"):
+        model.load_weights("data/my_model_similaritynet1.h5", by_name=True)
         print("加载模型文件")
 
     # 编译模型
-    model.compile(K.optimizers.Adadelta(lr=1e-4),
-                  K.losses.categorical_crossentropy, [K.metrics.binary_accuracy])
+    similarityModel.compile()
 
     # 读取文件
-    file_dir2 = [face_path+"test/"]
-    features2 = readFilesBatch(file_dir2)
+    file_dir = [face_path]
+    data = readFilesBatch(file_dir)
 
-    # pathDir = os.listdir(file_dir2[0])
-    # for i in range(len(features2)):
-    #     print("标签：", labels2[i])
-    #     predict_image_val = readFilesOne(features2[i])
-    #     plt.imshow(predict_image_val[0])  # 显示图片
-    #     plt.axis('off')  # 不显示坐标轴
-    #     plt.show()
+    # 测试模型
+    image1 = getRandomImage(data)
+    predict_image_val = readFilesOne(image1['image_paths'])
+    score = similarityModel.model1.predict([predict_image_val], steps=1)
+    print("识别A1", image1['image_paths'], score)
+    image2 = getRandomImage(data)
+    predict_image_val = readFilesOne(image2['image_paths'])
+    score = similarityModel.model2.predict([predict_image_val], steps=1)
+    print("识别A2", image2['image_paths'], score)
+    image3 = getRandomImage(data)
+    predict_image_val = readFilesOne(image3['image_paths'])
+    score = similarityModel.model3.predict([predict_image_val], steps=1)
+    print("识别A3", image3['image_paths'], score)
 
-    # print("识别", labels2)
-    score = model.evaluate_generator(
-        generate_arrays_from_file(features2, len(features2), False), steps=1)
-    print("损失值：", score[0])
-    print("准确率：", score[1])
-
-    pathDir = os.listdir(file_dir2[0])
-    for path in pathDir:
-        predict_image_val = readFilesOne(file_dir2[0]+path)
-        score = model.predict(predict_image_val, steps=1)
-        predict_image_val = predict_image_val.reshape(
-            (image_size[0], image_size[1], 3))
-        print("识别路径", path)
-        print("识别", score[0])
-        h, w = predict_image_val.shape[:2]
-        pts = np.float32([[0, 0], [0, h-1], [w-1, h-1], [w-1, 0]])
-        pts1 = np.float32(
-            score[0] * ((w-1, h-1), (w-1, h-1), (w-1, h-1), (w-1, h-1)))
-        M = cv2.getPerspectiveTransform(pts1, pts)
-        dst = cv2.warpPerspective(
-            predict_image_val, M, predict_image_val.shape[:2])
-        plt.imshow(predict_image_val)  # 显示图片
-        plt.axis('off')  # 不显示坐标轴
-        plt.show()
-        plt.imshow(dst)  # 显示图片
-        plt.axis('off')  # 不显示坐标轴
-        plt.show()
+    image1 = getRandomImage(data)
+    # 找一张相同的
+    image2 = findImageById(
+        data, image1['image_paths'], image1['image_ids'], True)
+    predict_image_val = readFilesOne(image1['image_paths'])
+    predict_image_val2 = readFilesOne(image2['image_paths'])
+    score = similarityModel.model_predict.predict(
+        [predict_image_val, predict_image_val2], steps=1)
+    print("比对识别1", image1['image_paths'], image2['image_paths'], score)
+    # 找一张不同的
+    image2 = findImageById(
+        data, image1['image_paths'], image1['image_ids'], False)
+    predict_image_val = readFilesOne(image1['image_paths'])
+    predict_image_val2 = readFilesOne(image2['image_paths'])
+    score = similarityModel.model_predict.predict(
+        [predict_image_val, predict_image_val2], steps=1)
+    print("比对识别2", image1['image_paths'], image2['image_paths'], score)
     return
 
 
