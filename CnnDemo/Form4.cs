@@ -30,7 +30,7 @@ namespace CnnDemo
         {
             cnn = new Cnn();
             #region LeNet-5 结构
-            /*
+
             cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
                 2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
             cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
@@ -39,16 +39,15 @@ namespace CnnDemo
                 0, 0, CnnPooling.PoolingTypes.None, false, false);
             cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
             cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
-            //*/
             #endregion
-            cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
-            cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
-            cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
-                0, 0, CnnPooling.PoolingTypes.None, false, false);
-            cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
-            cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
+            //cnn.AddCnnConvolutionLayer(6, 32, 32, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            //    2, 2, CnnPooling.PoolingTypes.MaxPooling, false);
+            //cnn.AddCnnConvolutionLayer(16, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            //    2, 2, CnnPooling.PoolingTypes.MeanPooling, false, false);
+            //cnn.AddCnnConvolutionLayer(120, 5, 5, 1, 1, CnnNode.ActivationFunctionTypes.Tanh,
+            //    0, 0, CnnPooling.PoolingTypes.None, false, false);
+            //cnn.AddCnnFullLayer(84, CnnNode.ActivationFunctionTypes.Tanh, false);
+            //cnn.AddCnnFullLayer(10, CnnNode.ActivationFunctionTypes.Tanh, false);
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -72,9 +71,9 @@ namespace CnnDemo
                         if (!chkHandwritten.Checked)
                         {
                             #region MNIST库
-                            using (FileStream fs = new FileStream("train-labels.idx1-ubyte", FileMode.Open))
+                            using (FileStream fs = new FileStream("data/MNIST/train-labels.idx1-ubyte", FileMode.Open))
                             {
-                                using (FileStream fsImages = new FileStream("train-images.idx3-ubyte", FileMode.Open))
+                                using (FileStream fsImages = new FileStream("data/MNIST/train-images.idx3-ubyte", FileMode.Open))
                                 {
                                     byte[] bytes4 = new byte[4];
                                     fsImages.Seek(4, SeekOrigin.Current);

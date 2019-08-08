@@ -136,7 +136,7 @@
             this.numLearningRate.Size = new System.Drawing.Size(120, 21);
             this.numLearningRate.TabIndex = 8;
             this.numLearningRate.Value = new decimal(new int[] {
-            1,
+            2,
             0,
             0,
             131072});

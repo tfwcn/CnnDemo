@@ -2,3 +2,7 @@
 /CnnDemo/obj
 /*.cnn
 /*.suo
+
+.vs
+packages
+.vscode
